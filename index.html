@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phnaek Pkay | Satellite Eye</title>
+<link rel="icon" type="image/svg+xml" href="assets/phnaek-pkay.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Noto+Sans+Khmer:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12140f;
+    --ink-rgb:18,20,15;
+    --panel:#1a1e15;
+    --panel-rgb:26,30,21;
+    --panel2:#20261a;
+    --line:#3a4030;
+    --line-soft:#2a2f22;
+    --moss:#8ea15c;
+    --moss-dim:#5f6f42;
+    --amber:#d3934f;
+    --paper:#eef0e4;
+    --muted:#98a186;
+    --teal:#4f7d78;
+    --danger:#c15a4a;
+    --radius:3px;
+  }
+  [data-theme="light"]{
+    --ink:#f3f2e8;
+    --ink-rgb:243,242,232;
+    --panel:#ffffff;
+    --panel-rgb:255,255,255;
+    --panel2:#ece8d8;
+    --line:#c7c2a8;
+    --line-soft:#ddd9c4;
+    --moss:#5f7a3a;
+    --moss-dim:#48602a;
+    --amber:#a8641f;
+    --paper:#1c1f16;
+    --muted:#6b6a57;
+    --teal:#356560;
+    --danger:#a13d2c;
+  }
+  html{transition:background-color .15s;}
+  body{transition:background-color .15s, color .15s;}
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter',system-ui,sans-serif;
+    background:#0d100c;
+  }
+  #techBackground{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.72;}
+  ::selection{background:var(--moss); color:var(--ink);}
+  .app{display:flex; flex-direction:column; min-height:100vh;position:relative;z-index:1;}
+
+  /* ---- Topbar ---- */
+  .topbar{
+    display:flex; align-items:center; gap:20px;
+    padding:14px 20px;
+    border-bottom:1px solid var(--line);
+    background:rgba(var(--ink-rgb),0.9);
+    backdrop-filter:blur(4px);
+    position:sticky; top:0; z-index:20;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:baseline; gap:10px; margin-right:auto;}
+  .brand .mark{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; color:var(--moss);
+    border:1px solid var(--moss-dim);
+    padding:2px 6px; border-radius:2px;
+    letter-spacing:.06em;
+  }
+  .brand h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:17px; font-weight:600; margin:0;
+    letter-spacing:.01em;
+  }
+  .brand small{color:var(--muted); font-size:11px; font-family:'JetBrains Mono',monospace;}
+
+  .mode-toggle{display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .mode-toggle button{
+    background:var(--panel); color:var(--muted); border:none;
+    padding:9px 16px; font-family:'JetBrains Mono',monospace; font-size:12px;
+    cursor:pointer; letter-spacing:.04em; transition:.15s;
+  }
+  .mode-toggle button.active{background:var(--moss); color:var(--ink); font-weight:600;}
+  .mode-toggle button:not(.active):hover{color:var(--paper); background:var(--panel2);}
+
+  .btn{
+    font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.03em;
+    background:var(--amber); color:var(--ink); border:none;
+    padding:9px 16px; border-radius:var(--radius); cursor:pointer; font-weight:600;
+    display:flex; align-items:center; gap:6px;
+    transition:.15s;
+  }
+  .btn:hover{filter:brightness(1.1);}
+  .btn.ghost{background:transparent; color:var(--paper); border:1px solid var(--line);}
+  .btn.ghost:hover{border-color:var(--moss); color:var(--moss);}
+  .btn:disabled{opacity:.35; cursor:not-allowed;}
+  .top-actions{display:flex;gap:6px;align-items:center;}
+  .sidebar-toggle{font-size:16px;padding:8px 11px;}
+
+  /* ---- Layout ---- */
+  .layout{display:flex; flex:1; min-height:0;}
+  .sidebar{
+    width:300px; flex-shrink:0;
+    border-right:1px solid var(--line);
+    background:rgba(var(--panel-rgb),0.55);
+    padding:16px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:transparent transparent;
+    display:flex; flex-direction:column; gap:18px;
+    max-height:calc(100vh - 61px);
+  }
+  .sidebar:hover,.sidebar:focus-within{scrollbar-color:var(--line) transparent;}
+  .sidebar::-webkit-scrollbar{width:5px;}
+  .sidebar::-webkit-scrollbar-track{background:transparent;}
+  .sidebar::-webkit-scrollbar-thumb{background:transparent; border-radius:99px;}
+  .sidebar:hover::-webkit-scrollbar-thumb,.sidebar:focus-within::-webkit-scrollbar-thumb{background:var(--line);}
+  .sidebar::-webkit-scrollbar-thumb:hover{background:var(--moss-dim);}
+  .sidebar.is-collapsed{width:0;padding-left:0;padding-right:0;border-right:0;overflow:hidden;gap:0;}
+  .sidebar-backdrop{display:none;}
+  .sidebar h2{
+    font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase;
+    letter-spacing:.12em; color:var(--muted); margin:0 0 8px 0;
+    display:flex; align-items:center; gap:6px;
+  }
+  .sidebar h2::before{content:''; width:6px; height:6px; background:var(--moss); border-radius:1px;}
+
+  .dropzone{
+    border:1.5px dashed var(--line); border-radius:var(--radius);
+    padding:18px 10px; text-align:center; cursor:pointer;
+    color:var(--muted); font-size:12.5px; transition:.15s;
+    position:relative;
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--moss); color:var(--moss); background:rgba(142,161,92,0.06);}
+  .dropzone input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+  .dropzone .hint{display:block; font-family:'JetBrains Mono',monospace; font-size:10px; margin-top:4px; color:var(--muted);}
+
+  .image-list{display:flex; flex-direction:column; gap:6px;}
+  .empty-note{color:var(--muted); font-size:12px; font-style:italic; padding:6px 2px;}
+  .img-row{
+    display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--radius);
+    padding:6px; position:relative;
+  }
+  .img-row.selected{border-color:var(--moss-dim); background:var(--panel2);}
+  .img-row.generated{border-color:var(--amber);box-shadow:inset 3px 0 0 var(--amber);}
+  .generated-badge{display:inline-block;color:var(--amber);font:9px 'JetBrains Mono',monospace;letter-spacing:.05em;margin-left:4px;}
+  .img-row .thumb{
+    width:40px; height:40px; border-radius:2px; object-fit:cover; flex-shrink:0;
+    border:1px solid var(--line);
+  }
+  .img-row .meta{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;}
+  .img-row input[type=text]{
+    width:100%; background:transparent; border:none; border-bottom:1px solid transparent;
+    color:var(--paper); font-family:'Noto Sans Khmer','Inter',sans-serif; font-size:12.5px;
+    padding:1px 0; outline:none;
+  }
+  .img-row input[type=text]:focus{border-bottom-color:var(--moss);}
+  .img-row .imagery-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);}
+  .img-row .dims{font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--muted);}
+  .img-row .row-actions{display:flex; flex-direction:column; gap:2px;}
+  .img-row .row-actions button{
+    background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px;
+    padding:1px 4px; line-height:1;
+  }
+  .img-row .row-actions button:hover{color:var(--danger);}
+  .img-row .order-btns{display:flex; gap:2px;}
+  .img-row .order-btns button{background:none; border:none; color:var(--muted); cursor:pointer; font-size:10px;}
+  .img-row .order-btns button:hover{color:var(--moss);}
+  .img-row .chk{flex-shrink:0; accent-color:var(--moss); width:15px; height:15px; cursor:pointer;}
+  .img-row .grip{flex-shrink:0; color:var(--muted); cursor:grab; font-size:13px; letter-spacing:-1px; line-height:1; padding:0 1px; user-select:none;}
+  .img-row .grip:active{cursor:grabbing;}
+  .img-row.dragging{opacity:.4;}
+  .img-row.drag-over{border-top:2px solid var(--amber);}
+
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
+  .field input[type=text]{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    color:var(--paper); padding:8px 9px; font-size:12.5px; font-family:'Inter',sans-serif; outline:none;
+  }
+  .field input[type=text]:focus{border-color:var(--moss);}
+  .field textarea{width:100%;resize:vertical;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);color:var(--paper);padding:8px 9px;font:12px/1.4 'Inter',sans-serif;outline:none;}
+  .field textarea:focus{border-color:var(--moss);}
+  .annotation-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .annotation-tools .btn{justify-content:center;padding-inline:6px;font-size:10px;}
+  .upscale-tools{border-top:1px solid var(--line-soft);padding-top:14px;display:flex;flex-direction:column;gap:7px;}
+  .upscale-tools h2{margin-bottom:0;}
+  .upscale-tools input[type=file]{width:100%;font:10px 'JetBrains Mono',monospace;color:var(--muted);}
+  .model-link{color:var(--moss);font:10px 'JetBrains Mono',monospace;text-decoration:none;}
+  .model-link:hover{text-decoration:underline;}
+  .upscale-tools progress{width:100%;height:5px;accent-color:var(--amber);}
+  .upscale-progress-label{color:var(--muted);font:10px 'JetBrains Mono',monospace;min-height:14px;}
+  .date-results{display:flex;flex-wrap:wrap;gap:4px;max-height:92px;overflow:auto;}
+  .date-results button{background:var(--panel2);border:1px solid var(--line);color:var(--amber);padding:5px 7px;border-radius:2px;cursor:pointer;font:10px 'JetBrains Mono',monospace;}
+  .date-results button:hover{border-color:var(--moss);color:var(--moss);}
+
+  .view-controls{display:flex; flex-direction:column; gap:10px;}
+  .zoom-row{display:flex; align-items:center; gap:10px;}
+  .zoom-row input[type=range]{flex:1; accent-color:var(--moss);}
+  .zoom-readout{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber); width:44px; text-align:right;}
+  .coord-readout{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted);
+    display:flex; justify-content:space-between; border-top:1px solid var(--line-soft); padding-top:8px;
+  }
+  .coord-readout span{color:var(--teal);}
+
+  .cols-select{display:flex; gap:6px;}
+  .cols-select button{
+    flex:1; background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    padding:6px 0; font-family:'JetBrains Mono',monospace; font-size:11px; border-radius:2px; cursor:pointer;
+  }
+  .cols-select button.active{background:var(--moss); color:var(--ink); border-color:var(--moss); font-weight:600;}
+
+  select{
+    background:var(--panel); border:1px solid var(--line); color:var(--paper);
+    padding:8px 9px; border-radius:var(--radius); font-size:12.5px; width:100%; outline:none;
+  }
+  select:focus{border-color:var(--moss);}
+
+  /* ---- Main stage ---- */
+  .stage-wrap{flex:1;min-height:calc(100vh - 76px);padding:24px;overflow:auto;display:flex;flex-direction:column;gap:14px;position:relative;}
+  #annotationCanvas{position:absolute;z-index:15;pointer-events:none;display:none;cursor:crosshair;}
+  #annotationCanvas.active{pointer-events:auto;display:block;}
+  .stage-hint{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);
+    display:flex; align-items:center; gap:8px;
+  }
+  .stage-hint .dot{width:6px;height:6px;background:var(--teal);border-radius:50%;}
+
+  .placeholder{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    border:1px dashed var(--line); border-radius:var(--radius); color:var(--muted);
+    font-size:13px; min-height:400px; text-align:center; padding:20px;
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  .grid-stage{
+    display:grid; gap:3px; background:var(--line);
+    border:1px solid var(--line); border-radius:2px; overflow:hidden;
+    --zoom:1; --panx:0px; --pany:0px; min-height:calc(100vh - 170px); grid-auto-rows:minmax(0,1fr);
+  }
+  .panel{position:relative; background:#000; aspect-ratio:auto; min-height:0; overflow:hidden;}
+  .panel-viewport{position:absolute; inset:0; overflow:hidden; cursor:grab;}
+  .panel-viewport:active{cursor:grabbing;}
+  .panel-img{
+    width:100%; height:100%; object-fit:cover; display:block;
+    transform:translate(var(--panx),var(--pany)) scale(var(--zoom));
+    transform-origin:center; user-select:none; pointer-events:none;
+  }
+  .panel-label{
+    position:absolute; top:0; left:0; right:0;
+    background:linear-gradient(180deg, rgba(0,0,0,.72), rgba(0,0,0,0));
+    padding:8px 10px 20px;
+    font-family:'Noto Sans Khmer','JetBrains Mono',monospace; font-size:13px; font-weight:500;
+    color:#f4f2e8; letter-spacing:.01em; pointer-events:none;
+  }
+  .panel-tag{
+    position:absolute; bottom:6px; right:7px; font-family:'JetBrains Mono',monospace;
+    font-size:9px; color:rgba(238,240,228,.55); pointer-events:none;
+  }
+
+  .slider-stage{
+    position:relative; width:100%; aspect-ratio:16/10; background:#000;
+    border:1px solid var(--line); border-radius:2px; overflow:hidden;
+    --zoom:1; --panx:0px; --pany:0px;
+    height:calc(100vh - 170px); max-height:none; margin:0 auto;
+  }
+  .slider-panel{position:absolute; inset:0; overflow:hidden;}
+  .slider-panel img{
+    width:100%; height:100%; object-fit:cover; display:block;
+    transform:translate(var(--panx),var(--pany)) scale(var(--zoom));
+    transform-origin:center; user-select:none; pointer-events:none;
+  }
+  .slider-panel.overlay{clip-path:inset(0 0 0 var(--clip,50%));}
+  .slider-panel.third{clip-path:inset(0 0 0 var(--clip2,75%));}
+  .divider{
+    position:absolute; top:0; bottom:0; left:var(--clip,50%);
+    width:2px; background:var(--amber); cursor:ew-resize; z-index:5;
+    transform:translateX(-1px);
+  }
+  .divider .handle{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:34px; height:34px; border-radius:50%; background:var(--amber);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ink); font-weight:700;
+    box-shadow:0 0 0 3px rgba(211,147,79,.25);
+  }
+  .divider.second{left:var(--clip2,75%);z-index:6;background:var(--teal);}
+  .divider.second .handle{background:var(--teal);box-shadow:0 0 0 3px rgba(79,125,120,.25);}
+  .corner-label{
+    position:absolute; top:10px; font-family:'Noto Sans Khmer','JetBrains Mono',monospace;
+    font-size:12.5px; font-weight:500; color:#f4f2e8; background:rgba(0,0,0,.55);
+    padding:5px 10px; border-radius:2px; z-index:4; pointer-events:none; letter-spacing:.01em;
+  }
+  .corner-label.left{left:10px; border-left:2px solid var(--moss);}
+  .corner-label.right{right:10px; border-right:2px solid var(--teal);}
+  .corner-label.middle{left:50%;transform:translateX(-50%);border-bottom:2px solid var(--amber);}
+  .corner-label.third-tag{right:10px;top:52px;border-right:2px solid var(--teal);}
+  .drag-surface{position:absolute; inset:0; cursor:grab; z-index:3;}
+  .drag-surface:active{cursor:grabbing;}
+
+  .overlay-stage{
+    position:relative; width:100%; aspect-ratio:16/10; background:#000;
+    border:1px solid var(--line); border-radius:2px; overflow:hidden;
+    --zoom:1; --panx:0px; --pany:0px; --density:0.5;
+    height:calc(100vh - 170px); max-height:none; margin:0 auto;
+  }
+  .overlay-panel{position:absolute; inset:0; overflow:hidden;}
+  .overlay-panel img{
+    width:100%; height:100%; object-fit:cover; display:block;
+    transform:translate(var(--panx),var(--pany)) scale(var(--zoom));
+    transform-origin:center; user-select:none; pointer-events:none;
+  }
+  .overlay-panel.top{opacity:var(--density);}
+  .overlay-panel.third{opacity:var(--third-density,.55);}
+  .density-row{display:flex; align-items:center; gap:10px;}
+  .density-row input[type=range]{flex:1; accent-color:var(--amber);}
+  .density-row input[type=range]:disabled{opacity:.4;}
+  .density-readout{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber); width:38px; text-align:right;}
+
+  .sequence-stage{
+    position:relative; width:100%; aspect-ratio:3/2; background:#000;
+    border:1px solid var(--line); border-radius:2px; overflow:hidden;
+    height:calc(100vh - 220px); max-height:none; margin:0 auto; cursor:grab;
+  }
+  .sequence-stage:active{cursor:grabbing;}
+  .sequence-stage canvas{width:100%; height:100%; display:block;}
+  .seq-play{
+    position:absolute; bottom:14px; left:14px; width:38px; height:38px; border-radius:50%;
+    background:rgba(0,0,0,.6); border:1px solid rgba(238,240,228,.3); color:var(--paper);
+    cursor:pointer; font-size:14px; z-index:6; display:flex; align-items:center; justify-content:center;
+  }
+  .seq-play:hover{border-color:var(--amber); color:var(--amber);}
+  .seq-progress{
+    position:absolute; bottom:0; left:0; right:0; height:3px; background:rgba(238,240,228,.15); z-index:6;
+  }
+  .seq-progress-fill{height:100%; width:0%; background:var(--amber);}
+
+  .seq-timeline{
+    display:flex; gap:0; align-items:stretch; overflow-x:auto; padding-top:4px;
+    border-top:1px solid var(--line);
+  }
+  .seq-tick{
+    flex:1 0 auto; min-width:64px; background:none; border:none; cursor:pointer;
+    padding:10px 8px 8px; position:relative; color:var(--muted);
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; text-align:center;
+    border-right:1px solid var(--line-soft);
+  }
+  .seq-tick::before{
+    content:''; position:absolute; top:0; left:50%; width:2px; height:6px;
+    background:var(--line); transform:translateX(-50%);
+  }
+  .seq-tick .lbl{
+    display:block; margin-top:2px; font-family:'Noto Sans Khmer','JetBrains Mono',monospace;
+    font-size:11px; color:var(--paper); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .seq-tick .idx{display:block;color:var(--amber);font-size:9px;}
+  .seq-tick:hover{background:rgba(142,161,92,0.08); color:var(--moss);}
+  .seq-tick.active::before{background:var(--amber); height:9px;}
+  .seq-tick.active{color:var(--amber);}
+  .seq-tick.active .lbl{color:var(--amber);}
+
+  .checklist{display:flex; flex-direction:column; gap:4px; max-height:120px; overflow-y:auto;}
+  .checklist label{
+    display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted);
+    cursor:pointer; padding:2px 0;
+  }
+  .checklist input{accent-color:var(--moss);}
+
+  /* ---- Change map ---- */
+  .change-stage{position:relative; width:100%;height:calc(100vh - 170px);aspect-ratio:auto;max-height:none;margin:0 auto;background:#080a07;border:1px solid var(--line);border-radius:2px;overflow:hidden;}
+  .change-stage canvas{width:100%;height:100%;display:block;image-rendering:auto;}
+  .change-legend{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:6px 9px;background:rgba(0,0,0,.68);color:#f4f2e8;font:10px 'JetBrains Mono',monospace;}
+  .change-legend i{width:10px;height:10px;background:#e56c4c;display:inline-block;border-radius:50%;box-shadow:0 0 0 2px rgba(229,108,76,.2);}
+  .change-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+  .change-stat{padding:9px 8px;background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--radius);}
+  .change-stat strong{display:block;color:var(--amber);font:600 14px 'JetBrains Mono',monospace;}
+  .change-stat span{display:block;margin-top:4px;color:var(--muted);font:9px 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em;}
+  .change-note{font:10.5px 'JetBrains Mono',monospace;color:var(--muted);line-height:1.5;margin:8px 0 0;}
+  @media (max-width:820px){
+    html,body{overflow-x:hidden;}
+    body.sidebar-open{overflow:hidden;}
+    .layout{display:block;min-width:0;}
+    .sidebar{position:fixed;top:0;bottom:0;left:0;width:100vw;max-width:100vw;height:100dvh;max-height:none;z-index:40;border-right:1px solid var(--line);background:var(--panel);box-shadow:14px 0 40px rgba(0,0,0,.42);transform:translateX(0);transition:transform .2s ease;padding:12px;overflow-x:hidden;}
+    .sidebar.is-collapsed{width:100vw;max-width:100vw;padding:12px;border-right:1px solid var(--line);transform:translateX(-105%);}
+    .sidebar-backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:35;opacity:1;transition:opacity .2s;}
+    .sidebar-backdrop.is-hidden{opacity:0;pointer-events:none;}
+    .stage-wrap{width:100%;padding:12px;min-height:calc(100dvh - 100px);overflow-x:hidden;}
+    .grid-stage{min-height:calc(100vh - 145px);}
+    .slider-stage,.overlay-stage{height:calc(100vh - 145px);}
+    .sequence-stage{height:calc(100vh - 195px);}
+    .change-stage{height:calc(100vh - 145px);}
+  }
+  @media (max-width:620px){.top-actions{width:100%;}.top-actions .btn{flex:1;justify-content:center;}.mode-toggle{order:5;width:100%;overflow-x:auto;}.mode-toggle button{flex:1;white-space:nowrap;padding-inline:10px;}.topbar{gap:8px;padding:10px 12px;}.brand{min-width:0;}.brand small{display:none;}}
+
+  /* ---- Live map capture ---- */
+  .map-live{
+    position:relative; width:100%; aspect-ratio:4/3; background:#0a0b08;
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:grab;
+  }
+  .map-live:active{cursor:grabbing;}
+  .map-live canvas{width:100%; height:100%; display:block;}
+  .map-zoom-controls{position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:4px; z-index:5;}
+  .map-zoom-controls button{
+    width:26px; height:26px; background:rgba(var(--ink-rgb),.85); border:1px solid var(--line);
+    color:var(--paper); border-radius:2px; cursor:pointer; font-size:14px; line-height:1;
+  }
+  .map-zoom-controls button:hover{border-color:var(--moss); color:var(--moss);}
+  .map-zoom-controls button:disabled{opacity:.3;cursor:not-allowed;}
+  .map-expand-btn{
+    position:absolute; top:8px; left:8px; z-index:5;
+    width:26px; height:26px; background:rgba(var(--ink-rgb),.85); border:1px solid var(--line);
+    color:var(--paper); border-radius:2px; cursor:pointer; font-size:13px; line-height:1;
+  }
+  .map-expand-btn:hover{border-color:var(--moss); color:var(--moss);}
+  .map-refresh-btn{
+    position:absolute; top:8px; left:40px; z-index:5;
+    width:26px; height:26px; background:rgba(var(--ink-rgb),.85); border:1px solid var(--line);
+    color:var(--paper); border-radius:2px; cursor:pointer; font-size:14px; line-height:1;
+  }
+  .map-refresh-btn:hover{border-color:var(--amber); color:var(--amber);}
+  .map-live.expanded{
+    position:fixed; top:5vh; left:5vw; right:5vw; bottom:5vh;
+    width:auto; height:auto; aspect-ratio:auto; z-index:1000;
+    box-shadow:0 0 0 2000px rgba(0,0,0,.78);
+  }
+  .map-readout{
+    position:absolute; bottom:6px; left:8px; font-family:'JetBrains Mono',monospace; font-size:10px;
+    color:rgba(238,240,228,.82); background:rgba(0,0,0,.62); padding:4px 7px; border-radius:2px; z-index:5; pointer-events:none;display:flex;gap:8px;align-items:center;white-space:nowrap;
+  }
+  .map-readout .date{color:var(--amber);}
+  .provider-note{
+    font-size:10.5px; color:var(--muted); line-height:1.5; margin:2px 0 0;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .provider-capability{display:flex;justify-content:space-between;gap:8px;padding:7px 8px;margin-top:7px;background:rgba(79,125,120,.08);border:1px solid var(--line-soft);color:var(--teal);font:9.5px 'JetBrains Mono',monospace;}
+  .zoom-advice{font:10px/1.4 'JetBrains Mono',monospace;color:var(--muted);margin:6px 0 0;}
+  .date-actions{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:5px;margin-top:6px;}
+  .date-actions .btn{justify-content:center;padding:7px 4px;font-size:10px;}
+  .capture-status{font-size:11px; color:var(--teal); min-height:14px; line-height:1.4;}
+  .capture-status.err{color:var(--danger);}
+
+  @media (max-width:820px){
+    .layout{flex-direction:column;}
+    .sidebar{width:100%; max-height:none; border-right:none; border-bottom:1px solid var(--line);}
+  }
+</style>
+</head>
+<body>
+<canvas id="techBackground" aria-hidden="true"></canvas>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">PHNAEK&middot;PKAY</span>
+      <div>
+        <h1>Phnaek Pkay</h1>
+        <small>Satellite Eye &middot; imagery history</small>
+      </div>
+    </div>
+    <div class="mode-toggle">
+      <button id="modeGridBtn" class="active">GRID</button>
+      <button id="modeSliderBtn">SLIDER</button>
+      <button id="modeOverlayBtn">OVERLAY</button>
+      <button id="modeSequenceBtn">SEQUENCE</button>
+      <button id="modeChangeBtn">CHANGE MAP</button>
+    </div>
+    <button class="btn ghost sidebar-toggle" id="sidebarToggleBtn" title="Toggle controls">&#9776;</button>
+    <button class="btn ghost" id="themeToggleBtn" title="Toggle light / dark theme">&#9788;</button>
+    <div class="top-actions">
+      <button class="btn ghost" id="saveProjectBtn">Save</button>
+      <button class="btn ghost" id="loadProjectBtn">Load</button>
+      <button class="btn ghost" id="saveWorkspaceBtn">Workspace</button>
+      <button class="btn ghost" id="openWorkspaceBtn">Open workspace</button>
+      <button class="btn ghost" id="exportReportBtn">Report</button>
+      <button class="btn ghost" id="openUpscaleBtn">Enhance</button>
+      <button class="btn ghost" id="exportVideoBtn" style="display:none;">&#9679; Export video</button>
+      <button class="btn" id="exportBtn">&#8681; Export PNG</button>
+    </div>
+    <input type="file" id="projectInput" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+
+      <div>
+        <h2>Add imagery</h2>
+        <div class="dropzone" id="dropzone">
+          Drop satellite frames here, or click to browse
+          <span class="hint">PNG / JPG &middot; or press Ctrl/Cmd+V to paste</span>
+          <input type="file" id="fileInput" multiple accept="image/*">
+        </div>
+      </div>
+
+      <div>
+        <h2>Live satellite capture</h2>
+        <div class="field">
+          <label>PROVIDER</label>
+          <select id="providerSelect">
+            <option value="esri">Esri World Imagery &middot; no key</option>
+            <option value="carto">CARTO Voyager map &middot; no key</option>
+            <option value="nasa">NASA GIBS near-real-time &middot; no key</option>
+            <option value="google">Google Satellite tiles &middot; no key, unofficial</option>
+            <option value="mapbox">Mapbox Satellite &middot; needs token</option>
+            <option value="sentinel">Copernicus Sentinel-2 &middot; configuration ID</option>
+          </select>
+        </div>
+        <div class="field" id="mapboxTokenField" hidden style="margin-top:8px;">
+          <label>MAPBOX ACCESS TOKEN</label>
+          <input type="text" id="mapboxToken" placeholder="pk.eyJ1Ijoi&hellip;">
+        </div>
+        <div class="field" id="sentinelIdField" hidden style="margin-top:8px;">
+          <label>SENTINEL HUB INSTANCE ID</label>
+          <input type="text" id="sentinelId" placeholder="from dashboard.sentinel-hub.com">
+        </div>
+        <div class="field" id="sentinelLayerField" hidden style="margin-top:8px;">
+          <label>LAYER NAME</label>
+          <input type="text" id="sentinelLayer" value="TRUE_COLOR" placeholder="exact configured layer name">
+        </div>
+        <div class="field" id="sentinelDateField" hidden style="margin-top:8px;">
+          <label>DATE (YYYY-MM-DD)</label>
+          <input type="date" id="sentinelDate">
+          <div class="date-actions">
+            <button type="button" class="btn ghost" id="sentinelPrevDay">&larr; day</button>
+            <button type="button" class="btn ghost" id="sentinelLatest">Latest clear</button>
+            <button type="button" class="btn ghost" id="sentinelNextDay">day &rarr;</button>
+          </div>
+        </div>
+        <div class="field" id="sentinelWindowField" hidden style="margin-top:8px;">
+          <label>SEARCH WINDOW</label>
+          <select id="sentinelWindow">
+            <option value="1" selected>Exact date</option>
+            <option value="7">Best scene within 7 days</option>
+            <option value="30">Best scene within 30 days</option>
+          </select>
+          <button type="button" class="btn ghost" id="findSentinelDatesBtn" style="width:100%;margin-top:7px;">Find available dates</button>
+          <div class="capture-status" id="sentinelDatesStatus"></div>
+          <div class="date-results" id="sentinelDatesResults"></div>
+        </div>
+        <div class="field" id="sentinelCloudField" hidden style="margin-top:8px;">
+          <label>MAX CLOUD COVER <span id="sentinelCloudReadout">20%</span></label>
+          <input type="range" id="sentinelCloud" min="0" max="100" step="1" value="20">
+        </div>
+        <div class="field" id="sentinelSharpnessField" hidden style="margin-top:8px;">
+          <label>DETAIL BOOST <span id="sentinelSharpnessReadout">35%</span></label>
+          <input type="range" id="sentinelSharpness" min="0" max="80" step="1" value="35">
+          <p class="provider-note">Visual sharpening only. It improves edges but cannot create missing 10 m detail.</p>
+        </div>
+        <button class="btn ghost" id="sentinelTestBtn" hidden style="width:100%;margin-top:8px;">Test Sentinel configuration</button>
+        <div class="capture-status" id="sentinelTestStatus"></div>
+        <div class="field" id="nasaLayerField" hidden style="margin-top:8px;">
+          <label>NASA GIBS LAYER</label>
+          <select id="nasaLayer">
+            <option value="VIIRS_SNPP_CorrectedReflectance_TrueColor">VIIRS true color (375m)</option>
+            <option value="MODIS_Terra_CorrectedReflectance_TrueColor">MODIS Terra true color (250m)</option>
+            <option value="MODIS_Aqua_CorrectedReflectance_TrueColor">MODIS Aqua true color (250m)</option>
+          </select>
+        </div>
+        <div class="field" id="nasaDateField" hidden style="margin-top:8px;">
+          <label>NASA DATE (YYYY-MM-DD)</label>
+          <input type="date" id="nasaDate">
+        </div>
+        <p class="provider-note" id="providerNote">Free, no signup. Current-day mosaic (not date-specific).</p>
+        <div class="provider-capability"><span id="providerResolution">resolution varies</span><span id="providerZoomLimit">zoom z--</span></div>
+        <p class="zoom-advice" id="zoomAdvice" hidden>Sentinel-2 native detail is best around z14. Higher zoom enlarges the same pixels; it does not add detail.</p>
+
+        <div class="field" id="placesApiKeyField" style="margin-top:10px;">
+          <label>GOOGLE PLACES API KEY (LOCAL ONLY)</label>
+          <input type="text" id="placesApiKey" placeholder="optional &middot; enables full place-name search">
+        </div>
+        <p class="provider-note" id="placesApiNote">Optional geocoding key only. Leave blank to use free OpenStreetMap search.</p>
+        <div class="field" style="margin-top:8px;">
+          <label>GO TO PLACE</label>
+          <input type="text" id="placeSearch" placeholder="e.g. O Smach, Cambodia &middot; Enter">
+        </div>
+
+        <div class="map-live" id="liveMapWrap" style="margin-top:8px;">
+          <canvas id="liveMapCanvas"></canvas>
+          <button type="button" class="map-expand-btn" id="mapExpandBtn" title="Expand map">&#9974;</button>
+          <button type="button" class="map-refresh-btn" id="mapRefreshBtn" title="Force refresh tiles (bypass cache)">&#8635;</button>
+          <div class="map-zoom-controls">
+            <button type="button" id="mapZoomIn">+</button>
+            <button type="button" id="mapZoomOut">&minus;</button>
+          </div>
+          <div class="map-readout" id="mapReadout">z&mdash;</div>
+        </div>
+        <div class="checklist" style="margin-top:7px;">
+          <label><input type="checkbox" id="showMapLabelsChk"> Show place and boundary labels</label>
+          <label><input type="checkbox" id="enhanceImageryChk" checked> Enhance contrast and color</label>
+        </div>
+
+        <div class="field" style="margin-top:8px;">
+          <label>CAPTURE LABEL</label>
+          <input type="text" id="captureLabel" placeholder="date / label for this frame">
+        </div>
+        <button class="btn ghost" id="captureMapBtn" style="width:100%; margin-top:6px;">&#9678; Capture view as frame</button>
+        <div class="capture-status" id="captureStatus"></div>
+      </div>
+
+      <div>
+        <h2>Frames</h2>
+        <div class="image-list" id="imageList">
+          <div class="empty-note">No imagery loaded yet.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>CAPTION / ATTRIBUTION</label>
+        <input type="text" id="captionInput" placeholder="e.g. O Smach area &middot; Imagery: Planet Labs">
+      </div>
+      <div class="field">
+        <label>DOCUMENTATION NOTES</label>
+        <textarea id="notesInput" rows="4" placeholder="Record location, weather, source, observed changes, and decisions..."></textarea>
+      </div>
+      <div class="checklist"><label><input type="checkbox" id="includeNotesExport"> Include notes in PNG export</label></div>
+      <div class="annotation-tools">
+        <button class="btn ghost" id="drawToggleBtn">Draw on view</button>
+        <button class="btn ghost" id="clearDrawingBtn">Clear drawing</button>
+      </div>
+      <div class="upscale-tools" id="upscaleTools">
+        <h2>AI visual enhancement</h2>
+        <p class="provider-note">Optional local ONNX super-resolution. Download an ONNX Real-ESRGAN or SwinIR model, choose it below, then enhance a frame. Generated detail is for visual review only.</p>
+        <input type="file" id="upscaleModelInput" accept=".onnx,application/octet-stream">
+        <input type="text" id="upscaleModelUrl" value="/models/RealESRGAN_x4plus.onnx" aria-label="Hosted ONNX model URL">
+        <button class="btn ghost" id="loadHostedModelBtn">Load hosted model</button>
+        <a class="model-link" href="https://github.com/xinntao/Real-ESRGAN" target="_blank" rel="noopener">Open Real-ESRGAN model source</a>
+        <select id="upscaleFrameSelect"></select>
+        <button class="btn ghost" id="upscaleBtn" disabled>Load a model first</button>
+        <progress id="upscaleProgress" max="100" value="0"></progress>
+        <div class="upscale-progress-label" id="upscaleProgressLabel">Idle</div>
+        <div class="capture-status" id="upscaleStatus"></div>
+      </div>
+
+      <div id="gridControls">
+        <h2>Grid layout</h2>
+        <div class="cols-select" id="colsSelect">
+          <button data-cols="2">2 COL</button>
+          <button data-cols="3" class="active">3 COL</button>
+          <button data-cols="4">4 COL</button>
+        </div>
+      </div>
+
+      <div id="sliderControls" hidden>
+        <h2>Slider panels</h2>
+        <div class="field">
+          <label>LEFT (BEFORE)</label>
+          <select id="leftSelect"></select>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>RIGHT (AFTER)</label>
+          <select id="rightSelect"></select>
+        </div>
+        <button class="btn ghost" id="swapBtn" style="width:100%; margin-top:10px;">&#8646; Swap left / right</button>
+        <div class="checklist" style="margin-top:8px;"><label><input type="checkbox" id="sliderThreeChk"> Show third frame</label></div>
+        <div class="field" id="sliderMiddleField" hidden style="margin-top:10px;"><label>MIDDLE</label><select id="sliderMiddleSelect"></select></div>
+        <div class="field" style="margin-top:14px;">
+          <label>SWEEP DURATION (SEC)</label>
+          <input type="text" inputmode="numeric" id="sweepDuration" value="4">
+        </div>
+      </div>
+
+      <div id="overlayControls" hidden>
+        <h2>Overlay panels</h2>
+        <div class="field">
+          <label>BASE (BOTTOM)</label>
+          <select id="overlayBaseSelect"></select>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>OVERLAY (TOP)</label>
+          <select id="overlayTopSelect"></select>
+        </div>
+        <div class="field" style="margin-top:10px;"><label>THIRD (TOP)</label><select id="overlayThirdSelect"></select></div>
+        <div class="field" style="margin-top:10px;"><label>THIRD OPACITY</label><div class="density-row"><input type="range" id="overlayThirdDensity" min="0" max="100" value="55"><span class="density-readout" id="overlayThirdReadout">55%</span></div></div>
+        <button class="btn ghost" id="overlaySwapBtn" style="width:100%; margin-top:10px;">&#8646; Swap base / overlay</button>
+        <div class="field" style="margin-top:14px;">
+          <label>OVERLAY DENSITY</label>
+          <div class="density-row">
+            <input type="range" id="densityRange" min="0" max="100" step="1" value="50">
+            <span class="density-readout" id="densityReadout">50%</span>
+          </div>
+        </div>
+        <div class="checklist" style="margin-top:6px;">
+          <label><input type="checkbox" id="densityPulseChk"> Auto-pulse density (blink comparator)</label>
+        </div>
+        <div class="field" style="margin-top:10px;" id="pulseSpeedField" hidden>
+          <label>PULSE SPEED (SEC/CYCLE)</label>
+          <input type="text" inputmode="numeric" id="pulseSpeed" value="1.6">
+        </div>
+      </div>
+
+      <div id="sequenceControls" hidden>
+        <h2>Sequence (auto)</h2>
+        <div class="stage-hint" style="margin-bottom:2px;">Plays every uploaded frame in list order &mdash; reorder them in the Frames panel above.</div>
+        <div class="field">
+          <label>SECONDS PER FRAME</label>
+          <input type="range" id="secPerFrame" min="0.5" max="5" step="0.1" value="1.5">
+        </div>
+        <div class="checklist" style="margin-top:2px;">
+          <label><input type="checkbox" id="crossfadeChk" checked> Crossfade between frames</label>
+        </div>
+        <button class="btn ghost" id="playSeqBtn" style="width:100%; margin-top:10px;">&#9654; Play preview</button>
+      </div>
+
+      <div id="changeControls" hidden>
+        <h2>Change detection</h2>
+        <div class="field">
+          <label>BEFORE</label>
+          <select id="changeBeforeSelect"></select>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>AFTER</label>
+          <select id="changeAfterSelect"></select>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>METHOD</label>
+          <select id="changeMethodSelect">
+            <option value="rgb">RGB difference</option>
+            <option value="luma">Brightness difference</option>
+            <option value="ndvi">Vegetation proxy (green/red)</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>SENSITIVITY <span id="changeThresholdReadout">30%</span></label>
+          <input type="range" id="changeThreshold" min="5" max="90" step="1" value="30">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>MIN REGION SIZE <span id="changeMinSizeReadout">12 px</span></label>
+          <input type="range" id="changeMinSize" min="1" max="80" step="1" value="12">
+        </div>
+        <p class="change-note">Fast, explainable pixel comparison. Brightness and seasonal effects can look like change, so use the mask as a review guide rather than ground truth.</p>
+      </div>
+
+      <div class="view-controls">
+        <h2>Sync view</h2>
+        <div class="zoom-row">
+          <input type="range" id="zoomRange" min="1" max="4" step="0.01" value="1">
+          <span class="zoom-readout" id="zoomReadout">1.00x</span>
+        </div>
+        <button class="btn ghost" id="resetViewBtn" style="width:100%;">Reset pan / zoom</button>
+        <div class="coord-readout">
+          <span>ZOOM <span id="zoomTxt">1.00</span></span>
+          <span>PAN <span id="panTxt">0,0</span></span>
+        </div>
+      </div>
+
+    </aside>
+    <div class="sidebar-backdrop is-hidden" id="sidebarBackdrop"></div>
+
+    <main class="stage-wrap">
+      <div class="stage-hint"><span class="dot"></span>Drag to pan &middot; scroll to zoom &middot; arrow keys nudge, +/&minus; zoom &middot; view stays synced across all frames</div>
+      <canvas id="annotationCanvas" aria-label="Freehand map annotations"></canvas>
+      <div class="grid-stage" id="gridStage" style="display:none;"></div>
+      <div class="slider-stage" id="sliderStage" style="display:none;">
+         <div class="slider-panel base"><img id="sliderLeftImg" draggable="false"></div>
+         <div class="slider-panel overlay" id="sliderRightWrap"><img id="sliderRightImg" draggable="false"></div>
+         <div class="slider-panel third" id="sliderThirdWrap" hidden><img id="sliderThirdImg" draggable="false"></div>
+         <div class="drag-surface" id="sliderDragSurface"></div>
+         <div class="divider" id="divider"><div class="handle">&#8596;</div></div>
+         <div class="divider second" id="divider2" hidden><div class="handle">&#8596;</div></div>
+         <div class="corner-label left" id="leftLabelTag"></div>
+         <div class="corner-label right" id="rightLabelTag"></div>
+         <div class="corner-label middle" id="middleLabelTag" hidden></div>
+         <div class="corner-label third-tag" id="thirdLabelTag" hidden></div>
+      </div>
+      <div class="overlay-stage" id="overlayStage" style="display:none;">
+         <div class="overlay-panel base"><img id="overlayBaseImg" draggable="false"></div>
+         <div class="overlay-panel top" id="overlayTopWrap"><img id="overlayTopImg" draggable="false"></div>
+         <div class="overlay-panel third" id="overlayThirdWrap"><img id="overlayThirdImg" draggable="false"></div>
+        <div class="drag-surface" id="overlayDragSurface"></div>
+         <div class="corner-label left" id="overlayBaseLabelTag"></div>
+         <div class="corner-label right" id="overlayTopLabelTag"></div>
+         <div class="corner-label third-tag" id="overlayThirdLabelTag"></div>
+      </div>
+      <div class="sequence-stage" id="sequenceStage" style="display:none;">
+        <canvas id="seqCanvas"></canvas>
+        <button class="seq-play" id="seqPlayToggle">&#9654;</button>
+        <div class="seq-progress"><div class="seq-progress-fill" id="seqProgressFill"></div></div>
+      </div>
+      <div class="change-stage" id="changeStage" style="display:none;">
+        <canvas id="changeCanvas"></canvas>
+        <div class="change-legend"><i></i> likely change</div>
+      </div>
+      <div class="change-stats" id="changeStats" style="display:none;">
+        <div class="change-stat"><strong id="changedAreaStat">--</strong><span>changed area</span></div>
+        <div class="change-stat"><strong id="regionCountStat">--</strong><span>regions</span></div>
+        <div class="change-stat"><strong id="reliabilityStat">--</strong><span>reliability</span></div>
+      </div>
+      <div class="seq-timeline" id="seqTimeline" style="display:none;"></div>
+      <div class="placeholder" id="placeholder">
+        Upload two or more satellite frames of the same location to begin&#10;building a before/after comparison for documentation.
+      </div>
+    </main>
+  </div>
+</div>
+
+<canvas id="exportCanvas" style="display:none;"></canvas>
+<script src="src/lib/image-processing.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.min.js"></script>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- State ----------
+  let images = [];          // {id, src, label, natW, natH, imgEl, selected}
+  let nextId = 1;
+  let mode = 'grid';         // 'grid' | 'slider'
+  let cols = 3;
+  let view = { zoom: 1, panx: 0, pany: 0 };
+  let sliderState = { leftId: null, middleId: null, rightId: null, clip: 50, clip2: 75, three: false };
+  let overlayState = { baseId: null, topId: null, thirdId: null, density: 50, thirdDensity: 55 };
+  let dragSrcIdx = null;
+  let pulseRAF = null, pulseStart = null;
+  let changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12 };
+
+  // ---------- Elements ----------
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const imageList = document.getElementById('imageList');
+  const gridStage = document.getElementById('gridStage');
+  const sliderStage = document.getElementById('sliderStage');
+  const placeholder = document.getElementById('placeholder');
+  const modeGridBtn = document.getElementById('modeGridBtn');
+  const modeSliderBtn = document.getElementById('modeSliderBtn');
+  const modeOverlayBtn = document.getElementById('modeOverlayBtn');
+  const overlayControls = document.getElementById('overlayControls');
+  const overlayStage = document.getElementById('overlayStage');
+  const overlayBaseSelect = document.getElementById('overlayBaseSelect');
+  const overlayTopSelect = document.getElementById('overlayTopSelect');
+  const overlaySwapBtn = document.getElementById('overlaySwapBtn');
+  const overlayBaseImg = document.getElementById('overlayBaseImg');
+  const overlayTopImg = document.getElementById('overlayTopImg');
+  const overlayTopWrap = document.getElementById('overlayTopWrap');
+  const overlayDragSurface = document.getElementById('overlayDragSurface');
+  const overlayBaseLabelTag = document.getElementById('overlayBaseLabelTag');
+  const overlayTopLabelTag = document.getElementById('overlayTopLabelTag');
+  const overlayThirdSelect = document.getElementById('overlayThirdSelect');
+  const overlayThirdDensity = document.getElementById('overlayThirdDensity');
+  const overlayThirdReadout = document.getElementById('overlayThirdReadout');
+  const overlayThirdWrap = document.getElementById('overlayThirdWrap');
+  const overlayThirdImg = document.getElementById('overlayThirdImg');
+  const overlayThirdLabelTag = document.getElementById('overlayThirdLabelTag');
+  const densityRange = document.getElementById('densityRange');
+  const densityReadout = document.getElementById('densityReadout');
+  const densityPulseChk = document.getElementById('densityPulseChk');
+  const pulseSpeedField = document.getElementById('pulseSpeedField');
+  const pulseSpeed = document.getElementById('pulseSpeed');
+  const gridControls = document.getElementById('gridControls');
+  const sliderControls = document.getElementById('sliderControls');
+  const colsSelect = document.getElementById('colsSelect');
+  const zoomRange = document.getElementById('zoomRange');
+  const zoomReadout = document.getElementById('zoomReadout');
+  const zoomTxt = document.getElementById('zoomTxt');
+  const panTxt = document.getElementById('panTxt');
+  const resetViewBtn = document.getElementById('resetViewBtn');
+  const leftSelect = document.getElementById('leftSelect');
+  const rightSelect = document.getElementById('rightSelect');
+  const divider = document.getElementById('divider');
+  const sliderRightWrap = document.getElementById('sliderRightWrap');
+  const sliderLeftImg = document.getElementById('sliderLeftImg');
+  const sliderRightImg = document.getElementById('sliderRightImg');
+  const leftLabelTag = document.getElementById('leftLabelTag');
+  const rightLabelTag = document.getElementById('rightLabelTag');
+  const middleLabelTag = document.getElementById('middleLabelTag');
+  const thirdLabelTag = document.getElementById('thirdLabelTag');
+  const sliderDragSurface = document.getElementById('sliderDragSurface');
+  const sliderThirdWrap = document.getElementById('sliderThirdWrap');
+  const sliderThirdImg = document.getElementById('sliderThirdImg');
+  const divider2 = document.getElementById('divider2');
+  const sliderThreeChk = document.getElementById('sliderThreeChk');
+  const sliderMiddleField = document.getElementById('sliderMiddleField');
+  const sliderMiddleSelect = document.getElementById('sliderMiddleSelect');
+  const captionInput = document.getElementById('captionInput');
+  const exportBtn = document.getElementById('exportBtn');
+  const exportVideoBtn = document.getElementById('exportVideoBtn');
+  const exportCanvas = document.getElementById('exportCanvas');
+  const modeSequenceBtn = document.getElementById('modeSequenceBtn');
+  const modeChangeBtn = document.getElementById('modeChangeBtn');
+  const changeControls = document.getElementById('changeControls');
+  const changeBeforeSelect = document.getElementById('changeBeforeSelect');
+  const changeAfterSelect = document.getElementById('changeAfterSelect');
+  const changeMethodSelect = document.getElementById('changeMethodSelect');
+  const changeThreshold = document.getElementById('changeThreshold');
+  const changeMinSize = document.getElementById('changeMinSize');
+  const changeThresholdReadout = document.getElementById('changeThresholdReadout');
+  const changeMinSizeReadout = document.getElementById('changeMinSizeReadout');
+  const changeStage = document.getElementById('changeStage');
+  const changeCanvas = document.getElementById('changeCanvas');
+  const changeStats = document.getElementById('changeStats');
+  const changedAreaStat = document.getElementById('changedAreaStat');
+  const regionCountStat = document.getElementById('regionCountStat');
+  const reliabilityStat = document.getElementById('reliabilityStat');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const saveProjectBtn = document.getElementById('saveProjectBtn');
+  const loadProjectBtn = document.getElementById('loadProjectBtn');
+  const saveWorkspaceBtn = document.getElementById('saveWorkspaceBtn');
+  const openWorkspaceBtn = document.getElementById('openWorkspaceBtn');
+  const projectInput = document.getElementById('projectInput');
+  const exportReportBtn = document.getElementById('exportReportBtn');
+  const notesInput = document.getElementById('notesInput');
+  const includeNotesExport = document.getElementById('includeNotesExport');
+  const drawToggleBtn = document.getElementById('drawToggleBtn');
+  const clearDrawingBtn = document.getElementById('clearDrawingBtn');
+  const annotationCanvas = document.getElementById('annotationCanvas');
+  const upscaleModelInput = document.getElementById('upscaleModelInput');
+  const upscaleModelUrl = document.getElementById('upscaleModelUrl');
+  const loadHostedModelBtn = document.getElementById('loadHostedModelBtn');
+  const upscaleFrameSelect = document.getElementById('upscaleFrameSelect');
+  const upscaleBtn = document.getElementById('upscaleBtn');
+  const upscaleStatus = document.getElementById('upscaleStatus');
+  const upscaleProgress = document.getElementById('upscaleProgress');
+  const upscaleProgressLabel = document.getElementById('upscaleProgressLabel');
+  const upscaleTools = document.getElementById('upscaleTools');
+  const openUpscaleBtn = document.getElementById('openUpscaleBtn');
+  const findSentinelDatesBtn = document.getElementById('findSentinelDatesBtn');
+  const sentinelDatesStatus = document.getElementById('sentinelDatesStatus');
+  const sentinelDatesResults = document.getElementById('sentinelDatesResults');
+  let upscaleSession=null;
+  let upscaleWorker=null, upscaleRunResolve=null, upscaleRunReject=null, upscaleLoadResolve=null, upscaleLoadReject=null;
+  let upscaleTimer=null, upscaleStartedAt=0;
+  function setUpscaleProgress(value,label){ upscaleProgress.value=value; upscaleProgressLabel.textContent=label; }
+  try{
+    upscaleWorker=new Worker('src/lib/upscale.worker.js');
+    upscaleWorker.onmessage=event=>{
+      const message=event.data||{};
+      if(message.type==='progress'){ setUpscaleProgress(message.value,message.label); return; }
+      if(message.type==='ready'){ upscaleSession={inputNames:[message.inputName],outputNames:[message.outputName]}; upscaleStatus.textContent='Model ready in background worker'; updateUpscaleSelect(); upscaleBtn.disabled=false; if(upscaleLoadResolve){const resolve=upscaleLoadResolve;upscaleLoadResolve=null;resolve();} }
+      if(message.type==='result' && upscaleRunResolve){ const resolve=upscaleRunResolve; upscaleRunResolve=null; resolve({data:new Float32Array(message.data),dims:message.dims}); }
+      if(message.type==='error'){ if(upscaleRunReject){const reject=upscaleRunReject;upscaleRunReject=null;reject(Error(message.message));} else if(upscaleLoadReject){const reject=upscaleLoadReject;upscaleLoadReject=null;reject(Error(message.message));} else {upscaleStatus.textContent=`Model error: ${message.message}`;upscaleStatus.classList.add('err');} }
+    };
+  }catch(err){ upscaleStatus.textContent='Background model worker could not start.'; upscaleStatus.classList.add('err'); }
+  function loadUpscaleBuffer(buffer){ return new Promise((resolve,reject)=>{ if(!upscaleWorker) return reject(Error('Background worker unavailable')); upscaleLoadResolve=resolve; upscaleLoadReject=reject; upscaleWorker.postMessage({type:'load',buffer},[buffer]); }); }
+  function runUpscale(data,width,height){ return new Promise((resolve,reject)=>{ upscaleRunResolve=resolve; upscaleRunReject=reject; upscaleWorker.postMessage({type:'run',data,width,height},[data.buffer]); }); }
+  const stageWrap = document.querySelector('.stage-wrap');
+  let drawingEnabled=false, drawing=false;
+  const sequenceControls = document.getElementById('sequenceControls');
+  const sequenceStage = document.getElementById('sequenceStage');
+  const seqCanvas = document.getElementById('seqCanvas');
+  const secPerFrame = document.getElementById('secPerFrame');
+  const crossfadeChk = document.getElementById('crossfadeChk');
+  const playSeqBtn = document.getElementById('playSeqBtn');
+  const seqPlayToggle = document.getElementById('seqPlayToggle');
+  const seqProgressFill = document.getElementById('seqProgressFill');
+  const seqTimeline = document.getElementById('seqTimeline');
+  const sweepDuration = document.getElementById('sweepDuration');
+  const providerSelect = document.getElementById('providerSelect');
+  const mapboxTokenField = document.getElementById('mapboxTokenField');
+  const mapboxToken = document.getElementById('mapboxToken');
+  const sentinelIdField = document.getElementById('sentinelIdField');
+  const sentinelId = document.getElementById('sentinelId');
+  const sentinelLayerField = document.getElementById('sentinelLayerField');
+  const sentinelLayer = document.getElementById('sentinelLayer');
+  const sentinelDateField = document.getElementById('sentinelDateField');
+  const sentinelDate = document.getElementById('sentinelDate');
+  const sentinelWindowField = document.getElementById('sentinelWindowField');
+  const sentinelWindow = document.getElementById('sentinelWindow');
+  const sentinelPrevDay = document.getElementById('sentinelPrevDay');
+  const sentinelLatest = document.getElementById('sentinelLatest');
+  const sentinelNextDay = document.getElementById('sentinelNextDay');
+  const sentinelCloudField = document.getElementById('sentinelCloudField');
+  const sentinelCloud = document.getElementById('sentinelCloud');
+  const sentinelCloudReadout = document.getElementById('sentinelCloudReadout');
+  const sentinelSharpnessField = document.getElementById('sentinelSharpnessField');
+  const sentinelSharpness = document.getElementById('sentinelSharpness');
+  const sentinelSharpnessReadout = document.getElementById('sentinelSharpnessReadout');
+  const sentinelTestBtn = document.getElementById('sentinelTestBtn');
+  const sentinelTestStatus = document.getElementById('sentinelTestStatus');
+  const nasaLayerField = document.getElementById('nasaLayerField');
+  const nasaLayer = document.getElementById('nasaLayer');
+  const nasaDateField = document.getElementById('nasaDateField');
+  const nasaDate = document.getElementById('nasaDate');
+  const providerNote = document.getElementById('providerNote');
+  const providerResolution = document.getElementById('providerResolution');
+  const providerZoomLimit = document.getElementById('providerZoomLimit');
+  const zoomAdvice = document.getElementById('zoomAdvice');
+  const placesApiKey = document.getElementById('placesApiKey');
+  const placesApiKeyField = document.getElementById('placesApiKeyField');
+  const placesApiNote = document.getElementById('placesApiNote');
+  const placeSearch = document.getElementById('placeSearch');
+  const liveMapWrap = document.getElementById('liveMapWrap');
+  const liveMapCanvas = document.getElementById('liveMapCanvas');
+  const mapExpandBtn = document.getElementById('mapExpandBtn');
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const mapRefreshBtn = document.getElementById('mapRefreshBtn');
+  const mapZoomIn = document.getElementById('mapZoomIn');
+  const mapZoomOut = document.getElementById('mapZoomOut');
+  const mapReadout = document.getElementById('mapReadout');
+  const captureLabel = document.getElementById('captureLabel');
+  const captureMapBtn = document.getElementById('captureMapBtn');
+  const captureStatus = document.getElementById('captureStatus');
+  const showMapLabelsChk = document.getElementById('showMapLabelsChk');
+  const enhanceImageryChk = document.getElementById('enhanceImageryChk');
+  const techBackground = document.getElementById('techBackground');
+
+  // ---------- File loading ----------
+  function extractDateLabel(filename){
+    const base = filename.replace(/\.[^.]+$/,'');
+    // common patterns: 2025-04-12, 2025_04, 20250412, Apr 2025, 04-2025
+    const patterns = [
+      /(\d{4})[-_.](\d{1,2})[-_.](\d{1,2})/,          // 2025-04-12
+      /(\d{4})[-_.](\d{1,2})(?![\d])/,                 // 2025-04
+      /(\d{4})(\d{2})(\d{2})/,                          // 20250412
+      /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\D{0,3}(\d{4})/i,
+      /(\d{4})/                                          // bare year
+    ];
+    for(const p of patterns){
+      const m = base.match(p);
+      if(m) return m[0].replace(/_/g,'-');
+    }
+    return base.slice(0,40);
+  }
+  function formatTimestamp(value){
+    return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'medium'}).format(new Date(value));
+  }
+  function loadFiles(fileList){
+    Array.from(fileList).forEach(file=>{
+      if(!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = e=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const rec = {
+            id: nextId++,
+            src: e.target.result,
+            label: extractDateLabel(file.name),
+            natW: img.naturalWidth,
+            natH: img.naturalHeight,
+            imgEl: img,
+            selected: images.length < 6
+          };
+          images.push(rec);
+          renderImageList();
+          renderStage();
+          updateSliderSelects();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function updateUpscaleSelect(){
+    upscaleFrameSelect.innerHTML=images.filter(im=>!im.generated).map(im=>`<option value="${im.id}">${escapeHtml(im.label||('#'+im.id))}</option>`).join('');
+    upscaleBtn.disabled=!upscaleSession || !upscaleFrameSelect.options.length;
+  }
+  upscaleModelInput.addEventListener('change',async()=>{
+    const file=upscaleModelInput.files[0]; if(!file) return;
+    upscaleBtn.disabled=true; upscaleStatus.classList.remove('err'); upscaleStatus.textContent='Loading local model...';
+    try{
+      const buffer=await file.arrayBuffer();
+      await loadUpscaleBuffer(buffer);
+      upscaleStatus.textContent='Model ready in background worker';
+      updateUpscaleSelect(); upscaleBtn.disabled=false;
+    }catch(err){ upscaleSession=null; upscaleStatus.textContent=`Model could not load: ${err.message}`; upscaleStatus.classList.add('err'); }
+  });
+  loadHostedModelBtn.addEventListener('click',async()=>{
+    const url=upscaleModelUrl.value.trim(); if(!url) return;
+    loadHostedModelBtn.disabled=true; upscaleBtn.disabled=true; upscaleStatus.classList.remove('err'); upscaleStatus.textContent='Downloading hosted model...';
+    try{
+      const res=await fetch(url); if(!res.ok) throw Error(`HTTP ${res.status}`);
+      await loadUpscaleBuffer(await res.arrayBuffer());
+      upscaleStatus.textContent='Hosted model ready in background worker'; updateUpscaleSelect(); upscaleBtn.disabled=false;
+    }catch(err){ upscaleSession=null; upscaleStatus.textContent=`Hosted model failed: ${err.message}`; upscaleStatus.classList.add('err'); }
+    loadHostedModelBtn.disabled=false;
+  });
+  upscaleBtn.addEventListener('click',async()=>{
+    const source=images.find(im=>im.id===parseInt(upscaleFrameSelect.value,10)); if(!source||!upscaleSession) return;
+    upscaleBtn.disabled=true; upscaleStatus.classList.remove('err'); upscaleStatus.textContent='Running locally...';
+    try{
+      const max=512, scale=Math.min(1,max/source.natW,max/source.natH), W=Math.max(8,Math.floor(source.natW*scale/8)*8), H=Math.max(8,Math.floor(source.natH*scale/8)*8);
+      const inputCanvas=document.createElement('canvas'); inputCanvas.width=W; inputCanvas.height=H; inputCanvas.getContext('2d').drawImage(source.imgEl,0,0,W,H);
+      const pixels=inputCanvas.getContext('2d').getImageData(0,0,W,H).data, tensorData=new Float32Array(3*W*H);
+      for(let i=0;i<W*H;i++){tensorData[i]=pixels[i*4]/255;tensorData[W*H+i]=pixels[i*4+1]/255;tensorData[2*W*H+i]=pixels[i*4+2]/255;}
+      const output=await runUpscale(tensorData,W,H), shape=output.dims, outH=shape[2], outW=shape[3], values=output.data, canvas=document.createElement('canvas'); canvas.width=outW; canvas.height=outH;
+      let min=Infinity,maxValue=-Infinity; for(const value of values){if(Number.isFinite(value)){min=Math.min(min,value);maxValue=Math.max(maxValue,value);}}
+      const channelSize=outW*outH, normalize=value=>{ if(maxValue>2) return value/255; if(min<0) return (value-min)/Math.max(.0001,maxValue-min); return value; };
+      const out=canvas.getContext('2d').createImageData(outW,outH); for(let i=0;i<channelSize;i++){out.data[i*4]=Math.max(0,Math.min(255,normalize(values[i])*255));out.data[i*4+1]=Math.max(0,Math.min(255,normalize(values[channelSize+i])*255));out.data[i*4+2]=Math.max(0,Math.min(255,normalize(values[2*channelSize+i])*255));out.data[i*4+3]=255;} canvas.getContext('2d').putImageData(out,0,0);
+      let visiblePixels=0; for(let i=0;i<out.data.length;i+=4) if(out.data[i]+out.data[i+1]+out.data[i+2]>12) visiblePixels++;
+      if(visiblePixels<channelSize*.01) throw Error('Model returned an empty image. Try the WASM model path or a compatible ONNX export.');
+      const img=new Image(); img.onload=()=>{images.push({id:nextId++,src:canvas.toDataURL('image/png'),label:`AI enhanced · ${source.label}`,imageryDate:source.imageryDate||'derived from source',capturedAt:new Date().toISOString(),natW:outW,natH:outH,imgEl:img,selected:true,generated:true});mode='grid';setMode('grid');renderImageList();updateSliderSelects(true);renderStage();upscaleStatus.textContent=`Created ${outW} × ${outH} AI visual enhancement. It is highlighted in Frames and shown in the grid; original remains unchanged.`;upscaleBtn.disabled=false;}; img.src=canvas.toDataURL('image/png');
+    }catch(err){upscaleStatus.textContent=`Upscale failed: ${err.message}`;upscaleStatus.classList.add('err');upscaleBtn.disabled=false;}
+  });
+  openUpscaleBtn.addEventListener('click',()=>{
+    setSidebarOpen(true); upscaleTools.scrollIntoView({behavior:'smooth',block:'center'});
+    if(!upscaleSession) upscaleStatus.textContent='Enhancement is ready. Click Load hosted model when you want to download the 67 MB model.';
+  });
+  function sentinelProbeUrl(date){
+    const old=sentinelDate.value, z=Math.round(liveMap.zoom), n=2**z, x=Math.floor(lon2tileX(liveMap.lng,z)), y=Math.floor(lat2tileY(liveMap.lat,z));
+    sentinelDate.value=date; const url=tileUrl('sentinel',z,((x%n)+n)%n,y); sentinelDate.value=old; return url;
+  }
+  function probeSentinelDate(date){
+    return new Promise(resolve=>{ const img=new Image(); img.crossOrigin='anonymous'; img.onload=()=>resolve(!looksLikeSentinelNoData(img)); img.onerror=()=>resolve(false); img.src=sentinelProbeUrl(date); });
+  }
+  findSentinelDatesBtn.addEventListener('click',async()=>{
+    if(!sentinelId.value.trim()){ sentinelDatesStatus.textContent='Enter and test the Sentinel configuration first.'; sentinelDatesStatus.classList.add('err'); return; }
+    findSentinelDatesBtn.disabled=true; sentinelDatesStatus.classList.remove('err'); sentinelDatesStatus.textContent='Checking candidate dates at the map center...'; sentinelDatesResults.innerHTML='';
+    const base=sentinelDate.value?new Date(`${sentinelDate.value}T00:00:00Z`):new Date(), dates=[];
+    for(let offset=-30;offset<=30;offset+=3){const d=new Date(base);d.setUTCDate(d.getUTCDate()+offset);dates.push(d.toISOString().slice(0,10));}
+    const found=[];
+    for(let i=0;i<dates.length;i+=4){ const batch=await Promise.all(dates.slice(i,i+4).map(async date=>({date,ok:await probeSentinelDate(date)}))); batch.forEach(item=>{if(item.ok)found.push(item.date);}); sentinelDatesStatus.textContent=`Checked ${Math.min(i+4,dates.length)} of ${dates.length} dates...`; }
+    sentinelDatesStatus.textContent=found.length?`${found.length} usable date(s) found at this map center.`:'No usable scenes found in this window. Try a wider range or higher cloud limit.';
+    if(!found.length) sentinelDatesStatus.classList.add('err');
+    sentinelDatesResults.innerHTML=found.map(date=>`<button type="button" data-date="${date}">${date}</button>`).join('');
+    sentinelDatesResults.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{sentinelDate.value=btn.dataset.date;sentinelWindow.value='1';drawLiveMap();}));
+    findSentinelDatesBtn.disabled=false;
+  });
+  fileInput.addEventListener('change', e=>loadFiles(e.target.files));
+  ['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev, e=>{e.preventDefault(); dropzone.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev, e=>{e.preventDefault(); dropzone.classList.remove('drag');}));
+  dropzone.addEventListener('drop', e=>{ if(e.dataTransfer.files.length) loadFiles(e.dataTransfer.files); });
+
+  // Paste images straight from clipboard (e.g. copied from Google Earth Pro / browser)
+  document.addEventListener('paste', e=>{
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if(tag === 'INPUT' || tag === 'TEXTAREA') return; // let normal text paste happen
+    const items = e.clipboardData && e.clipboardData.items;
+    if(!items) return;
+    const files = [];
+    for(const item of items){
+      if(item.type && item.type.startsWith('image/')){
+        const f = item.getAsFile();
+        if(f) files.push(f);
+      }
+    }
+    if(files.length){ e.preventDefault(); loadFiles(files); }
+  });
+
+  // ---------- Live satellite map (Esri / NASA GIBS / Google / Mapbox / Sentinel Hub) ----------
+  const TILE = 256;
+  const PROVIDER_NOTES = {
+    esri: 'Free, no signup. Current-day mosaic (not date-specific).',
+    carto: 'Free CARTO Voyager reference map with roads, places, and boundaries. Use it for geographic context, not satellite detail.',
+    nasa: 'Free NASA GIBS layers with no key. These are real near-real-time observations, so clouds can fully obscure the ground. For a clear surface view, try another date or use Esri; for dated 10m imagery, use Sentinel Hub.',
+     google: 'Google satellite tiles with native hybrid labels when enabled. Unofficial endpoint; use is subject to Google\'s terms and canvas capture may be blocked by CORS.',
+    mapbox: 'Needs a free Mapbox account + access token (mapbox.com/account). Current-day mosaic.',
+    sentinel: 'Copernicus Data Space configuration. Uses the exact configured layer name and the latest valid Sentinel-2 scene unless a date is entered. About 10m resolution.'
+  };
+  const PROVIDER_MAX_ZOOM = { esri:19, carto:20, nasa:9, google:20, mapbox:20, sentinel:16 };
+  const PROVIDER_CAPABILITIES = {
+    esri: ['high-resolution mosaic','up to z19'],
+    carto: ['reference map','up to z20'],
+    nasa: ['250-375m monitoring','up to z9'],
+    google: ['high-resolution mosaic','up to z20'],
+    mapbox: ['high-resolution mosaic','up to z20'],
+    sentinel: ['10m dated scenes','best z14 · max z16']
+  };
+  let liveMap = { provider:'esri', lat:14.238, lng:103.548, zoom:13, dragging:false, lastX:0, lastY:0, cacheBust:0 };
+  const tileCache = new Map();
+  const labelTileCache = new Map();
+  let sentinelPendingTiles=0;
+
+  function lon2tileX(lon,z){ return (lon+180)/360*Math.pow(2,z); }
+  function lat2tileY(lat,z){
+    const rad = lat*Math.PI/180;
+    return (1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*Math.pow(2,z);
+  }
+  function tileX2lon(x,z){ return x/Math.pow(2,z)*360-180; }
+  function tileY2lat(y,z){
+    const n = Math.PI - 2*Math.PI*y/Math.pow(2,z);
+    return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)));
+  }
+
+  function tileUrl(provider, z, x, y){
+    const cb = liveMap.cacheBust ? `_cb=${liveMap.cacheBust}` : '';
+    switch(provider){
+      case 'esri':
+        return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}${cb?'?'+cb:''}`;
+      case 'carto':
+        return `https://${['a','b','c','d'][(x+y)%4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png${cb?'?'+cb:''}`;
+      case 'nasa': {
+        const layer = nasaLayer.value || 'VIIRS_SNPP_CorrectedReflectance_TrueColor';
+        const date = nasaDate.value || new Date().toISOString().slice(0,10);
+        return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${date}/GoogleMapsCompatible_Level9/${z}/${y}/${x}.jpg${cb?'?'+cb:''}`;
+      }
+      case 'google':
+        return `https://mt${(x+y)%4}.google.com/vt/lyrs=${showMapLabelsChk.checked?'y':'s'}&x=${x}&y=${y}&z=${z}${cb?'&'+cb:''}`;
+      case 'mapbox': {
+        const token = mapboxToken.value.trim();
+        if(!token) return null;
+        return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/${z}/${x}/${y}?access_token=${encodeURIComponent(token)}${cb?'&'+cb:''}`;
+      }
+      case 'sentinel': {
+        const id = sentinelId.value.trim();
+        if(!id) return null;
+        const layer = (sentinelLayer.value.trim() || 'TRUE_COLOR');
+        const date = sentinelDate.value.trim();
+        const windowDays = Math.max(1, parseInt(sentinelWindow.value,10)||7);
+        let timeParam='';
+        if(date){
+          const end=new Date(`${date}T00:00:00Z`); end.setUTCDate(end.getUTCDate()+windowDays-1);
+          timeParam=`&TIME=${date}/${end.toISOString().slice(0,10)}`;
+        }
+        const cloud = Math.max(0, Math.min(100, parseInt(sentinelCloud.value,10)||20));
+        return `https://sh.dataspace.copernicus.eu/ogc/wmts/${id}?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${encodeURIComponent(layer)}&TILEMATRIXSET=PopularWebMercator256&TILEMATRIX=${z}&TILEROW=${y}&TILECOL=${x}&FORMAT=image/png&MAXCC=${cloud}&PRIORITY=leastCC&UPSAMPLING=BICUBIC&DOWNSAMPLING=BICUBIC&WARNINGS=NO${timeParam}${cb?'&'+cb:''}`;
+      }
+    }
+    return null;
+  }
+
+  function getTile(provider, z, x, y){
+    const n = Math.pow(2,z);
+    if(y<0 || y>=n) return null;
+    const xw = ((x%n)+n)%n;
+    const key = [provider,z,xw,y,showMapLabelsChk.checked,mapboxToken.value,sentinelId.value,sentinelLayer.value,sentinelDate.value,sentinelWindow.value,sentinelCloud.value,nasaLayer.value,nasaDate.value,liveMap.cacheBust].join('|');
+    let img = tileCache.get(key);
+    if(img) return img;
+    const url = tileUrl(provider, z, xw, y);
+    if(!url) return null;
+    img = new Image();
+    if(provider==='sentinel') img.crossOrigin='anonymous';
+    if(provider==='sentinel') sentinelPendingTiles++;
+    img.onload = ()=>{ if(provider==='sentinel'){ sentinelPendingTiles=Math.max(0,sentinelPendingTiles-1); if(looksLikeSentinelNoData(img)){ sentinelTestStatus.textContent='No Sentinel-2 scene found for this date and location. Try Latest clear or a wider search window.'; sentinelTestStatus.classList.add('err'); } else if(!sentinelPendingTiles) { sentinelTestStatus.textContent='Sentinel tiles ready.'; sentinelTestStatus.classList.remove('err'); } } if(liveMap.provider===provider) drawLiveMap(); };
+    img.onerror = ()=>{ if(provider==='sentinel'){ sentinelPendingTiles=Math.max(0,sentinelPendingTiles-1); sentinelTestStatus.textContent='Some Sentinel tiles failed; try a wider date window or lower cloud limit.'; sentinelTestStatus.classList.add('err'); } };
+    img.src = url;
+    tileCache.set(key, img);
+    return img;
+  }
+  function getLabelTile(z,x,y){
+    const n=Math.pow(2,z); if(y<0||y>=n) return null;
+    const xw=((x%n)+n)%n, key=`labels|${z}|${xw}|${y}`;
+    let img=labelTileCache.get(key); if(img) return img;
+    img=new Image(); img.onload=()=>drawLiveMap(); img.onerror=()=>{};
+    img.crossOrigin='anonymous';
+    img.src=`https://${['a','b','c','d'][(xw+y)%4]}.basemaps.cartocdn.com/light_only_labels/${z}/${xw}/${y}.png`;
+    labelTileCache.set(key,img); return img;
+  }
+  function applySharpen(ctx,W,H,amount){
+    if(!amount) return;
+    if(window.PhnaekPkayImageProcessing) return window.PhnaekPkayImageProcessing.sharpen(ctx,W,H,amount);
+    try{
+      const src=ctx.getImageData(0,0,W,H), data=src.data, copy=new Uint8ClampedArray(data);
+      const a=Math.min(.8,amount), center=1+4*a;
+      for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+        const p=(y*W+x)*4;
+        for(let c=0;c<3;c++) data[p+c]=center*copy[p+c]-a*(copy[p-4+c]+copy[p+4+c]+copy[p-W*4+c]+copy[p+W*4+c]);
+      }
+      ctx.putImageData(src,0,0);
+    }catch(err){ /* Some providers intentionally block pixel access. */ }
+  }
+  function looksLikeSentinelNoData(img){
+    try{
+      const c=document.createElement('canvas'); c.width=16; c.height=16; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,16,16);
+      const d=ctx.getImageData(0,0,16,16).data; let total=0,bright=0;
+      for(let i=0;i<d.length;i+=4){ total+=(d[i]+d[i+1]+d[i+2])/3; if(d[i]+d[i+1]+d[i+2]>500) bright++; }
+      return total/(d.length/4)<8 && bright<8;
+    }catch(err){ return false; }
+  }
+
+  function drawLiveMap(){
+    if(!liveMapCanvas.width || !liveMapCanvas.height) return;
+    const ctx = liveMapCanvas.getContext('2d');
+    const W = liveMapCanvas.width, H = liveMapCanvas.height;
+    ctx.fillStyle = '#0a0b08'; ctx.fillRect(0,0,W,H);
+    ctx.filter = enhanceImageryChk.checked ? 'contrast(1.12) saturate(1.08)' : 'none';
+    const z = Math.round(liveMap.zoom);
+    const centerXtile = lon2tileX(liveMap.lng, z);
+    const centerYtile = lat2tileY(liveMap.lat, z);
+    const originPxX = centerXtile*TILE - W/2;
+    const originPxY = centerYtile*TILE - H/2;
+    const firstTileX = Math.floor(originPxX/TILE);
+    const firstTileY = Math.floor(originPxY/TILE);
+    const tilesX = Math.ceil(W/TILE)+2;
+    const tilesY = Math.ceil(H/TILE)+2;
+    for(let ty=0; ty<tilesY; ty++){
+      for(let tx=0; tx<tilesX; tx++){
+        const xt = firstTileX+tx, yt = firstTileY+ty;
+        const px = xt*TILE - originPxX, py = yt*TILE - originPxY;
+        const img = getTile(liveMap.provider, z, xt, yt);
+        if(img && img.complete && img.naturalWidth) ctx.drawImage(img, px, py, TILE, TILE);
+      }
+    }
+    if(liveMap.provider==='sentinel' && parseInt(sentinelSharpness.value,10)>0) applySharpen(ctx,W,H,parseInt(sentinelSharpness.value,10)/100);
+    if(showMapLabelsChk.checked && liveMap.provider!=='google' && liveMap.provider!=='carto'){
+      ctx.filter='none';
+      for(let ty=0; ty<tilesY; ty++) for(let tx=0; tx<tilesX; tx++){
+        const xt=firstTileX+tx, yt=firstTileY+ty, label=getLabelTile(z,xt,yt);
+        if(label&&label.complete&&label.naturalWidth) ctx.drawImage(label,xt*TILE-originPxX,yt*TILE-originPxY,TILE,TILE);
+      }
+    }
+    ctx.filter='none';
+    let mapDate='';
+    if(liveMap.provider==='sentinel') mapDate=sentinelDate.value ? ` · from ${sentinelDate.value}` : ' · latest valid';
+    if(liveMap.provider==='nasa') mapDate=` · ${nasaDate.value}`;
+    mapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span class="date">${mapDate.slice(3)}</span>`:''}`;
+    const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
+    mapZoomIn.disabled=liveMap.zoom>=maxZ;
+    mapZoomOut.disabled=liveMap.zoom<=2;
+  }
+
+  function sizeLiveMapCanvas(){
+    const rect = liveMapWrap.getBoundingClientRect();
+    liveMapCanvas.width = Math.max(1, Math.round(rect.width));
+    liveMapCanvas.height = Math.max(1, Math.round(rect.height));
+    drawLiveMap();
+  }
+  window.addEventListener('resize', sizeLiveMapCanvas);
+
+  providerSelect.addEventListener('change', ()=>{
+    liveMap.provider = providerSelect.value;
+    mapboxTokenField.hidden = liveMap.provider!=='mapbox';
+    sentinelIdField.hidden = liveMap.provider!=='sentinel';
+    sentinelLayerField.hidden = liveMap.provider!=='sentinel';
+    sentinelDateField.hidden = liveMap.provider!=='sentinel';
+    sentinelWindowField.hidden = liveMap.provider!=='sentinel';
+    sentinelCloudField.hidden = liveMap.provider!=='sentinel';
+    sentinelSharpnessField.hidden = liveMap.provider!=='sentinel';
+    nasaLayerField.hidden = liveMap.provider!=='nasa';
+    nasaDateField.hidden = liveMap.provider!=='nasa';
+    sentinelTestBtn.hidden = liveMap.provider!=='sentinel';
+    showMapLabelsChk.parentElement.hidden = liveMap.provider==='carto';
+    placesApiKeyField.hidden = liveMap.provider!=='google';
+    placesApiNote.hidden = liveMap.provider!=='google';
+    providerNote.textContent = PROVIDER_NOTES[liveMap.provider] || '';
+    const capability=PROVIDER_CAPABILITIES[liveMap.provider]||['resolution varies','zoom varies'];
+    providerResolution.textContent=capability[0];
+    providerZoomLimit.textContent=capability[1];
+    zoomAdvice.hidden = liveMap.provider!=='sentinel';
+    const maxZ = PROVIDER_MAX_ZOOM[liveMap.provider] || 19;
+    if(liveMap.zoom > maxZ) liveMap.zoom = maxZ;
+    captureStatus.textContent = '';
+    captureStatus.classList.remove('err');
+    drawLiveMap();
+  });
+  [mapboxToken, sentinelId, sentinelLayer, sentinelDate, sentinelWindow, nasaLayer, nasaDate].forEach(el=>{
+    el.addEventListener('input', ()=>{ if(liveMap.provider==='sentinel'){ sentinelTestStatus.textContent='Loading Sentinel tiles...'; sentinelTestStatus.classList.remove('err'); } drawLiveMap(); });
+  });
+  sentinelCloud.addEventListener('input',()=>{ sentinelCloudReadout.textContent=sentinelCloud.value+'%'; if(liveMap.provider==='sentinel') sentinelTestStatus.textContent='Loading Sentinel tiles...'; drawLiveMap(); });
+  sentinelSharpness.addEventListener('input',()=>{ sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; drawLiveMap(); });
+  function shiftSentinelDate(days){
+    const base=sentinelDate.value ? new Date(`${sentinelDate.value}T00:00:00Z`) : new Date();
+    base.setUTCDate(base.getUTCDate()+days);
+    sentinelDate.value=base.toISOString().slice(0,10); drawLiveMap();
+  }
+  sentinelPrevDay.addEventListener('click',()=>shiftSentinelDate(-1));
+  sentinelNextDay.addEventListener('click',()=>shiftSentinelDate(1));
+  sentinelLatest.addEventListener('click',()=>{ sentinelDate.value=''; drawLiveMap(); });
+  sentinelTestBtn.addEventListener('click', async()=>{
+    const id=sentinelId.value.trim();
+    if(!id){ sentinelTestStatus.textContent='Enter a Sentinel Hub configuration instance ID first.'; sentinelTestStatus.classList.add('err'); return; }
+    sentinelTestBtn.disabled=true; sentinelTestStatus.classList.remove('err'); sentinelTestStatus.textContent='Checking configuration...';
+    try{
+      const res=await fetch(`https://sh.dataspace.copernicus.eu/ogc/wmts/${encodeURIComponent(id)}?SERVICE=WMTS&REQUEST=GetCapabilities`);
+      if(!res.ok) throw Error(`HTTP ${res.status}`);
+      const xml=await res.text();
+      const layerCount=(xml.match(/<Layer>/g)||[]).length, layerName=sentinelLayer.value.trim();
+      const hasLayer=layerName && xml.includes('>'+layerName+'<');
+      sentinelTestStatus.textContent=`Configuration reachable${layerCount?' · '+layerCount+' layer(s) found':''}${hasLayer?' · layer '+layerName+' found':' · layer '+(layerName||'(empty)')+' not found'}.`;
+      if(!hasLayer) sentinelTestStatus.classList.add('err');
+      drawLiveMap();
+    }catch(err){
+      sentinelTestStatus.textContent=`Sentinel configuration failed (${err.message}). Check that this is a Configuration Instance ID, the layer exists, and the service is enabled.`;
+      sentinelTestStatus.classList.add('err');
+    }
+    sentinelTestBtn.disabled=false;
+  });
+  // GIBS products are usually published a few days behind the calendar date.
+  nasaDate.value = new Date(Date.now()-3*86400000).toISOString().slice(0,10);
+  sentinelDate.value = '';
+  providerNote.textContent = PROVIDER_NOTES.esri;
+  providerResolution.textContent = PROVIDER_CAPABILITIES.esri[0];
+  providerZoomLimit.textContent = PROVIDER_CAPABILITIES.esri[1];
+  placesApiKeyField.hidden = true;
+  placesApiNote.hidden = true;
+
+  liveMapCanvas.addEventListener('mousedown', e=>{
+    liveMap.dragging = true; liveMap.lastX = e.clientX; liveMap.lastY = e.clientY;
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!liveMap.dragging) return;
+    const dx = e.clientX-liveMap.lastX, dy = e.clientY-liveMap.lastY;
+    liveMap.lastX = e.clientX; liveMap.lastY = e.clientY;
+    const z = Math.round(liveMap.zoom);
+    const xt = lon2tileX(liveMap.lng, z) - dx/TILE;
+    const yt = lat2tileY(liveMap.lat, z) - dy/TILE;
+    liveMap.lng = tileX2lon(xt, z);
+    liveMap.lat = tileY2lat(yt, z);
+    drawLiveMap();
+  });
+  window.addEventListener('mouseup', ()=>{ liveMap.dragging = false; });
+  liveMapCanvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const maxZ = PROVIDER_MAX_ZOOM[liveMap.provider] || 19;
+    liveMap.zoom = Math.min(maxZ, Math.max(2, liveMap.zoom + (e.deltaY<0?1:-1)));
+    drawLiveMap();
+  }, {passive:false});
+  mapZoomIn.addEventListener('click', ()=>{
+    const maxZ = PROVIDER_MAX_ZOOM[liveMap.provider] || 19;
+    liveMap.zoom = Math.min(maxZ, liveMap.zoom+1); drawLiveMap();
+  });
+  mapZoomOut.addEventListener('click', ()=>{ liveMap.zoom = Math.max(2, liveMap.zoom-1); drawLiveMap(); });
+
+  let mapExpanded = false;
+  function setMapExpanded(v){
+    mapExpanded = v;
+    liveMapWrap.classList.toggle('expanded', mapExpanded);
+    mapExpandBtn.textContent = mapExpanded ? '\u2715' : '\u26F6';
+    mapExpandBtn.title = mapExpanded ? 'Collapse map' : 'Expand map';
+    requestAnimationFrame(sizeLiveMapCanvas);
+  }
+  mapExpandBtn.addEventListener('click', ()=> setMapExpanded(!mapExpanded));
+  window.addEventListener('keydown', e=>{ if(e.key==='Escape' && mapExpanded) setMapExpanded(false); });
+  mapRefreshBtn.addEventListener('click', ()=>{
+    liveMap.cacheBust = Date.now();
+    tileCache.clear();
+    captureStatus.textContent = 'Reloading tiles fresh from the server\u2026';
+    captureStatus.classList.remove('err');
+    drawLiveMap();
+  });
+  showMapLabelsChk.addEventListener('change', drawLiveMap);
+  enhanceImageryChk.addEventListener('change', drawLiveMap);
+
+  placeSearch.addEventListener('keydown', async e=>{
+    if(e.key !== 'Enter') return;
+    const q = placeSearch.value.trim();
+    if(!q) return;
+    placeSearch.disabled = true;
+    captureStatus.classList.remove('err');
+    captureStatus.textContent = 'Searching\u2026';
+    const gkey = placesApiKey.value.trim();
+    try{
+      let lat=null, lng=null;
+      if(gkey){
+        const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${encodeURIComponent(gkey)}`);
+        const data = await res.json();
+        if(data.status === 'OK' && data.results && data.results[0]){
+          lat = data.results[0].geometry.location.lat;
+          lng = data.results[0].geometry.location.lng;
+        } else {
+          captureStatus.textContent = `Google search: ${data.status}${data.error_message ? ' \u2014 '+data.error_message : ''}`;
+          captureStatus.classList.add('err');
+        }
+      } else {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if(data && data[0]){
+          lat = parseFloat(data[0].lat);
+          lng = parseFloat(data[0].lon);
+        } else {
+          captureStatus.textContent = 'Place not found.';
+          captureStatus.classList.add('err');
+        }
+      }
+      if(lat!==null && lng!==null){
+        liveMap.lat = lat; liveMap.lng = lng;
+        drawLiveMap();
+        captureStatus.textContent = '';
+      }
+    }catch(err){
+      captureStatus.textContent = gkey
+        ? 'Search failed \u2014 check your API key\u2019s referrer restrictions and that the Geocoding API is enabled for it in Google Cloud Console.'
+        : 'Search failed (network).';
+      captureStatus.classList.add('err');
+    }
+    placeSearch.disabled = false;
+  });
+
+  async function captureLiveView(){
+    const capturedAt = new Date().toISOString();
+    const provider = liveMap.provider;
+    const z = Math.min(Math.round(liveMap.zoom), PROVIDER_MAX_ZOOM[provider] || 19);
+    if((provider==='mapbox' && !mapboxToken.value.trim()) || (provider==='sentinel' && !sentinelId.value.trim())){
+      captureStatus.textContent = 'Add the required key / instance ID above first.';
+      captureStatus.classList.add('err');
+      return;
+    }
+    captureMapBtn.disabled = true;
+    captureStatus.classList.remove('err');
+    captureStatus.textContent = 'Capturing\u2026';
+
+    const W = 1600, H = 1000;
+    const cap = document.createElement('canvas');
+    cap.width = W; cap.height = H;
+    const ctx = cap.getContext('2d');
+    ctx.filter = enhanceImageryChk.checked ? 'contrast(1.12) saturate(1.08)' : 'none';
+    const centerXtile = lon2tileX(liveMap.lng, z);
+    const centerYtile = lat2tileY(liveMap.lat, z);
+    const originPxX = centerXtile*TILE - W/2;
+    const originPxY = centerYtile*TILE - H/2;
+    const firstTileX = Math.floor(originPxX/TILE);
+    const firstTileY = Math.floor(originPxY/TILE);
+    const tilesX = Math.ceil(W/TILE)+2;
+    const tilesY = Math.ceil(H/TILE)+2;
+    const n = Math.pow(2,z);
+    const loads = [];
+    for(let ty=0; ty<tilesY; ty++){
+      for(let tx=0; tx<tilesX; tx++){
+        const xt = firstTileX+tx, yt = firstTileY+ty;
+        if(yt<0 || yt>=n) continue;
+        const xw = ((xt%n)+n)%n;
+        const url = tileUrl(provider, z, xw, yt);
+        if(!url) continue;
+        const px = xt*TILE - originPxX, py = yt*TILE - originPxY;
+        loads.push(new Promise(resolve=>{
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = ()=>{ try{ ctx.drawImage(img, px, py, TILE, TILE); resolve(true); }catch(e){ resolve(false); } };
+          img.onerror = ()=> resolve(false);
+          img.src = url;
+        }));
+      }
+    }
+    const results = await Promise.all(loads);
+    if(provider==='sentinel' && parseInt(sentinelSharpness.value,10)>0) applySharpen(ctx,W,H,parseInt(sentinelSharpness.value,10)/100);
+    ctx.filter='none';
+    if(showMapLabelsChk.checked && provider!=='google' && provider!=='carto'){
+      const labelLoads=[];
+      for(let ty=0; ty<tilesY; ty++) for(let tx=0; tx<tilesX; tx++){
+        const xt=firstTileX+tx, yt=firstTileY+ty;
+        if(yt<0||yt>=n) continue;
+        const xw=((xt%n)+n)%n;
+        const url=`https://${['a','b','c','d'][(xw+yt)%4]}.basemaps.cartocdn.com/light_only_labels/${z}/${xw}/${yt}.png`;
+        const px=xt*TILE-originPxX, py=yt*TILE-originPxY;
+        labelLoads.push(new Promise(resolve=>{
+          const img=new Image(); img.crossOrigin='anonymous';
+          img.onload=()=>{try{ctx.drawImage(img,px,py,TILE,TILE);resolve(true);}catch(e){resolve(false);}};
+          img.onerror=()=>resolve(false); img.src=url;
+        }));
+      }
+      await Promise.all(labelLoads);
+    }
+    const failCount = results.filter(r=>!r).length;
+    if(results.length===0 || failCount > results.length*0.3){
+      captureStatus.textContent = `${failCount}/${results.length} tiles failed to load for cross-origin capture \u2014 this provider likely doesn\u2019t send CORS headers. Try Esri, Mapbox, or Sentinel Hub, or screenshot the preview manually.`;
+      captureStatus.classList.add('err');
+      captureMapBtn.disabled = false;
+      return;
+    }
+    let dataUrl;
+    try{
+      dataUrl = cap.toDataURL('image/png');
+    }catch(err){
+      captureStatus.textContent = 'Capture blocked: this provider\u2019s tiles taint the canvas (no CORS support). Try Esri, Mapbox, or Sentinel Hub instead.';
+      captureStatus.classList.add('err');
+      captureMapBtn.disabled = false;
+      return;
+    }
+    const img = new Image();
+    img.onload = ()=>{
+      const rec = {
+        id: nextId++,
+        src: dataUrl,
+        label: `${captureLabel.value.trim() || `${provider} · ${liveMap.provider==='sentinel' && sentinelDate.value ? sentinelDate.value : 'latest'}`} · captured ${formatTimestamp(capturedAt)}`,
+        imageryDate: liveMap.provider==='sentinel' ? (sentinelDate.value || 'latest valid · server-selected') : liveMap.provider==='nasa' ? nasaDate.value : 'current mosaic · provider date varies',
+        capturedAt,
+        natW: img.naturalWidth,
+        natH: img.naturalHeight,
+        imgEl: img,
+        selected: images.length < 6
+      };
+      images.push(rec);
+      renderImageList(); renderStage(); updateSliderSelects();
+      captureStatus.textContent = 'Captured \u2014 added to Frames below.';
+      captureMapBtn.disabled = false;
+    };
+    img.src = dataUrl;
+  }
+  captureMapBtn.addEventListener('click', captureLiveView);
+
+  // ---------- Sidebar image list ----------
+  function renderImageList(){
+    imageList.innerHTML = '';
+    if(images.length === 0){
+      imageList.innerHTML = '<div class="empty-note">No imagery loaded yet.</div>';
+      updateUpscaleSelect();
+      return;
+    }
+    images.forEach((im, idx)=>{
+      const row = document.createElement('div');
+       row.className = 'img-row' + (im.selected ? ' selected' : '') + (im.generated ? ' generated' : '');
+      row.draggable = true;
+      row.dataset.idx = idx;
+      row.innerHTML = `
+        <span class="grip" title="Drag to reorder">&#8942;&#8942;</span>
+        <input type="checkbox" class="chk" ${im.selected?'checked':''} title="Include in grid">
+        <img class="thumb" src="${im.src}">
+        <div class="meta">
+           <input type="text" value="${im.label.replace(/"/g,'&quot;')}" placeholder="date / label">
+           ${im.generated ? '<span class="generated-badge">AI ENHANCED · VISUAL ONLY</span>' : ''}
+          <input type="text" class="imagery-date" value="${escapeHtml(im.imageryDate||'')}" placeholder="imagery date / latest valid">
+          <span class="dims">${im.natW}&times;${im.natH}px${im.capturedAt ? ' · '+escapeHtml(formatTimestamp(im.capturedAt)) : ''}</span>
+        </div>
+        <div class="order-btns">
+          <button data-act="up" title="Move up">&#9650;</button>
+          <button data-act="down" title="Move down">&#9660;</button>
+        </div>
+        <div class="row-actions"><button data-act="del" title="Remove">&#10005;</button></div>
+      `;
+      row.querySelector('.chk').addEventListener('change', e=>{ im.selected = e.target.checked; renderStage(); });
+      row.querySelector('input[type=text]').addEventListener('input', e=>{ im.label = e.target.value; renderStage(); updateSliderSelects(true); });
+      row.querySelector('.imagery-date').addEventListener('input', e=>{ im.imageryDate=e.target.value; renderStage(); updateSliderSelects(true); saveWorkspace(); });
+      row.querySelector('[data-act=del]').addEventListener('click', ()=>{
+        images = images.filter(x=>x.id!==im.id);
+        renderImageList(); renderStage(); updateSliderSelects();
+      });
+      row.querySelector('[data-act=up]').addEventListener('click', ()=>{
+        if(idx>0){ [images[idx-1],images[idx]] = [images[idx],images[idx-1]]; renderImageList(); renderStage(); updateSliderSelects(true); }
+      });
+      row.querySelector('[data-act=down]').addEventListener('click', ()=>{
+        if(idx<images.length-1){ [images[idx+1],images[idx]] = [images[idx],images[idx+1]]; renderImageList(); renderStage(); updateSliderSelects(true); }
+      });
+      row.addEventListener('dragstart', e=>{
+        dragSrcIdx = idx;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try{ e.dataTransfer.setData('text/plain', String(idx)); }catch(err){}
+      });
+      row.addEventListener('dragend', ()=>{
+        row.classList.remove('dragging');
+        [...imageList.children].forEach(r=>r.classList.remove('drag-over'));
+        dragSrcIdx = null;
+      });
+      row.addEventListener('dragover', e=>{
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        row.classList.add('drag-over');
+      });
+      row.addEventListener('dragleave', ()=> row.classList.remove('drag-over'));
+      row.addEventListener('drop', e=>{
+        e.preventDefault();
+        row.classList.remove('drag-over');
+        const from = dragSrcIdx;
+        const to = idx;
+        if(from===null || from===to) return;
+        const [moved] = images.splice(from,1);
+        images.splice(to,0,moved);
+        renderImageList(); renderStage(); updateSliderSelects(true);
+      });
+      imageList.appendChild(row);
+    });
+    updateUpscaleSelect();
+  }
+
+  // ---------- Mode toggle ----------
+  modeGridBtn.addEventListener('click', ()=>setMode('grid'));
+  modeSliderBtn.addEventListener('click', ()=>setMode('slider'));
+  modeOverlayBtn.addEventListener('click', ()=>setMode('overlay'));
+  modeSequenceBtn.addEventListener('click', ()=>setMode('sequence'));
+  modeChangeBtn.addEventListener('click', ()=>setMode('change'));
+  function setMode(m){
+    stopSequencePreview();
+    stopDensityPulse();
+    mode = m;
+    modeGridBtn.classList.toggle('active', m==='grid');
+    modeSliderBtn.classList.toggle('active', m==='slider');
+    modeOverlayBtn.classList.toggle('active', m==='overlay');
+    modeSequenceBtn.classList.toggle('active', m==='sequence');
+    modeChangeBtn.classList.toggle('active', m==='change');
+    gridControls.hidden = (m!=='grid');
+    sliderControls.hidden = (m!=='slider');
+    overlayControls.hidden = (m!=='overlay');
+    sequenceControls.hidden = (m!=='sequence');
+    changeControls.hidden = (m!=='change');
+    exportVideoBtn.style.display = (m==='slider' || m==='sequence' || m==='overlay') ? 'flex' : 'none';
+    exportBtn.style.display = (m==='grid' || m==='slider' || m==='overlay' || m==='change') ? 'flex' : 'none';
+    renderStage();
+  }
+
+  // ---------- Column select ----------
+  colsSelect.addEventListener('click', e=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    cols = parseInt(btn.dataset.cols,10);
+    [...colsSelect.children].forEach(b=>b.classList.toggle('active', b===btn));
+    renderStage();
+  });
+
+  // ---------- Slider select dropdowns ----------
+  function updateSliderSelects(preserve){
+    const prevLeft = sliderState.leftId, prevMiddle=sliderState.middleId, prevRight = sliderState.rightId;
+    leftSelect.innerHTML = images.map(im=>`<option value="${im.id}">${escapeHtml(im.label||('#'+im.id))}</option>`).join('');
+    rightSelect.innerHTML = leftSelect.innerHTML;
+    sliderMiddleSelect.innerHTML = leftSelect.innerHTML;
+    if(images.length){
+      sliderState.leftId = preserve && images.find(i=>i.id===prevLeft) ? prevLeft : images[0].id;
+      sliderState.rightId = preserve && images.find(i=>i.id===prevRight) ? prevRight : images[images.length-1].id;
+      sliderState.middleId = preserve && images.find(i=>i.id===prevMiddle) ? prevMiddle : images[Math.min(1,images.length-1)].id;
+      leftSelect.value = sliderState.leftId;
+      rightSelect.value = sliderState.rightId;
+      sliderMiddleSelect.value = sliderState.middleId;
+    }
+    updateOverlaySelects(preserve);
+    updateChangeSelects(preserve);
+    renderStage();
+  }
+  leftSelect.addEventListener('change', ()=>{ sliderState.leftId = parseInt(leftSelect.value,10); renderStage(); });
+  rightSelect.addEventListener('change', ()=>{ sliderState.rightId = parseInt(rightSelect.value,10); renderStage(); });
+  sliderMiddleSelect.addEventListener('change', ()=>{ sliderState.middleId=parseInt(sliderMiddleSelect.value,10); renderStage(); });
+  sliderThreeChk.addEventListener('change',()=>{ sliderState.three=sliderThreeChk.checked; sliderMiddleField.hidden=!sliderState.three; renderStage(); });
+  document.getElementById('swapBtn').addEventListener('click', ()=>{
+    [sliderState.leftId, sliderState.rightId] = [sliderState.rightId, sliderState.leftId];
+    leftSelect.value = sliderState.leftId; rightSelect.value = sliderState.rightId;
+    renderStage();
+  });
+
+  // ---------- Overlay select dropdowns + density ----------
+  function updateOverlaySelects(preserve){
+    const prevBase = overlayState.baseId, prevTop = overlayState.topId, prevThird=overlayState.thirdId;
+    overlayBaseSelect.innerHTML = images.map(im=>`<option value="${im.id}">${escapeHtml(im.label||('#'+im.id))}</option>`).join('');
+    overlayTopSelect.innerHTML = overlayBaseSelect.innerHTML;
+    overlayThirdSelect.innerHTML = overlayBaseSelect.innerHTML;
+    if(images.length){
+      overlayState.baseId = preserve && images.find(i=>i.id===prevBase) ? prevBase : images[0].id;
+      overlayState.topId = preserve && images.find(i=>i.id===prevTop) ? prevTop : images[images.length-1].id;
+      overlayState.thirdId = preserve && images.find(i=>i.id===prevThird) ? prevThird : images[Math.min(1,images.length-1)].id;
+      overlayBaseSelect.value = overlayState.baseId;
+      overlayTopSelect.value = overlayState.topId;
+      overlayThirdSelect.value = overlayState.thirdId;
+    }
+  }
+  overlayBaseSelect.addEventListener('change', ()=>{ overlayState.baseId = parseInt(overlayBaseSelect.value,10); renderStage(); });
+  overlayTopSelect.addEventListener('change', ()=>{ overlayState.topId = parseInt(overlayTopSelect.value,10); renderStage(); });
+  overlayThirdSelect.addEventListener('change', ()=>{ overlayState.thirdId=parseInt(overlayThirdSelect.value,10); renderStage(); });
+  overlayThirdDensity.addEventListener('input',()=>{ overlayState.thirdDensity=parseInt(overlayThirdDensity.value,10); overlayThirdReadout.textContent=overlayState.thirdDensity+'%'; overlayStage.style.setProperty('--third-density',overlayState.thirdDensity/100); });
+  overlaySwapBtn.addEventListener('click', ()=>{
+    [overlayState.baseId, overlayState.topId] = [overlayState.topId, overlayState.baseId];
+    overlayBaseSelect.value = overlayState.baseId; overlayTopSelect.value = overlayState.topId;
+    renderStage();
+  });
+  densityRange.addEventListener('input', ()=>{
+    overlayState.density = parseInt(densityRange.value,10);
+    densityReadout.textContent = overlayState.density+'%';
+    overlayStage.style.setProperty('--density', overlayState.density/100);
+  });
+  densityPulseChk.addEventListener('change', ()=>{
+    pulseSpeedField.hidden = !densityPulseChk.checked;
+    densityRange.disabled = densityPulseChk.checked;
+    if(densityPulseChk.checked) startDensityPulse(); else stopDensityPulse();
+  });
+  function startDensityPulse(){
+    stopDensityPulse();
+    pulseStart = null;
+    function loop(ts){
+      if(!pulseStart) pulseStart = ts;
+      const period = Math.max(0.4, parseFloat(pulseSpeed.value) || 1.6) * 1000;
+      const t = ((ts - pulseStart) % period) / period; // 0..1
+      // triangle wave 10% <-> 90% so both frames stay glimpsable
+      const tri = t < 0.5 ? t*2 : 2 - t*2;
+      const d = 10 + tri*80;
+      overlayStage.style.setProperty('--density', d/100);
+      densityReadout.textContent = Math.round(d)+'%';
+      pulseRAF = requestAnimationFrame(loop);
+    }
+    pulseRAF = requestAnimationFrame(loop);
+  }
+  function stopDensityPulse(){
+    if(pulseRAF) cancelAnimationFrame(pulseRAF);
+    pulseRAF = null; pulseStart = null;
+  }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function updateChangeSelects(preserve){
+    const before = changeState.beforeId, after = changeState.afterId;
+    const html = images.map(im=>`<option value="${im.id}">${escapeHtml(im.label||('#'+im.id))}</option>`).join('');
+    changeBeforeSelect.innerHTML = html; changeAfterSelect.innerHTML = html;
+    if(images.length){
+      changeState.beforeId = preserve && images.some(i=>i.id===before) ? before : images[0].id;
+      changeState.afterId = preserve && images.some(i=>i.id===after) ? after : images[images.length-1].id;
+      changeBeforeSelect.value = changeState.beforeId; changeAfterSelect.value = changeState.afterId;
+    }
+  }
+  [changeBeforeSelect, changeAfterSelect].forEach((el, idx)=>el.addEventListener('change', ()=>{
+    changeState[idx ? 'afterId' : 'beforeId'] = parseInt(el.value,10); renderStage();
+  }));
+  changeMethodSelect.addEventListener('change', ()=>{ changeState.method=changeMethodSelect.value; renderChangeMap(); });
+  changeThreshold.addEventListener('input', ()=>{ changeState.threshold=parseInt(changeThreshold.value,10); changeThresholdReadout.textContent=changeState.threshold+'%'; renderChangeMap(); });
+  changeMinSize.addEventListener('input', ()=>{ changeState.minSize=parseInt(changeMinSize.value,10); changeMinSizeReadout.textContent=changeState.minSize+' px'; renderChangeMap(); });
+
+  // ---------- View (zoom/pan) ----------
+  function activeStageEl(){
+    if(mode==='grid') return gridStage.querySelector('.panel-viewport');
+    if(mode==='sequence') return sequenceStage;
+    if(mode==='change') return changeStage;
+    if(mode==='overlay') return overlayStage;
+    return sliderStage;
+  }
+  function applyViewVars(){
+    gridStage.style.setProperty('--zoom', view.zoom);
+    gridStage.style.setProperty('--panx', view.panx+'px');
+    gridStage.style.setProperty('--pany', view.pany+'px');
+    sliderStage.style.setProperty('--zoom', view.zoom);
+    sliderStage.style.setProperty('--panx', view.panx+'px');
+    sliderStage.style.setProperty('--pany', view.pany+'px');
+    overlayStage.style.setProperty('--zoom', view.zoom);
+    overlayStage.style.setProperty('--panx', view.panx+'px');
+    overlayStage.style.setProperty('--pany', view.pany+'px');
+    zoomReadout.textContent = view.zoom.toFixed(2)+'x';
+    zoomTxt.textContent = view.zoom.toFixed(2);
+    panTxt.textContent = Math.round(view.panx)+','+Math.round(view.pany);
+    zoomRange.value = view.zoom;
+    queueWorkspaceSave();
+  }
+  function clampPan(rectW, rectH){
+    const maxX = Math.max(0, rectW*(view.zoom-1)/2);
+    const maxY = Math.max(0, rectH*(view.zoom-1)/2);
+    view.panx = Math.min(maxX, Math.max(-maxX, view.panx));
+    view.pany = Math.min(maxY, Math.max(-maxY, view.pany));
+  }
+  zoomRange.addEventListener('input', ()=>{
+    view.zoom = parseFloat(zoomRange.value);
+    const stage = activeStageEl();
+    if(stage){ const r = stage.getBoundingClientRect(); clampPan(r.width, r.height); }
+    applyViewVars();
+    if(mode==='sequence' && !seqPlaying) drawSeqStatic();
+  });
+  resetViewBtn.addEventListener('click', ()=>{ view = {zoom:1, panx:0, pany:0}; applyViewVars(); if(mode==='sequence') drawSeqStatic(); });
+
+  // Keyboard: arrow keys nudge pan, +/- zoom, 0 resets. Ignored while typing in a field.
+  window.addEventListener('keydown', e=>{
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const stageEl = activeStageEl();
+    if(!stageEl) return;
+    const r = stageEl.getBoundingClientRect();
+    const step = e.shiftKey ? 40 : 12;
+    let handled = true;
+    switch(e.key){
+      case 'ArrowLeft': view.panx += step; break;
+      case 'ArrowRight': view.panx -= step; break;
+      case 'ArrowUp': view.pany += step; break;
+      case 'ArrowDown': view.pany -= step; break;
+      case '+': case '=': view.zoom = Math.min(4, view.zoom + 0.06); break;
+      case '-': case '_': view.zoom = Math.max(1, view.zoom - 0.06); break;
+      case '0': view = {zoom:1, panx:0, pany:0}; break;
+      default: handled = false;
+    }
+    if(handled){
+      e.preventDefault();
+      clampPan(r.width, r.height);
+      applyViewVars();
+      if(mode==='sequence' && !seqPlaying) drawSeqStatic();
+    }
+  });
+
+  function attachPanHandlers(el){
+    let dragging=false, sx=0, sy=0, startX=0, startY=0, rectW=0, rectH=0;
+    const refStage = ()=> mode==='grid' ? el : activeStageEl();
+    el.addEventListener('pointerdown', e=>{
+      dragging=true; sx=e.clientX; sy=e.clientY; startX=view.panx; startY=view.pany;
+      const r = refStage().getBoundingClientRect();
+      rectW=r.width; rectH=r.height;
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      view.panx = startX + (e.clientX - sx);
+      view.pany = startY + (e.clientY - sy);
+      clampPan(rectW, rectH);
+      applyViewVars();
+      if(mode==='sequence') drawSeqStatic();
+    });
+    el.addEventListener('pointerup', ()=>{ dragging=false; });
+    el.addEventListener('pointercancel', ()=>{ dragging=false; });
+    el.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      view.zoom = Math.min(4, Math.max(1, view.zoom + delta));
+      const r = refStage().getBoundingClientRect();
+      clampPan(r.width, r.height);
+      applyViewVars();
+      if(mode==='sequence') drawSeqStatic();
+    }, {passive:false});
+  }
+
+  // ---------- Divider drag (slider mode) ----------
+  (function(){
+    let dragging=null;
+    function setClip(clientX,which){
+      const r = sliderStage.getBoundingClientRect();
+      let pct = ((clientX - r.left) / r.width) * 100;
+      pct = Math.min(99.5, Math.max(.5, pct));
+      if(which===2){ pct=Math.max(sliderState.clip+.5, pct); sliderState.clip2=pct; sliderStage.style.setProperty('--clip2', pct+'%'); }
+      else { pct=sliderState.three ? Math.min(sliderState.clip2-.5, pct) : pct; sliderState.clip=pct; sliderStage.style.setProperty('--clip', pct+'%'); }
+    }
+    divider.addEventListener('pointerdown', e=>{ dragging=1; divider.setPointerCapture(e.pointerId); });
+    divider2.addEventListener('pointerdown', e=>{ dragging=2; divider2.setPointerCapture(e.pointerId); });
+    window.addEventListener('pointermove', e=>{ if(dragging) setClip(e.clientX,dragging); });
+    window.addEventListener('pointerup', ()=>{ dragging=null; });
+  })();
+
+  // ---------- Render stage ----------
+  function renderChangeMap(){
+    const before = images.find(i=>i.id===changeState.beforeId);
+    const after = images.find(i=>i.id===changeState.afterId);
+    if(!before || !after || before.id===after.id){
+      changeStats.style.display='none';
+      return;
+    }
+    const W=800, H=500;
+    changeCanvas.width=W; changeCanvas.height=H;
+    const a=document.createElement('canvas'), b=document.createElement('canvas');
+    a.width=b.width=W; a.height=b.height=H;
+    const drawAligned=(canvas, im)=>{
+      const ctx=canvas.getContext('2d');
+      const r=computeSourceRect(im.natW,im.natH,W,H,1,0,0);
+      ctx.drawImage(im.imgEl,r.sx,r.sy,r.sw,r.sh,0,0,W,H);
+    };
+    drawAligned(a,before); drawAligned(b,after);
+    const ai=a.getContext('2d').getImageData(0,0,W,H).data;
+    const bi=b.getContext('2d').getImageData(0,0,W,H).data;
+    const mask=new Uint8Array(W*H), visited=new Uint8Array(W*H), keep=new Uint8Array(W*H), sizes=[];
+    const threshold=changeState.threshold/100*255;
+    for(let p=0;p<W*H;p++){
+      const i=p*4, ar=ai[i], ag=ai[i+1], ab=ai[i+2], br=bi[i], bg=bi[i+1], bb=bi[i+2];
+      let delta;
+      if(changeState.method==='luma') delta=Math.abs((ar*.299+ag*.587+ab*.114)-(br*.299+bg*.587+bb*.114));
+      else if(changeState.method==='ndvi') delta=Math.abs(((ag-ar)/(ag+ar+1)) - ((bg-br)/(bg+br+1))) * 255;
+      else delta=(Math.abs(ar-br)+Math.abs(ag-bg)+Math.abs(ab-bb))/3;
+      if(delta>=threshold) mask[p]=1;
+    }
+    const neighbors=[-1,1,-W,W];
+    for(let p=0;p<W*H;p++) if(mask[p]&&!visited[p]){
+      const queue=[p], component=[]; visited[p]=1; let size=0;
+      while(queue.length){
+        const q=queue.pop(); component.push(q); size++;
+        const x=q%W;
+        for(const n of neighbors){ const next=q+n; if((n===-1&&x===0)||(n===1&&x===W-1)||next<0||next>=W*H) continue; if(mask[next]&&!visited[next]){visited[next]=1;queue.push(next);} }
+      }
+      if(size>=changeState.minSize){ sizes.push(size); component.forEach(q=>keep[q]=1); }
+    }
+    const ctx=changeCanvas.getContext('2d');
+    ctx.drawImage(a,0,0);
+    const out=ctx.getImageData(0,0,W,H), px=out.data;
+    for(let p=0;p<W*H;p++){
+      if(keep[p]){
+        const i=p*4;
+        px[i]=229; px[i+1]=108; px[i+2]=76; px[i+3]=210;
+      } else { const i=p*4; const gray=px[i]*.55+px[i+1]*.35+px[i+2]*.1; px[i]=px[i+1]=px[i+2]=gray; }
+    }
+    ctx.putImageData(out,0,0);
+    drawCornerLabel(ctx,before.label,14,14,'left','#8ea15c');
+    drawCornerLabel(ctx,after.label,W-14,14,'right','#4f7d78');
+    const changed=keep.reduce((n,v)=>n+v,0), area=changed/(W*H)*100;
+    changedAreaStat.textContent=area.toFixed(1)+'%';
+    regionCountStat.textContent=sizes.length;
+    reliabilityStat.textContent=area<1?'HIGH':area<18?'REVIEW':'LOW';
+    changeStats.style.display='grid';
+  }
+
+  function renderStage(){
+    const selected = images.filter(i=>i.selected);
+    placeholder.style.display = images.length < 1 ? 'flex' : 'none';
+
+    gridStage.style.display = 'none';
+    sliderStage.style.display = 'none';
+    overlayStage.style.display = 'none';
+    sequenceStage.style.display = 'none';
+    changeStage.style.display = 'none';
+    changeStats.style.display = 'none';
+    seqTimeline.style.display = 'none';
+
+    if(mode==='grid'){
+      if(images.length < 1) return;
+      gridStage.style.display = 'grid';
+      gridStage.innerHTML = '';
+      const list = selected.length ? selected : images.slice(0,6);
+      if(list.length===0){ placeholder.style.display='flex'; placeholder.textContent='Check at least one frame in the sidebar to show it in the grid.'; gridStage.style.display='none'; return; }
+      gridStage.style.gridTemplateColumns = `repeat(${Math.min(cols,list.length)}, 1fr)`;
+      list.forEach(im=>{
+        const panel = document.createElement('div');
+        panel.className='panel';
+        panel.innerHTML = `
+          <div class="panel-viewport">
+            <img class="panel-img" src="${im.src}" draggable="false">
+          </div>
+          <div class="panel-label">${escapeHtml(im.label)}</div>
+           <div class="panel-tag">PHNAEK&middot;PKAY</div>
+        `;
+        attachPanHandlers(panel.querySelector('.panel-viewport'));
+        gridStage.appendChild(panel);
+      });
+      applyViewVars();
+    } else if(mode==='slider'){
+      const L = images.find(i=>i.id===sliderState.leftId);
+      const R = images.find(i=>i.id===sliderState.rightId);
+      if(!L || !R) return;
+      sliderStage.style.display='block';
+      sliderLeftImg.src = L.src;
+      sliderRightImg.src = R.src;
+      leftLabelTag.textContent = L.label;
+      rightLabelTag.textContent = R.label;
+      const M=images.find(i=>i.id===sliderState.middleId);
+      const useThree=sliderState.three && M && M.id!==L.id && M.id!==R.id;
+      sliderThirdWrap.hidden=!useThree; divider2.hidden=!useThree; middleLabelTag.hidden=!useThree; thirdLabelTag.hidden=!useThree;
+      if(useThree){
+        sliderThirdImg.src=R.src; sliderRightImg.src=M.src;
+        middleLabelTag.textContent=M.label; thirdLabelTag.textContent=R.label;
+        sliderRightWrap.style.clipPath=`inset(0 ${100-sliderState.clip2}% 0 ${sliderState.clip}%)`;
+        sliderThirdWrap.style.setProperty('--clip2',sliderState.clip2+'%');
+      } else { sliderRightWrap.style.clipPath=''; sliderThirdWrap.style.clipPath=''; }
+      sliderStage.style.setProperty('--clip', sliderState.clip+'%');
+      sliderStage.style.setProperty('--clip2', sliderState.clip2+'%');
+      attachPanHandlers(sliderDragSurface);
+      applyViewVars();
+    } else if(mode==='overlay'){
+      const B = images.find(i=>i.id===overlayState.baseId);
+      const T = images.find(i=>i.id===overlayState.topId);
+      if(!B || !T) return;
+      overlayStage.style.display='block';
+      overlayBaseImg.src = B.src;
+      overlayTopImg.src = T.src;
+      const O3=images.find(i=>i.id===overlayState.thirdId);
+      const useThirdOverlay=!!O3 && O3.id!==B.id && O3.id!==T.id;
+      overlayThirdWrap.hidden=!useThirdOverlay; overlayThirdLabelTag.hidden=!useThirdOverlay;
+      overlayThirdImg.src=O3 ? O3.src : '';
+      overlayBaseLabelTag.textContent = B.label;
+      overlayTopLabelTag.textContent = T.label;
+      overlayThirdLabelTag.textContent = O3 ? O3.label : '';
+      overlayStage.style.setProperty('--density', overlayState.density/100);
+      overlayStage.style.setProperty('--third-density', overlayState.thirdDensity/100);
+      attachPanHandlers(overlayDragSurface);
+      applyViewVars();
+    } else if(mode==='sequence'){
+      if(images.length < 1) return;
+      sequenceStage.style.display='block';
+      seqTimeline.style.display='flex';
+      renderSeqTimeline();
+      sizeSeqCanvas();
+      attachPanHandlers(sequenceStage);
+      drawSeqStatic();
+    } else if(mode==='change'){
+      if(images.length<2){ placeholder.style.display='flex'; placeholder.textContent='Upload at least two aligned frames to generate a change map.'; return; }
+      changeStage.style.display='block';
+      renderChangeMap();
+    }
+    requestAnimationFrame(syncAnnotationCanvas);
+  }
+
+  // ---------- Sequence mode ----------
+  let seqRAF = null, seqStartTs = null, seqPausedElapsed = 0, seqPlaying = false;
+
+  function sizeSeqCanvas(){
+    const r = sequenceStage.getBoundingClientRect();
+    seqCanvas.width = Math.max(2, Math.round(r.width));
+    seqCanvas.height = Math.max(2, Math.round(r.height));
+  }
+  window.addEventListener('resize', ()=>{ if(mode==='sequence'){ sizeSeqCanvas(); drawSeqStatic(); } });
+
+  function renderSeqTimeline(){
+    seqTimeline.innerHTML = '';
+    images.forEach((im, idx)=>{
+      const tick = document.createElement('button');
+      tick.className = 'seq-tick';
+      tick.innerHTML = `<span class="idx">${String(idx+1).padStart(2,'0')}</span><span class="lbl">${escapeHtml(im.label || ('Frame '+(idx+1)))}</span>`;
+      tick.title = 'Jump to this date';
+      tick.addEventListener('click', ()=>{
+        stopSequencePreview();
+        const holdMs = parseFloat(secPerFrame.value)*1000;
+        seqPausedElapsed = idx*holdMs + 1; // land just inside the frame, before any crossfade window
+        drawSeqStatic();
+        highlightSeqTick(idx);
+      });
+      seqTimeline.appendChild(tick);
+    });
+    const holdMsNow = parseFloat(secPerFrame.value)*1000;
+    const curIdx = images.length ? Math.floor((seqPausedElapsed % (holdMsNow*images.length)) / holdMsNow) : 0;
+    highlightSeqTick(curIdx);
+  }
+  function highlightSeqTick(idx){
+    [...seqTimeline.children].forEach((el,i)=> el.classList.toggle('active', i===idx));
+  }
+
+  function drawFrameToCtx(ctx, im, Cw, Ch, alpha, scaleFactor){
+    const tx = view.panx*scaleFactor, ty = view.pany*scaleFactor;
+    const {sx,sy,sw,sh} = computeSourceRect(im.natW, im.natH, Cw, Ch, view.zoom, tx, ty);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(im.imgEl, sx, sy, sw, sh, 0, 0, Cw, Ch);
+    ctx.globalAlpha = 1;
+  }
+
+  function renderSeqAtElapsed(ctx, Cw, Ch, elapsedMs, scaleFactor){
+    if(images.length===0) return;
+    const holdMs = parseFloat(secPerFrame.value)*1000;
+    const crossfade = crossfadeChk.checked;
+    const fadeMs = crossfade ? Math.min(holdMs*0.4, 500) : 0;
+    const cycleLen = holdMs*images.length;
+    const t = ((elapsedMs % cycleLen)+cycleLen) % cycleLen;
+    const idx = Math.min(images.length-1, Math.floor(t/holdMs));
+    const within = t - idx*holdMs;
+    const curr = images[idx];
+    const next = images[(idx+1)%images.length];
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,Cw,Ch);
+    drawFrameToCtx(ctx, curr, Cw, Ch, 1, scaleFactor);
+    let activeLabel = curr.label;
+    if(fadeMs>0 && within > holdMs-fadeMs && images.length>1){
+      const a = (within-(holdMs-fadeMs))/fadeMs;
+      drawFrameToCtx(ctx, next, Cw, Ch, a, scaleFactor);
+      if(a>0.5) activeLabel = next.label;
+    }
+    drawLabel(ctx, activeLabel, 0, 0, 'left');
+    return {idx, cycleLen, t};
+  }
+
+  function drawSeqStatic(){
+    const ctx = seqCanvas.getContext('2d');
+    renderSeqAtElapsed(ctx, seqCanvas.width, seqCanvas.height, seqPausedElapsed, 1);
+  }
+
+  function seqLoop(ts){
+    if(!seqStartTs) seqStartTs = ts - seqPausedElapsed;
+    const elapsed = ts - seqStartTs;
+    const ctx = seqCanvas.getContext('2d');
+    const info = renderSeqAtElapsed(ctx, seqCanvas.width, seqCanvas.height, elapsed, 1);
+    if(info){ seqProgressFill.style.width = ((info.t/info.cycleLen)*100)+'%'; highlightSeqTick(info.idx); }
+    seqPausedElapsed = elapsed;
+    if(seqPlaying) seqRAF = requestAnimationFrame(seqLoop);
+  }
+  function playSequencePreview(){
+    if(images.length===0) return;
+    seqPlaying = true;
+    seqStartTs = null;
+    seqPlayToggle.innerHTML = '&#10074;&#10074;';
+    playSeqBtn.innerHTML = '&#10074;&#10074; Pause preview';
+    seqRAF = requestAnimationFrame(seqLoop);
+  }
+  function stopSequencePreview(){
+    seqPlaying = false;
+    if(seqRAF) cancelAnimationFrame(seqRAF);
+    seqRAF = null; seqStartTs = null;
+    seqPlayToggle.innerHTML = '&#9654;';
+    playSeqBtn.innerHTML = '&#9654; Play preview';
+  }
+  seqPlayToggle.addEventListener('click', ()=> seqPlaying ? stopSequencePreview() : playSequencePreview());
+  playSeqBtn.addEventListener('click', ()=> seqPlaying ? stopSequencePreview() : playSequencePreview());
+  secPerFrame.addEventListener('input', ()=>{ if(!seqPlaying) drawSeqStatic(); });
+  crossfadeChk.addEventListener('change', ()=>{ if(!seqPlaying) drawSeqStatic(); });
+
+  // ---------- Export ----------
+  function computeSourceRect(natW, natH, Cw, Ch, S, tx, ty){
+    const coverScale = Math.max(Cw/natW, Ch/natH);
+    const sxStart = (natW - Cw/coverScale)/2;
+    const syStart = (natH - Ch/coverScale)/2;
+    const ox = Cw/2, oy = Ch/2;
+    const ux0 = ox + (0 - ox - tx)/S;
+    const uy0 = oy + (0 - oy - ty)/S;
+    let sx = sxStart + ux0/coverScale;
+    let sy = syStart + uy0/coverScale;
+    let sw = Cw/(S*coverScale);
+    let sh = Ch/(S*coverScale);
+    // clamp within image bounds
+    sx = Math.max(0, Math.min(sx, natW - sw));
+    sy = Math.max(0, Math.min(sy, natH - sh));
+    sw = Math.min(sw, natW); sh = Math.min(sh, natH);
+    return {sx, sy, sw, sh};
+  }
+
+  function drawLabel(ctx, text, x, y, align){
+    if(!text) return;
+    ctx.font = "500 22px 'Noto Sans Khmer','JetBrains Mono',monospace";
+    const padX=14, padY=10;
+    const w = ctx.measureText(text).width + padX*2;
+    const h = 34 + padY;
+    let bx = x;
+    if(align==='right') bx = x - w;
+    const grad = ctx.createLinearGradient(0,y,0,y+h+20);
+    grad.addColorStop(0,'rgba(0,0,0,0.72)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(bx, y, w, h+20);
+    ctx.fillStyle = '#f4f2e8';
+    ctx.textBaseline = 'top';
+    ctx.fillText(text, bx+padX, y+padY);
+  }
+
+  function drawCornerLabel(ctx, text, x, y, align, accent){
+    ctx.font = "500 20px 'Noto Sans Khmer','JetBrains Mono',monospace";
+    const padX=12, padY=8;
+    const w = ctx.measureText(text).width + padX*2;
+    const h = 34;
+    let bx = align==='right' ? x - w : x;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(bx, y, w, h);
+    ctx.fillStyle = accent;
+    if(align==='right') ctx.fillRect(bx+w-3, y, 3, h); else ctx.fillRect(bx, y, 3, h);
+    ctx.fillStyle = '#f4f2e8';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, bx+padX, y+h/2+1);
+  }
+
+  async function ensureFontsReady(){
+    try{ await document.fonts.ready; }catch(e){}
+  }
+
+  function renderSliderFrame(ctx, W, H, L, R, clipPct, scaleFactor){
+    ctx.fillStyle = '#12140f'; ctx.fillRect(0,0,W,H);
+    const tx = view.panx*scaleFactor, ty = view.pany*scaleFactor;
+    const rL = computeSourceRect(L.natW, L.natH, W, H, view.zoom, tx, ty);
+    ctx.drawImage(L.imgEl, rL.sx, rL.sy, rL.sw, rL.sh, 0, 0, W, H);
+    const clipX = W*(clipPct/100);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(clipX, 0, W-clipX, H); ctx.clip();
+    const rR = computeSourceRect(R.natW, R.natH, W, H, view.zoom, tx, ty);
+    ctx.drawImage(R.imgEl, rR.sx, rR.sy, rR.sw, rR.sh, 0, 0, W, H);
+    ctx.restore();
+    ctx.fillStyle = '#d3934f';
+    ctx.fillRect(clipX-1.5, 0, 3, H);
+    drawCornerLabel(ctx, L.label, 14, 14, 'left', '#8ea15c');
+    drawCornerLabel(ctx, R.label, W-14, 14, 'right', '#4f7d78');
+  }
+  function renderThreeSliderFrame(ctx,W,H,L,M,R,clip1,clip2,scaleFactor){
+    ctx.fillStyle='#12140f'; ctx.fillRect(0,0,W,H);
+    const tx=view.panx*scaleFactor,ty=view.pany*scaleFactor, draw=(im)=>{const r=computeSourceRect(im.natW,im.natH,W,H,view.zoom,tx,ty);ctx.drawImage(im.imgEl,r.sx,r.sy,r.sw,r.sh,0,0,W,H);};
+    draw(L); const x1=W*clip1/100,x2=W*clip2/100;
+    ctx.save();ctx.beginPath();ctx.rect(x1,0,x2-x1,H);ctx.clip();draw(M);ctx.restore();
+    ctx.save();ctx.beginPath();ctx.rect(x2,0,W-x2,H);ctx.clip();draw(R);ctx.restore();
+    ctx.fillStyle='#d3934f';ctx.fillRect(x1-1.5,0,3,H);ctx.fillStyle='#4f7d78';ctx.fillRect(x2-1.5,0,3,H);
+    drawCornerLabel(ctx,L.label,14,14,'left','#8ea15c'); drawCornerLabel(ctx,M.label,W/2,14,'left','#d3934f'); drawCornerLabel(ctx,R.label,W-14,14,'right','#4f7d78');
+  }
+
+  function renderOverlayFrame(ctx, W, H, B, T, densityPct, scaleFactor, O3, thirdDensity){
+    ctx.fillStyle = '#12140f'; ctx.fillRect(0,0,W,H);
+    const tx = view.panx*scaleFactor, ty = view.pany*scaleFactor;
+    const rB = computeSourceRect(B.natW, B.natH, W, H, view.zoom, tx, ty);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(B.imgEl, rB.sx, rB.sy, rB.sw, rB.sh, 0, 0, W, H);
+    const rT = computeSourceRect(T.natW, T.natH, W, H, view.zoom, tx, ty);
+    ctx.globalAlpha = Math.max(0, Math.min(1, densityPct/100));
+    ctx.drawImage(T.imgEl, rT.sx, rT.sy, rT.sw, rT.sh, 0, 0, W, H);
+    if(O3){ const r3=computeSourceRect(O3.natW,O3.natH,W,H,view.zoom,tx,ty); ctx.globalAlpha=Math.max(0,Math.min(1,(thirdDensity==null?55:thirdDensity)/100)); ctx.drawImage(O3.imgEl,r3.sx,r3.sy,r3.sw,r3.sh,0,0,W,H); }
+    ctx.globalAlpha = 1;
+    drawCornerLabel(ctx, B.label, 14, 14, 'left', '#8ea15c');
+    drawCornerLabel(ctx, T.label, W-14, 14, 'right', '#4f7d78');
+    if(O3) drawCornerLabel(ctx,O3.label,W-14,54,'right','#4f7d78');
+  }
+
+  function drawExportBrand(ctx,W,H){
+    ctx.save(); ctx.font="600 15px 'Space Grotesk',sans-serif"; ctx.textAlign='right'; ctx.textBaseline='bottom';
+    ctx.fillStyle='rgba(0,0,0,.58)'; ctx.fillRect(W-220,H-34,210,24);
+    ctx.fillStyle='#eef0e4'; ctx.fillText('Phnaek Pkay · Satellite Eye',W-20,H-17); ctx.restore();
+  }
+  function drawExportNotes(ctx,W,H){
+    if(!includeNotesExport.checked || !notesInput.value.trim()) return;
+    const lines=notesInput.value.trim().split(/\r?\n/).flatMap(line=>{const words=line.split(/\s+/),out=[];let cur='';words.forEach(word=>{if((cur+' '+word).trim().length>90){out.push(cur);cur=word;}else cur=(cur+' '+word).trim();});if(cur)out.push(cur);return out;}).slice(0,4);
+    const h=lines.length*18+28; ctx.save();ctx.fillStyle='rgba(10,12,8,.78)';ctx.fillRect(12,H-h-12,Math.min(W-24,W*.72),h);
+    ctx.fillStyle='#d3934f';ctx.font="600 12px 'JetBrains Mono',monospace";ctx.fillText('NOTES',24,H-h+8);
+    ctx.fillStyle='#eef0e4';ctx.font="11px 'Inter',sans-serif";lines.forEach((line,i)=>ctx.fillText(line,24,H-h+26+i*18));ctx.restore();
+  }
+
+  exportBtn.addEventListener('click', async ()=>{
+    await ensureFontsReady();
+    const caption = captionInput.value.trim();
+    if(mode==='grid'){
+      const selected = images.filter(i=>i.selected);
+      const list = selected.length ? selected : images.slice(0,6);
+      if(list.length===0){ alert('Select at least one frame to export.'); return; }
+      const panelW = 640, panelH = 480, gap = 4;
+      const rows = Math.ceil(list.length/cols);
+      const capH = caption ? 44 : 0;
+      const W = cols*panelW + (cols-1)*gap;
+      const H = rows*panelH + (rows-1)*gap + capH;
+      exportCanvas.width = W; exportCanvas.height = H;
+      const ctx = exportCanvas.getContext('2d');
+      ctx.fillStyle = '#12140f'; ctx.fillRect(0,0,W,H);
+
+      const liveRect = gridStage.querySelector('.panel-viewport')?.getBoundingClientRect();
+      const onW = liveRect ? liveRect.width : panelW;
+      const onH = liveRect ? liveRect.height : panelH;
+      const scaleFactor = panelW/onW;
+
+      list.forEach((im,idx)=>{
+        const col = idx%cols, row = Math.floor(idx/cols);
+        const x = col*(panelW+gap), y = row*(panelH+gap);
+        const tx = view.panx*scaleFactor, ty = view.pany*scaleFactor;
+        const {sx,sy,sw,sh} = computeSourceRect(im.natW, im.natH, panelW, panelH, view.zoom, tx, ty);
+        ctx.drawImage(im.imgEl, sx, sy, sw, sh, x, y, panelW, panelH);
+        drawLabel(ctx, im.label, x, y, 'left');
+      });
+      if(caption){
+        ctx.fillStyle = '#1a1e15';
+        ctx.fillRect(0, H-capH, W, capH);
+        ctx.fillStyle = '#98a186';
+        ctx.font = "500 16px 'JetBrains Mono',monospace";
+        ctx.textBaseline='middle';
+        ctx.fillText(caption, 14, H-capH/2);
+      }
+       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-grid.png');
+    } else if(mode==='slider') {
+      const L = images.find(i=>i.id===sliderState.leftId);
+      const R = images.find(i=>i.id===sliderState.rightId);
+      if(!L || !R){ alert('Choose two frames for the slider.'); return; }
+      const W = 1400, H = 900;
+      const capH = caption ? 46 : 0;
+      exportCanvas.width = W; exportCanvas.height = H+capH;
+      const ctx = exportCanvas.getContext('2d');
+      const liveRect = sliderStage.getBoundingClientRect();
+      const scaleFactor = W/liveRect.width;
+      const M=images.find(i=>i.id===sliderState.middleId);
+      if(sliderState.three && M && M.id!==L.id && M.id!==R.id) renderThreeSliderFrame(ctx,W,H,L,M,R,sliderState.clip,sliderState.clip2,scaleFactor);
+      else renderSliderFrame(ctx, W, H, L, R, sliderState.clip, scaleFactor);
+      if(caption){
+        ctx.fillStyle = '#1a1e15'; ctx.fillRect(0,H,W,capH);
+        ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'JetBrains Mono',monospace";
+        ctx.textBaseline='middle';
+        ctx.fillText(caption, 14, H+capH/2);
+      }
+       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-slider.png');
+    } else if(mode==='overlay') {
+      const B = images.find(i=>i.id===overlayState.baseId);
+      const T = images.find(i=>i.id===overlayState.topId);
+      if(!B || !T){ alert('Choose two frames for the overlay.'); return; }
+      const W = 1400, H = 900;
+      const capH = caption ? 46 : 0;
+      exportCanvas.width = W; exportCanvas.height = H+capH;
+      const ctx = exportCanvas.getContext('2d');
+      const liveRect = overlayStage.getBoundingClientRect();
+      const scaleFactor = W/liveRect.width;
+      const O3=images.find(i=>i.id===overlayState.thirdId);
+      renderOverlayFrame(ctx, W, H, B, T, overlayState.density, scaleFactor, O3 && O3.id!==B.id && O3.id!==T.id ? O3 : null, overlayState.thirdDensity);
+      if(caption){
+        ctx.fillStyle = '#1a1e15'; ctx.fillRect(0,H,W,capH);
+        ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'JetBrains Mono',monospace";
+        ctx.textBaseline='middle';
+        ctx.fillText(caption, 14, H+capH/2);
+      }
+       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-overlay.png');
+    } else if(mode==='change') {
+      const before = images.find(i=>i.id===changeState.beforeId);
+      const after = images.find(i=>i.id===changeState.afterId);
+      if(!before || !after || before.id===after.id){ alert('Choose two different frames for the change map.'); return; }
+      renderChangeMap();
+      const W=changeCanvas.width, H=changeCanvas.height, capH=caption?46:0;
+      exportCanvas.width=W; exportCanvas.height=H+capH;
+      const ctx=exportCanvas.getContext('2d'); ctx.drawImage(changeCanvas,0,0);
+      if(caption){ ctx.fillStyle='#1a1e15'; ctx.fillRect(0,H,W,capH); ctx.fillStyle='#98a186'; ctx.font="500 16px 'JetBrains Mono',monospace"; ctx.textBaseline='middle'; ctx.fillText(caption,14,H+capH/2); }
+       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-change-map.png');
+    }
+  });
+
+  // ---------- Video export (webm, native MediaRecorder — no external libraries) ----------
+  function pickMimeType(){
+    const options = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+    for(const o of options){ if(window.MediaRecorder && MediaRecorder.isTypeSupported(o)) return o; }
+    return '';
+  }
+
+  function recordCanvas(canvas, durationMs, drawFn, filename, onDone){
+    if(!window.MediaRecorder){ alert('Video recording is not supported in this browser.'); onDone && onDone(); return; }
+    const stream = canvas.captureStream(30);
+    const mimeType = pickMimeType();
+    const recorder = new MediaRecorder(stream, mimeType ? {mimeType} : undefined);
+    const chunks = [];
+    recorder.ondataavailable = e=>{ if(e.data.size) chunks.push(e.data); };
+    recorder.onstop = ()=>{
+      const blob = new Blob(chunks, {type: mimeType || 'video/webm'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      onDone && onDone();
+    };
+    recorder.start();
+    const start = performance.now();
+    function tick(ts){
+      const elapsed = ts - start;
+      drawFn(elapsed);
+      if(elapsed < durationMs){
+        requestAnimationFrame(tick);
+      } else {
+        recorder.stop();
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  exportVideoBtn.addEventListener('click', async ()=>{
+    await ensureFontsReady();
+    exportVideoBtn.disabled = true;
+    const originalLabel = exportVideoBtn.innerHTML;
+    exportVideoBtn.innerHTML = '&#9679; Recording&hellip;';
+
+    if(mode==='slider'){
+      const L = images.find(i=>i.id===sliderState.leftId);
+      const R = images.find(i=>i.id===sliderState.rightId);
+      if(!L || !R){ alert('Choose two frames for the slider.'); exportVideoBtn.disabled=false; exportVideoBtn.innerHTML=originalLabel; return; }
+      const W = 1280, H = 800;
+      exportCanvas.width = W; exportCanvas.height = H;
+      const ctx = exportCanvas.getContext('2d');
+      const liveRect = sliderStage.getBoundingClientRect();
+      const scaleFactor = W/liveRect.width;
+      const durSec = Math.max(2, Math.min(20, parseFloat(sweepDuration.value) || 4));
+      const durationMs = durSec*1000;
+      const half = durationMs/2;
+      recordCanvas(exportCanvas, durationMs, elapsed=>{
+        // sweep 6% -> 94% -> 6% (there-and-back) so the clip loops cleanly
+        let phase = elapsed < half ? elapsed/half : 1 - (elapsed-half)/half;
+        const clip = 6 + phase*88;
+        renderSliderFrame(ctx, W, H, L, R, clip, scaleFactor);
+      }, 'phnaek-pkay-sweep.webm', ()=>{
+        exportVideoBtn.disabled=false; exportVideoBtn.innerHTML=originalLabel;
+      });
+    } else if(mode==='overlay'){
+      const B = images.find(i=>i.id===overlayState.baseId);
+      const T = images.find(i=>i.id===overlayState.topId);
+      if(!B || !T){ alert('Choose two frames for the overlay.'); exportVideoBtn.disabled=false; exportVideoBtn.innerHTML=originalLabel; return; }
+      const W = 1280, H = 800;
+      exportCanvas.width = W; exportCanvas.height = H;
+      const ctx = exportCanvas.getContext('2d');
+      const liveRect = overlayStage.getBoundingClientRect();
+      const scaleFactor = liveRect.width ? W/liveRect.width : 1;
+      const period = Math.max(0.4, parseFloat(pulseSpeed.value) || 1.6) * 1000;
+      const durationMs = period * 3; // three pulse cycles, loops cleanly
+      const wasPulsing = !!pulseRAF;
+      stopDensityPulse();
+      recordCanvas(exportCanvas, durationMs, elapsed=>{
+        const t = (elapsed % period) / period;
+        const tri = t < 0.5 ? t*2 : 2 - t*2;
+        const d = 10 + tri*80;
+        renderOverlayFrame(ctx, W, H, B, T, d, scaleFactor);
+      }, 'phnaek-pkay-blink.webm', ()=>{
+        exportVideoBtn.disabled=false; exportVideoBtn.innerHTML=originalLabel;
+        if(wasPulsing) startDensityPulse();
+      });
+    } else if(mode==='sequence'){
+      if(images.length < 1){ alert('Add at least one frame first.'); exportVideoBtn.disabled=false; exportVideoBtn.innerHTML=originalLabel; return; }
+      const W = 1280, H = 800;
+      exportCanvas.width = W; exportCanvas.height = H;
+      const ctx = exportCanvas.getContext('2d');
+      const liveRect = sequenceStage.getBoundingClientRect();
+      const scaleFactor = liveRect.width ? W/liveRect.width : 1;
+      const holdMs = parseFloat(secPerFrame.value)*1000;
+      const durationMs = holdMs*images.length;
+      const wasPlaying = seqPlaying;
+      stopSequencePreview();
+      recordCanvas(exportCanvas, durationMs, elapsed=>{
+        renderSeqAtElapsed(ctx, W, H, elapsed, scaleFactor);
+      }, 'phnaek-pkay-timelapse.webm', ()=>{
+        exportVideoBtn.disabled=false; exportVideoBtn.innerHTML=originalLabel;
+        drawSeqStatic();
+        if(wasPlaying) playSequencePreview();
+      });
+    }
+  });
+
+  function triggerDownload(filename){
+    exportCanvas.toBlob(blob=>{
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+    }, 'image/png');
+  }
+
+  function downloadText(filename, text, type){
+    const blob=new Blob([text],{type:type||'text/plain'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),500);
+  }
+
+  function setSidebarOpen(open){
+    sidebar.classList.toggle('is-collapsed',!open);
+    document.body.classList.toggle('sidebar-open',open && window.innerWidth<=820);
+    sidebarBackdrop.classList.toggle('is-hidden',open || window.innerWidth>820);
+    sidebarToggleBtn.setAttribute('aria-expanded',String(open));
+    sidebarToggleBtn.title=open?'Hide controls':'Show controls';
+  }
+  sidebarToggleBtn.addEventListener('click',()=>setSidebarOpen(sidebar.classList.contains('is-collapsed')));
+  sidebarBackdrop.addEventListener('click',()=>setSidebarOpen(false));
+  window.addEventListener('resize',()=>{
+    if(window.innerWidth>820){ sidebarBackdrop.classList.add('is-hidden'); sidebar.classList.remove('is-collapsed'); }
+  });
+  [modeGridBtn,modeSliderBtn,modeOverlayBtn,modeSequenceBtn,modeChangeBtn].forEach(btn=>btn.addEventListener('click',()=>{
+    if(window.innerWidth<=820) setSidebarOpen(false);
+  }));
+  setSidebarOpen(window.innerWidth>820);
+
+  function projectPayload(){
+    return {version:1, savedAt:new Date().toISOString(), mode, cols, view, caption:captionInput.value, notes:notesInput.value, includeNotesExport:includeNotesExport.checked, annotation:annotationCanvas.width?annotationCanvas.toDataURL('image/png'):null, map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value}, images:images.map(im=>({id:im.id,src:im.src,label:im.label,imageryDate:im.imageryDate||'',natW:im.natW,natH:im.natH,capturedAt:im.capturedAt||null,generated:!!im.generated,selected:im.selected})), sliderState, overlayState, changeState};
+  }
+  function preferencePayload(){ return {version:1,preferenceOnly:true,mode,cols,view,caption:captionInput.value,notes:notesInput.value,includeNotesExport:includeNotesExport.checked,map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value},sliderState,overlayState,changeState}; }
+  function saveWorkspace(){ try{ localStorage.setItem('phnaek-pkay-preferences',JSON.stringify(preferencePayload())); }catch(err){} }
+  let workspaceSaveTimer=null;
+  function queueWorkspaceSave(){ clearTimeout(workspaceSaveTimer); workspaceSaveTimer=setTimeout(saveWorkspace,500); }
+  function restoreProject(p){
+    if(!p || (!Array.isArray(p.images) && !p.preferenceOnly)) throw Error('invalid project');
+    if(Array.isArray(p.images)){ images=[]; nextId=Math.max(0,...p.images.map(saved=>Number(saved.id)||0))+1;
+      p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:saved.selected!==false}); renderImageList(); updateSliderSelects(true); renderStage(); }; img.src=saved.src; }); }
+    cols=p.cols||3; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars();
+    if(p.map){ Object.assign(liveMap,{provider:p.map.provider||liveMap.provider,lat:p.map.lat||liveMap.lat,lng:p.map.lng||liveMap.lng,zoom:p.map.zoom||liveMap.zoom}); mapboxToken.value=p.map.mapboxToken||''; sentinelId.value=p.map.sentinelId||''; sentinelLayer.value=p.map.sentinelLayer||'TRUE_COLOR'; sentinelDate.value=p.map.sentinelDate||''; sentinelCloud.value=p.map.sentinelCloud||20; sentinelSharpness.value=p.map.sentinelSharpness||35; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; nasaLayer.value=p.map.nasaLayer||nasaLayer.value; nasaDate.value=p.map.nasaDate||nasaDate.value; placesApiKey.value=p.map.placesApiKey||''; providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change')); }
+    if(p.annotation){ const img=new Image(); img.onload=()=>{syncAnnotationCanvas(); annotationCanvas.getContext('2d').drawImage(img,0,0,annotationCanvas.width,annotationCanvas.height);}; img.src=p.annotation; }
+  }
+  saveProjectBtn.addEventListener('click',()=>downloadText('phnaek-pkay-project.json',JSON.stringify(projectPayload()),'application/json'));
+  saveWorkspaceBtn.addEventListener('click',()=>{ saveWorkspace(); captureStatus.textContent='Preferences saved locally. Use Save for the full image workspace.'; captureStatus.classList.remove('err'); });
+  openWorkspaceBtn.addEventListener('click',()=>{ try{ const raw=localStorage.getItem('phnaek-pkay-workspace'),prefs=localStorage.getItem('phnaek-pkay-preferences'); if(!raw&&!prefs) throw Error('No saved workspace'); restoreProject(JSON.parse(raw||prefs)); captureStatus.textContent=raw?'Workspace restored.':'Preferences restored. Use Load to restore image files.'; captureStatus.classList.remove('err'); }catch(err){ captureStatus.textContent=err.message==='No saved workspace'?'No local workspace saved yet.': 'Could not restore the local workspace.'; captureStatus.classList.add('err'); } });
+  loadProjectBtn.addEventListener('click',()=>projectInput.click());
+  projectInput.addEventListener('change',()=>{
+    const file=projectInput.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const p=JSON.parse(reader.result); restoreProject(p);
+        captureStatus.textContent='Project loaded.'; captureStatus.classList.remove('err');
+      }catch(err){ captureStatus.textContent='Could not load that project file.'; captureStatus.classList.add('err'); }
+    };
+    reader.readAsText(file); projectInput.value='';
+  });
+  exportReportBtn.addEventListener('click',()=>{
+    if(mode==='change' && images.length>=2) renderChangeMap();
+    const preview=mode==='change' && changeCanvas.width ? changeCanvas.toDataURL('image/png') : '';
+    const rows=images.map(im=>`<tr><td>${escapeHtml(im.label)}</td><td>${escapeHtml(im.imageryDate||'Not specified')}</td><td>${im.capturedAt?escapeHtml(formatTimestamp(im.capturedAt)):'Uploaded'}</td><td>${im.natW} x ${im.natH}</td><td>${im.selected?'Included':'Excluded'}</td></tr>`).join('');
+    const report=`<!doctype html><meta charset="utf-8"><title>Phnaek Pkay report</title><style>body{font:14px system-ui;max-width:980px;margin:40px auto;color:#20251c}h1{font-size:28px}small{color:#66705e}pre{white-space:pre-wrap;background:#f1f3ed;padding:14px}table{border-collapse:collapse;width:100%;margin-top:20px}td,th{border-bottom:1px solid #d8decf;padding:9px;text-align:left}img{max-width:100%;margin-top:22px;border:1px solid #ccd3c3}</style><h1>Phnaek Pkay · Satellite Eye</h1><small>Generated ${new Date().toLocaleString()} · mode: ${escapeHtml(mode)}</small><p>${escapeHtml(captionInput.value||'Satellite imagery comparison')}</p>${notesInput.value?`<h2>Notes</h2><pre>${escapeHtml(notesInput.value)}</pre>`:''}${preview?`<h2>Change map</h2><img src="${preview}" alt="Generated change map">`:''}<h2>Frames</h2><table><tr><th>Label</th><th>Imagery date</th><th>Captured</th><th>Dimensions</th><th>Status</th></tr>${rows}</table>`;
+    downloadText('phnaek-pkay-report.html',report,'text/html');
+  });
+
+  function syncAnnotationCanvas(){
+    const target=activeStageEl(); if(!target) return;
+    const r=target.getBoundingClientRect(), wr=stageWrap.getBoundingClientRect();
+    const old=document.createElement('canvas'); old.width=annotationCanvas.width; old.height=annotationCanvas.height; if(old.width) old.getContext('2d').drawImage(annotationCanvas,0,0);
+    annotationCanvas.width=Math.max(1,Math.round(r.width)); annotationCanvas.height=Math.max(1,Math.round(r.height));
+    annotationCanvas.style.left=(r.left-wr.left+stageWrap.scrollLeft)+'px'; annotationCanvas.style.top=(r.top-wr.top+stageWrap.scrollTop)+'px';
+    if(old.width) annotationCanvas.getContext('2d').drawImage(old,0,0,annotationCanvas.width,annotationCanvas.height);
+  }
+  function annotationPoint(e){ const r=annotationCanvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+  drawToggleBtn.addEventListener('click',()=>{ drawingEnabled=!drawingEnabled; annotationCanvas.classList.toggle('active',drawingEnabled); drawToggleBtn.classList.toggle('active',drawingEnabled); drawToggleBtn.textContent=drawingEnabled?'Drawing enabled':'Draw on view'; syncAnnotationCanvas(); });
+  clearDrawingBtn.addEventListener('click',()=>{ annotationCanvas.getContext('2d').clearRect(0,0,annotationCanvas.width,annotationCanvas.height); saveWorkspace(); });
+  annotationCanvas.addEventListener('pointerdown',e=>{ drawing=true; const p=annotationPoint(e),ctx=annotationCanvas.getContext('2d'); ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.strokeStyle='#e56c4c';ctx.lineWidth=3;ctx.lineCap='round';annotationCanvas.setPointerCapture(e.pointerId); });
+  annotationCanvas.addEventListener('pointermove',e=>{ if(!drawing)return; const p=annotationPoint(e),ctx=annotationCanvas.getContext('2d');ctx.lineTo(p.x,p.y);ctx.stroke(); });
+  annotationCanvas.addEventListener('pointerup',()=>{drawing=false;saveWorkspace();});
+  window.addEventListener('resize',syncAnnotationCanvas);
+  [captionInput,notesInput,includeNotesExport,zoomRange,providerSelect,mapboxToken,sentinelId,sentinelLayer,sentinelDate,sentinelWindow,sentinelCloud,sentinelSharpness,nasaLayer,nasaDate,placesApiKey].forEach(el=>el.addEventListener('input',queueWorkspaceSave));
+  providerSelect.addEventListener('change',queueWorkspaceSave);
+  includeNotesExport.addEventListener('change',queueWorkspaceSave);
+  window.addEventListener('beforeunload',saveWorkspace);
+
+  function startTechBackground(){
+    const ctx=techBackground.getContext('2d'), nodes=[]; let width=0,height=0,dpr=1;
+    function resize(){ dpr=Math.min(2,window.devicePixelRatio||1); width=window.innerWidth; height=window.innerHeight; techBackground.width=width*dpr; techBackground.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    function seed(){ nodes.length=0; const count=Math.min(72,Math.max(28,Math.round(width*height/22000))); for(let i=0;i<count;i++) nodes.push({x:Math.random()*width,y:Math.random()*height,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12,p:Math.random()*Math.PI*2}); }
+    function draw(ts){
+      ctx.clearRect(0,0,width,height); const dark=document.documentElement.getAttribute('data-theme')!=='light';
+      ctx.fillStyle=dark?'rgba(13,16,12,.18)':'rgba(243,242,232,.18)';ctx.fillRect(0,0,width,height);
+      nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;n.p+=.012;if(n.x<-20)n.x=width+20;if(n.x>width+20)n.x=-20;if(n.y<-20)n.y=height+20;if(n.y>height+20)n.y=-20;});
+      for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);if(d<145){const alpha=(1-d/145)*.16;ctx.strokeStyle=dark?`rgba(142,161,92,${alpha})`:`rgba(72,96,42,${alpha})`;ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+      nodes.forEach(n=>{const pulse=(Math.sin(n.p+ts*.0007)+1)/2;ctx.fillStyle=dark?`rgba(211,147,79,${.22+pulse*.2})`:`rgba(95,122,58,${.2+pulse*.2})`;ctx.beginPath();ctx.arc(n.x,n.y,1+pulse*1.2,0,Math.PI*2);ctx.fill();});
+      requestAnimationFrame(draw);
+    }
+    resize();seed();window.addEventListener('resize',()=>{resize();seed();});requestAnimationFrame(draw);
+  }
+
+  // ---------- Theme (light / dark) ----------
+  function applyTheme(theme){
+    if(theme === 'light'){
+      document.documentElement.setAttribute('data-theme','light');
+      themeToggleBtn.innerHTML = '&#9789;'; // moon = click to go dark
+      themeToggleBtn.title = 'Switch to dark theme';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      themeToggleBtn.innerHTML = '&#9788;'; // sun = click to go light
+      themeToggleBtn.title = 'Switch to light theme';
+    }
+    try{ localStorage.setItem('phnaek-pkay-theme', theme); }catch(e){}
+  }
+  themeToggleBtn.addEventListener('click', ()=>{
+    const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    applyTheme(cur === 'light' ? 'dark' : 'light');
+  });
+  (function initTheme(){
+    let saved = null;
+    try{ saved = localStorage.getItem('phnaek-pkay-theme'); }catch(e){}
+    if(!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches){
+      saved = 'light';
+    }
+    applyTheme(saved === 'light' ? 'light' : 'dark');
+  })();
+
+  // ---------- init ----------
+  startTechBackground();
+  applyViewVars();
+  renderStage();
+  sizeLiveMapCanvas();
+  try{ const savedWorkspace=localStorage.getItem('phnaek-pkay-workspace')||localStorage.getItem('phnaek-pkay-preferences'); if(savedWorkspace) restoreProject(JSON.parse(savedWorkspace)); }catch(err){}
+  syncAnnotationCanvas();
+})();
+</script>
+</body>
+</html>

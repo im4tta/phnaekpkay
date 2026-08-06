@@ -1,0 +1,15 @@
+{
+  "name": "Phnaek Pkay | Satellite Eye",
+  "short_name": "Phnaek Pkay",
+  "description": "Satellite imagery history, comparison, and documentation",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#12140f",
+  "theme_color": "#12140f",
+  "icons": [{
+    "src": "assets/phnaek-pkay.svg",
+    "sizes": "any",
+    "type": "image/svg+xml",
+    "purpose": "any maskable"
+  }]
+}

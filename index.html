@@ -314,13 +314,13 @@
             <label>SWEEP DURATION (SEC)</label>
             <input type="text" inputmode="numeric" id="sweepDuration" value="4">
           </div>
+          <p class="provider-note" style="flex-basis:100%;">Drag directly on each frame to reposition it &middot; scroll or pinch on a frame to zoom it independently &middot; Reset pan / zoom (sidebar) clears all frames.</p>
         </div>
       </div>
       <div class="slider-stage" id="sliderStage" style="display:none;">
-         <div class="slider-panel base"><img id="sliderLeftImg" draggable="false"></div>
+         <div class="slider-panel base" id="sliderLeftWrap"><img id="sliderLeftImg" draggable="false"></div>
          <div class="slider-panel overlay" id="sliderRightWrap"><img id="sliderRightImg" draggable="false"></div>
          <div class="slider-panel third" id="sliderThirdWrap" hidden><img id="sliderThirdImg" draggable="false"></div>
-         <div class="drag-surface" id="sliderDragSurface"></div>
          <div class="divider" id="divider"><div class="handle">&#8596;</div></div>
          <div class="divider second" id="divider2" hidden><div class="handle">&#8596;</div></div>
          <div class="corner-label left" id="leftLabelTag"></div>
@@ -373,7 +373,7 @@
   let mode = 'grid';         // 'grid' | 'slider'
   let cols = 3;
   let view = { zoom: 1, panx: 0, pany: 0 };
-  let sliderState = { leftId: null, middleId: null, rightId: null, clip: 50, clip2: 75, three: false };
+  let sliderState = { leftId: null, middleId: null, rightId: null, clip: 50, clip2: 75, three: false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
   let overlayState = { baseId: null, topId: null, thirdId: null, density: 50, thirdDensity: 55 };
   let dragSrcIdx = null;
   let pulseRAF = null, pulseStart = null;
@@ -422,6 +422,7 @@
   const leftSelect = document.getElementById('leftSelect');
   const rightSelect = document.getElementById('rightSelect');
   const divider = document.getElementById('divider');
+  const sliderLeftWrap = document.getElementById('sliderLeftWrap');
   const sliderRightWrap = document.getElementById('sliderRightWrap');
   const sliderLeftImg = document.getElementById('sliderLeftImg');
   const sliderRightImg = document.getElementById('sliderRightImg');
@@ -429,7 +430,6 @@
   const rightLabelTag = document.getElementById('rightLabelTag');
   const middleLabelTag = document.getElementById('middleLabelTag');
   const thirdLabelTag = document.getElementById('thirdLabelTag');
-  const sliderDragSurface = document.getElementById('sliderDragSurface');
   const sliderThirdWrap = document.getElementById('sliderThirdWrap');
   const sliderThirdImg = document.getElementById('sliderThirdImg');
   const divider2 = document.getElementById('divider2');
@@ -1372,7 +1372,17 @@
     applyViewVars();
     if(mode==='sequence' && !seqPlaying) drawSeqStatic();
   });
-  resetViewBtn.addEventListener('click', ()=>{ view = {zoom:1, panx:0, pany:0}; applyViewVars(); if(mode==='sequence') drawSeqStatic(); });
+  resetViewBtn.addEventListener('click', ()=>{
+    view = {zoom:1, panx:0, pany:0};
+    if(mode==='slider'){
+      sliderState.leftView = {zoom:1,x:0,y:0};
+      sliderState.rightView = {zoom:1,x:0,y:0};
+      sliderState.thirdView = {zoom:1,x:0,y:0};
+      applySliderPanelVars();
+    }
+    applyViewVars();
+    if(mode==='sequence') drawSeqStatic();
+  });
 
   // Keyboard: arrow keys nudge pan, +/- zoom, 0 resets. Ignored while typing in a field.
   window.addEventListener('keydown', e=>{
@@ -1446,6 +1456,61 @@
     window.addEventListener('pointermove', e=>{ if(dragging) setClip(e.clientX,dragging); });
     window.addEventListener('pointerup', ()=>{ dragging=null; });
   })();
+
+  // ---------- Independent per-image drag/zoom (slider mode) ----------
+  // Each visible slider panel (left, right, and the optional third band) can
+  // be repositioned on its own — drag to pan, scroll/pinch to zoom — instead
+  // of the whole comparison moving together. clip-path already restricts
+  // pointer hit-testing to each panel's visible band, so a drag started in
+  // a given band only ever moves that panel's image.
+  function clampPanelView(pv, rectW, rectH){
+    const maxX = Math.max(0, rectW*(pv.zoom-1)/2);
+    const maxY = Math.max(0, rectH*(pv.zoom-1)/2);
+    pv.x = Math.min(maxX, Math.max(-maxX, pv.x));
+    pv.y = Math.min(maxY, Math.max(-maxY, pv.y));
+  }
+  function applySliderPanelVars(){
+    [[sliderLeftWrap, sliderState.leftView], [sliderRightWrap, sliderState.rightView], [sliderThirdWrap, sliderState.thirdView]].forEach(([el, pv])=>{
+      if(!el || !pv) return;
+      el.style.setProperty('--zoom', pv.zoom);
+      el.style.setProperty('--panx', pv.x+'px');
+      el.style.setProperty('--pany', pv.y+'px');
+    });
+    queueWorkspaceSave();
+  }
+  function attachSliderPanelDrag(el, getView){
+    let dragging=false, sx=0, sy=0, startX=0, startY=0, rectW=0, rectH=0;
+    el.addEventListener('pointerdown', e=>{
+      const pv = getView();
+      dragging=true; sx=e.clientX; sy=e.clientY; startX=pv.x; startY=pv.y;
+      const r = sliderStage.getBoundingClientRect();
+      rectW=r.width; rectH=r.height;
+      el.setPointerCapture(e.pointerId);
+      e.stopPropagation();
+    });
+    el.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      const pv = getView();
+      pv.x = startX + (e.clientX - sx);
+      pv.y = startY + (e.clientY - sy);
+      clampPanelView(pv, rectW, rectH);
+      applySliderPanelVars();
+    });
+    el.addEventListener('pointerup', ()=>{ dragging=false; });
+    el.addEventListener('pointercancel', ()=>{ dragging=false; });
+    el.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const pv = getView();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      pv.zoom = Math.min(4, Math.max(1, pv.zoom + delta));
+      const r = sliderStage.getBoundingClientRect();
+      clampPanelView(pv, r.width, r.height);
+      applySliderPanelVars();
+    }, {passive:false});
+  }
+  attachSliderPanelDrag(sliderLeftWrap, ()=>sliderState.leftView);
+  attachSliderPanelDrag(sliderRightWrap, ()=>sliderState.rightView);
+  attachSliderPanelDrag(sliderThirdWrap, ()=>sliderState.thirdView);
 
   // ---------- Render stage ----------
   function renderChangeMap(){
@@ -1559,7 +1624,7 @@
       } else { sliderRightWrap.style.clipPath=''; sliderThirdWrap.style.clipPath=''; }
       sliderStage.style.setProperty('--clip', sliderState.clip+'%');
       sliderStage.style.setProperty('--clip2', sliderState.clip2+'%');
-      attachPanHandlers(sliderDragSurface);
+      applySliderPanelVars();
       applyViewVars();
     } else if(mode==='overlay'){
       const B = images.find(i=>i.id===overlayState.baseId);
@@ -1752,13 +1817,13 @@
 
   function renderSliderFrame(ctx, W, H, L, R, clipPct, scaleFactor){
     ctx.fillStyle = '#12140f'; ctx.fillRect(0,0,W,H);
-    const tx = view.panx*scaleFactor, ty = view.pany*scaleFactor;
-    const rL = computeSourceRect(L.natW, L.natH, W, H, view.zoom, tx, ty);
+    const lv = sliderState.leftView, rv = sliderState.rightView;
+    const rL = computeSourceRect(L.natW, L.natH, W, H, lv.zoom, lv.x*scaleFactor, lv.y*scaleFactor);
     ctx.drawImage(L.imgEl, rL.sx, rL.sy, rL.sw, rL.sh, 0, 0, W, H);
     const clipX = W*(clipPct/100);
     ctx.save();
     ctx.beginPath(); ctx.rect(clipX, 0, W-clipX, H); ctx.clip();
-    const rR = computeSourceRect(R.natW, R.natH, W, H, view.zoom, tx, ty);
+    const rR = computeSourceRect(R.natW, R.natH, W, H, rv.zoom, rv.x*scaleFactor, rv.y*scaleFactor);
     ctx.drawImage(R.imgEl, rR.sx, rR.sy, rR.sw, rR.sh, 0, 0, W, H);
     ctx.restore();
     ctx.fillStyle = '#d3934f';
@@ -1768,10 +1833,11 @@
   }
   function renderThreeSliderFrame(ctx,W,H,L,M,R,clip1,clip2,scaleFactor){
     ctx.fillStyle='#12140f'; ctx.fillRect(0,0,W,H);
-    const tx=view.panx*scaleFactor,ty=view.pany*scaleFactor, draw=(im)=>{const r=computeSourceRect(im.natW,im.natH,W,H,view.zoom,tx,ty);ctx.drawImage(im.imgEl,r.sx,r.sy,r.sw,r.sh,0,0,W,H);};
-    draw(L); const x1=W*clip1/100,x2=W*clip2/100;
-    ctx.save();ctx.beginPath();ctx.rect(x1,0,x2-x1,H);ctx.clip();draw(M);ctx.restore();
-    ctx.save();ctx.beginPath();ctx.rect(x2,0,W-x2,H);ctx.clip();draw(R);ctx.restore();
+    const lv=sliderState.leftView, mv=sliderState.rightView, rv=sliderState.thirdView;
+    const draw=(im,pv)=>{const r=computeSourceRect(im.natW,im.natH,W,H,pv.zoom,pv.x*scaleFactor,pv.y*scaleFactor);ctx.drawImage(im.imgEl,r.sx,r.sy,r.sw,r.sh,0,0,W,H);};
+    draw(L,lv); const x1=W*clip1/100,x2=W*clip2/100;
+    ctx.save();ctx.beginPath();ctx.rect(x1,0,x2-x1,H);ctx.clip();draw(M,mv);ctx.restore();
+    ctx.save();ctx.beginPath();ctx.rect(x2,0,W-x2,H);ctx.clip();draw(R,rv);ctx.restore();
     ctx.fillStyle='#d3934f';ctx.fillRect(x1-1.5,0,3,H);ctx.fillStyle='#4f7d78';ctx.fillRect(x2-1.5,0,3,H);
     drawCornerLabel(ctx,L.label,14,14,'left','#8ea15c'); drawCornerLabel(ctx,M.label,W/2,14,'left','#d3934f'); drawCornerLabel(ctx,R.label,W-14,14,'right','#4f7d78');
   }
@@ -2043,7 +2109,7 @@
     if(!p || (!Array.isArray(p.images) && !p.preferenceOnly)) throw Error('invalid project');
     if(Array.isArray(p.images)){ images=[]; nextId=Math.max(0,...p.images.map(saved=>Number(saved.id)||0))+1;
       p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:saved.selected!==false}); renderImageList(); updateSliderSelects(true); renderStage(); }; img.src=saved.src; }); }
-    cols=p.cols||3; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars();
+    cols=p.cols||3; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,leftView:{zoom:1,x:0,y:0},rightView:{zoom:1,x:0,y:0},thirdView:{zoom:1,x:0,y:0},...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars(); applySliderPanelVars();
     if(p.map){ Object.assign(liveMap,{provider:p.map.provider||liveMap.provider,lat:p.map.lat||liveMap.lat,lng:p.map.lng||liveMap.lng,zoom:p.map.zoom||liveMap.zoom}); mapboxToken.value=p.map.mapboxToken||''; sentinelId.value=p.map.sentinelId||''; sentinelLayer.value=p.map.sentinelLayer||'TRUE_COLOR'; sentinelDate.value=p.map.sentinelDate||''; sentinelCloud.value=p.map.sentinelCloud||20; sentinelSharpness.value=p.map.sentinelSharpness||35; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; nasaLayer.value=p.map.nasaLayer||nasaLayer.value; nasaDate.value=p.map.nasaDate||nasaDate.value; placesApiKey.value=p.map.placesApiKey||''; providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change')); }
     if(p.annotation){ const img=new Image(); img.onload=()=>{syncAnnotationCanvas(); annotationCanvas.getContext('2d').drawImage(img,0,0,annotationCanvas.width,annotationCanvas.height);}; img.src=p.annotation; }
   }

@@ -108,7 +108,7 @@
   .sidebar-toggle{font-size:16px;padding:8px 11px;}
 
   /* ---- Layout ---- */
-  .layout{display:flex; flex:1; min-height:0;}
+  .layout{display:flex; flex:1; min-height:0; align-items:flex-start;}
   .sidebar{
     width:300px; flex-shrink:0;
     border-right:1px solid var(--line);
@@ -251,7 +251,7 @@
   .panel-viewport{position:absolute; inset:0; overflow:hidden; cursor:grab;}
   .panel-viewport:active{cursor:grabbing;}
   .panel-img{
-    width:100%; height:100%; object-fit:cover; display:block;
+    width:100%; height:100%; object-fit:contain; display:block;
     transform:translate(var(--panx),var(--pany)) scale(var(--zoom));
     transform-origin:center; user-select:none; pointer-events:none;
   }
@@ -273,6 +273,19 @@
     --zoom:1; --panx:0px; --pany:0px;
     height:calc(100vh - 170px); max-height:none; margin:0 auto;
   }
+  #sliderControls{flex:0 0 auto; background:rgba(var(--panel-rgb),0.55); border:1px solid var(--line-soft); border-radius:2px; overflow:hidden;}
+  #sliderControls .slider-controls-toggle{width:100%; display:flex; align-items:center; gap:6px; padding:4px 10px; background:none; border:none; cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted);}
+  #sliderControls .slider-controls-toggle:hover{color:var(--paper);}
+  #sliderControls .chev{font-size:9px; color:var(--moss); transition:transform .15s;}
+  #sliderControls.collapsed .chev{transform:rotate(-90deg);}
+  #sliderControls .slider-controls-body{display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; padding:0 10px 8px;}
+  #sliderControls.collapsed .slider-controls-body{display:none;}
+  #sliderControls .field{flex:1 1 130px; min-width:110px; gap:3px;}
+  #sliderControls .field label{font-size:9px; margin-bottom:0;}
+  #sliderControls select{padding:5px 7px; font-size:12px;}
+  #sliderControls .btn{margin:0; padding:5px 10px; font-size:11px; width:auto;}
+  #sliderControls .checklist{margin:0; font-size:11px;}
+  #sliderControls input[type=text]{padding:5px 7px; font-size:12px;}
   .slider-panel{position:absolute; inset:0; overflow:hidden;}
   .slider-panel img{
     width:100%; height:100%; object-fit:cover; display:block;
@@ -648,25 +661,6 @@
         </div>
       </div>
 
-      <div id="sliderControls" hidden>
-        <h2>Slider panels</h2>
-        <div class="field">
-          <label>LEFT (BEFORE)</label>
-          <select id="leftSelect"></select>
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>RIGHT (AFTER)</label>
-          <select id="rightSelect"></select>
-        </div>
-        <button class="btn ghost" id="swapBtn" style="width:100%; margin-top:10px;">&#8646; Swap left / right</button>
-        <div class="checklist" style="margin-top:8px;"><label><input type="checkbox" id="sliderThreeChk"> Show third frame</label></div>
-        <div class="field" id="sliderMiddleField" hidden style="margin-top:10px;"><label>MIDDLE</label><select id="sliderMiddleSelect"></select></div>
-        <div class="field" style="margin-top:14px;">
-          <label>SWEEP DURATION (SEC)</label>
-          <input type="text" inputmode="numeric" id="sweepDuration" value="4">
-        </div>
-      </div>
-
       <div id="overlayControls" hidden>
         <h2>Overlay panels</h2>
         <div class="field">
@@ -755,9 +749,28 @@
     <div class="sidebar-backdrop is-hidden" id="sidebarBackdrop"></div>
 
     <main class="stage-wrap">
-      <div class="stage-hint"><span class="dot"></span>Drag to pan &middot; scroll to zoom &middot; arrow keys nudge, +/&minus; zoom &middot; view stays synced across all frames</div>
       <canvas id="annotationCanvas" aria-label="Freehand map annotations"></canvas>
       <div class="grid-stage" id="gridStage" style="display:none;"></div>
+      <div id="sliderControls" hidden>
+        <button type="button" class="slider-controls-toggle" id="sliderControlsToggle" aria-expanded="true"><span class="chev" id="sliderControlsChev">&#9660;</span> Slider panels</button>
+        <div class="slider-controls-body" id="sliderControlsBody">
+          <div class="field">
+            <label>LEFT (BEFORE)</label>
+            <select id="leftSelect"></select>
+          </div>
+          <div class="field">
+            <label>RIGHT (AFTER)</label>
+            <select id="rightSelect"></select>
+          </div>
+          <button class="btn ghost" id="swapBtn">&#8646; Swap left / right</button>
+          <div class="checklist"><label><input type="checkbox" id="sliderThreeChk"> Show third frame</label></div>
+          <div class="field" id="sliderMiddleField" hidden><label>MIDDLE</label><select id="sliderMiddleSelect"></select></div>
+          <div class="field" id="sliderSweepField">
+            <label>SWEEP DURATION (SEC)</label>
+            <input type="text" inputmode="numeric" id="sweepDuration" value="4">
+          </div>
+        </div>
+      </div>
       <div class="slider-stage" id="sliderStage" style="display:none;">
          <div class="slider-panel base"><img id="sliderLeftImg" draggable="false"></div>
          <div class="slider-panel overlay" id="sliderRightWrap"><img id="sliderRightImg" draggable="false"></div>
@@ -1694,6 +1707,10 @@
   rightSelect.addEventListener('change', ()=>{ sliderState.rightId = parseInt(rightSelect.value,10); renderStage(); });
   sliderMiddleSelect.addEventListener('change', ()=>{ sliderState.middleId=parseInt(sliderMiddleSelect.value,10); renderStage(); });
   sliderThreeChk.addEventListener('change',()=>{ sliderState.three=sliderThreeChk.checked; sliderMiddleField.hidden=!sliderState.three; renderStage(); });
+  document.getElementById('sliderControlsToggle').addEventListener('click', ()=>{
+    sliderControls.classList.toggle('collapsed');
+    document.getElementById('sliderControlsToggle').setAttribute('aria-expanded', !sliderControls.classList.contains('collapsed'));
+  });
   document.getElementById('swapBtn').addEventListener('click', ()=>{
     [sliderState.leftId, sliderState.rightId] = [sliderState.rightId, sliderState.leftId];
     leftSelect.value = sliderState.leftId; rightSelect.value = sliderState.rightId;

@@ -3,10 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Phnaek Pkay | Satellite Eye</title>
-<meta name="description" content="Browser-based satellite imagery comparison and change review tool">
+<title>Phnaek Pkay | Satellite Eye — satellite imagery history and comparison</title>
+<meta name="description" content="Phnaek Pkay (Satellite Eye) is a free browser-based tool to upload, capture, compare, and analyze satellite imagery over time — with side-by-side slider, overlay, sequence, change detection, annotations, and offline-ready PWA support.">
+<meta name="keywords" content="satellite imagery, imagery comparison, change detection, GIS, remote sensing, Phnaek Pkay, Cambodia, earth observation, before and after, satellite history">
+<meta name="author" content="Phnaek Pkay">
 <meta name="theme-color" content="#12140f">
 <meta name="color-scheme" content="dark light">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Phnaek Pkay | Satellite Eye">
+<meta name="twitter:description" content="Compare, capture, and analyze satellite imagery history in your browser — slider, overlay, sequence, change detection, and more.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Phnaek Pkay">
+<meta property="og:title" content="Phnaek Pkay | Satellite Eye">
+<meta property="og:description" content="A browser-based tool to compare, capture, and analyze satellite imagery history.">
+<meta property="og:locale" content="en">
 
 <!-- PWA icons -->
 <link rel="icon" type="image/svg+xml" href="assets/phnaek-pkay.svg">
@@ -31,9 +41,8 @@
 
   <div class="topbar">
     <div class="brand">
-      <span class="mark">PHNAEK&middot;PKAY</span>
-      <div>
-        <h1>Phnaek Pkay</h1>
+      <div class="brand-title">
+        <span class="mark">PHNAEK&middot;PKAY</span>
         <small>Satellite Eye &middot; imagery history</small>
       </div>
     </div>
@@ -71,9 +80,10 @@
         </div>
       </div>
 
-      <div>
-        <h2>Live satellite capture</h2>
-        <div class="field">
+      <details class="collapse" open>
+        <summary>Live satellite capture</summary>
+        <div class="collapse-body">
+          <div class="field">
           <label>PROVIDER</label>
           <select id="providerSelect">
             <option value="esri">Esri World Imagery &middot; no key</option>
@@ -175,6 +185,7 @@
         <button class="btn ghost" id="captureMapBtn" style="width:100%; margin-top:6px;">&#9678; Capture view as frame</button>
         <div class="capture-status" id="captureStatus"></div>
       </div>
+      </details>
 
       <div>
         <h2>Frames</h2>
@@ -196,8 +207,9 @@
         <button class="btn ghost" id="drawToggleBtn">Draw on view</button>
         <button class="btn ghost" id="clearDrawingBtn">Clear drawing</button>
       </div>
-      <div class="upscale-tools" id="upscaleTools">
-        <h2>AI visual enhancement</h2>
+      <details class="collapse upscale-collapse" open>
+        <summary>AI visual enhancement</summary>
+        <div class="upscale-tools collapse-body" id="upscaleTools">
         <p class="provider-note">Optional local ONNX super-resolution. Download an ONNX Real-ESRGAN or SwinIR model, choose it below, then enhance a frame. Generated detail is for visual review only.</p>
         <input type="file" id="upscaleModelInput" accept=".onnx,application/octet-stream">
         <input type="text" id="upscaleModelUrl" value="/models/RealESRGAN_x4plus.onnx" aria-label="Hosted ONNX model URL">
@@ -208,7 +220,8 @@
         <progress id="upscaleProgress" max="100" value="0"></progress>
         <div class="upscale-progress-label" id="upscaleProgressLabel">Idle</div>
         <div class="capture-status" id="upscaleStatus"></div>
-      </div>
+        </div>
+      </details>
 
       <div id="gridControls">
         <h2>Grid layout</h2>
@@ -661,7 +674,9 @@
     }catch(err){upscaleStatus.textContent=`Upscale failed: ${err.message}`;upscaleStatus.classList.add('err');upscaleBtn.disabled=false;}
   });
   openUpscaleBtn.addEventListener('click',()=>{
-    setSidebarOpen(true); upscaleTools.scrollIntoView({behavior:'smooth',block:'center'});
+    setSidebarOpen(true);
+    if(upscaleTools && window.innerWidth<=820) upscaleTools.closest('details').open = true;
+    upscaleTools.scrollIntoView({behavior:'smooth',block:'center'});
     if(!upscaleSession) upscaleStatus.textContent='Enhancement is ready. Click Load hosted model when you want to download the 67 MB model.';
   });
   function sentinelProbeUrl(date){

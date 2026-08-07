@@ -18,18 +18,20 @@
 
   /* ---- Topbar ---- */
   .topbar {
-    gap: 8px;
-    padding: 10px 12px;
-    padding-top: max(10px, env(safe-area-inset-top));
+    gap: 6px;
+    padding: 8px 10px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    flex-wrap: nowrap;
   }
-  .brand { min-width: 0; }
+  .brand { min-width: 0; flex-shrink: 1; }
   .brand small { display: none; }
+  .brand .mark { font-size: 10px; padding: 2px 6px; }
 
   .sidebar-toggle,
   #themeToggleBtn {
-    min-width: 40px;
-    min-height: 40px;
-    padding: 8px 10px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px 8px;
     flex-shrink: 0;
   }
 
@@ -43,13 +45,15 @@
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
+    gap: 4px;
   }
   .mode-toggle::-webkit-scrollbar { display: none; }
   .mode-toggle button {
     flex: 1 0 auto;
-    min-height: 40px;
+    min-height: 32px;
     white-space: nowrap;
-    padding-inline: 12px;
+    padding-inline: 10px;
+    font-size: 11px;
     scroll-snap-align: start;
   }
 
@@ -64,14 +68,16 @@
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
-    gap: 6px;
+    gap: 4px;
     padding-bottom: 2px;
   }
   .top-actions::-webkit-scrollbar { display: none; }
   .top-actions .btn {
     flex: 0 0 auto;
     white-space: nowrap;
-    min-height: 40px;
+    min-height: 32px;
+    padding: 6px 9px;
+    font-size: 11px;
     scroll-snap-align: start;
   }
 
@@ -116,19 +122,53 @@
   .img-row .row-actions button { padding: 6px 8px; font-size: 14px; }
   .img-row .chk { width: 18px; height: 18px; }
 
+  /* Keep the drawer from pushing everything too far apart. */
+  .sidebar { gap: 10px; padding: 10px; }
+  .sidebar h2 { margin-bottom: 5px; }
+
+  /* Collapsible sidebar sections (native <details>) — keep summaries
+     compact so the drawer starts with Add imagery + Frames only, and the
+     heavy capture/AI tools are one tap away. */
+  .sidebar .collapse { border: 1px solid var(--line-soft); border-radius: var(--radius); background: rgba(var(--panel-rgb),0.4); }
+  .sidebar .collapse > summary {
+    list-style: none; cursor: pointer; user-select: none;
+    padding: 9px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: .12em; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sidebar .collapse > summary::-webkit-details-marker { display: none; }
+  .sidebar .collapse > summary::before {
+    content: ''; width: 6px; height: 6px; background: var(--moss); border-radius: 1px; flex-shrink: 0;
+  }
+  .sidebar .collapse > summary::after {
+    content: '+'; margin-left: auto; font-size: 13px; line-height: 1; color: var(--moss);
+  }
+  .sidebar .collapse[open] > summary { border-bottom: 1px solid var(--line-soft); }
+  .sidebar .collapse[open] > summary::after { content: '\2212'; }
+  .sidebar .collapse .collapse-body { padding: 10px; }
+  .sidebar .collapse .collapse-body > * + * { margin-top: 8px; }
+  .sidebar .collapse .collapse-body select,
+  .sidebar .collapse .collapse-body input[type=text] { width: 100%; }
+  .sidebar .collapse .upscale-tools > * + * { margin-top: 8px; }
+  .collapse .upscale-tools { border-top: none; padding-top: 0; }
+  #upscaleTools .provider-note { margin: 0; }
+
   /* ---- Main stage ---- */
   .stage-wrap {
     width: 100%;
-    padding: 12px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    min-height: calc(100dvh - 100px);
+    padding: 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    min-height: calc(100dvh - 64px);
     overflow-x: hidden;
+    gap: 8px;
   }
-  .grid-stage      { min-height: calc(100dvh - 145px); }
+  .grid-stage      { min-height: calc(100dvh - 92px); }
   .slider-stage,
-  .overlay-stage   { height: calc(100dvh - 145px); }
-  .sequence-stage  { height: calc(100dvh - 195px); }
-  .change-stage    { height: calc(100dvh - 145px); }
+  .overlay-stage   { height: calc(100dvh - 92px); }
+  .sequence-stage  { height: calc(100dvh - 140px); }
+  .change-stage    { height: calc(100dvh - 92px); }
 
   .change-stats { grid-template-columns: repeat(3, 1fr); gap: 5px; }
   .change-stat  { padding: 7px 6px; }
@@ -173,8 +213,7 @@
    ========================================================================== */
 @media (max-width: 480px) {
   .topbar { padding: 8px 10px; }
-  .brand .mark { font-size: 10px; padding: 2px 5px; }
-  .brand h1 { font-size: 15px; }
+  .brand .mark { font-size: 10px; padding: 2px 6px; }
 
   .mode-toggle button { padding-inline: 10px; font-size: 11px; }
   .top-actions .btn { padding: 8px 12px; font-size: 11px; }

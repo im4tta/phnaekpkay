@@ -2119,14 +2119,27 @@
   function setSidebarOpen(open){
     sidebar.classList.toggle('is-collapsed',!open);
     document.body.classList.toggle('sidebar-open',open && window.innerWidth<=820);
-    sidebarBackdrop.classList.toggle('is-hidden',open || window.innerWidth>820);
+    // Backdrop must simply mirror "open" — it was previously also OR'd with
+    // a desktop-width check, which meant on first portrait-mode load
+    // (open=false, width<=820) the dim backdrop stayed fully visible and
+    // clickable over the whole page even though the sidebar was collapsed.
+    sidebarBackdrop.classList.toggle('is-hidden',!open);
     sidebarToggleBtn.setAttribute('aria-expanded',String(open));
     sidebarToggleBtn.title=open?'Hide controls':'Show controls';
   }
   sidebarToggleBtn.addEventListener('click',()=>setSidebarOpen(sidebar.classList.contains('is-collapsed')));
   sidebarBackdrop.addEventListener('click',()=>setSidebarOpen(false));
+  let wasDesktopWidth = window.innerWidth>820;
   window.addEventListener('resize',()=>{
-    if(window.innerWidth>820){ sidebarBackdrop.classList.add('is-hidden'); sidebar.classList.remove('is-collapsed'); }
+    const isDesktopWidth = window.innerWidth>820;
+    if(isDesktopWidth !== wasDesktopWidth){
+      // Only re-sync when actually crossing the breakpoint (e.g. rotating
+      // the phone), so we don't fight a manual open/close within the same
+      // layout mode, and so both drawer + backdrop stay in sync in both
+      // directions (portrait -> landscape -> portrait).
+      setSidebarOpen(isDesktopWidth);
+      wasDesktopWidth = isDesktopWidth;
+    }
   });
   [modeGridBtn,modeSliderBtn,modeOverlayBtn,modeSequenceBtn,modeChangeBtn].forEach(btn=>btn.addEventListener('click',()=>{
     if(window.innerWidth<=820) setSidebarOpen(false);

@@ -65,7 +65,9 @@
     position:sticky; top:0; z-index:20;
     flex-wrap:wrap;
   }
-  .brand{display:flex; align-items:center; margin-right:auto;}
+  .brand{display:flex; align-items:center; margin-right:auto; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .brand:hover .mark{border-color:var(--moss); color:var(--paper);}
+  .brand:focus-visible{outline:2px solid var(--amber); outline-offset:3px; border-radius:2px;}
   .brand .brand-title{display:flex; flex-direction:column; align-items:flex-start; gap:2px;}
   .brand .mark{
     font-family:'JetBrains Mono',monospace;

@@ -41,7 +41,7 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="brand">
+    <div class="brand" id="brandHome" role="button" tabindex="0" title="Return to homepage">
       <div class="brand-title">
         <span class="mark">PHNAEK&middot;PKAY</span>
         <small>Satellite Eye &middot; imagery history</small>
@@ -758,7 +758,7 @@
     mapbox: ['high-resolution mosaic','up to z20'],
     sentinel: ['10m dated scenes','best z14 · max z16']
   };
-  let liveMap = { provider:'esri', lat:14.238, lng:103.548, zoom:13, dragging:false, lastX:0, lastY:0, cacheBust:0 };
+  let liveMap = { provider:'esri', lat:12.5657, lng:104.9910, zoom:7, dragging:false, lastX:0, lastY:0, cacheBust:0 };
   const tileCache = new Map();
   const labelTileCache = new Map();
   const thumbCache = new Map();
@@ -2420,6 +2420,24 @@
     }
     applyTheme(saved === 'light' ? 'light' : 'dark');
   })();
+
+  // ---------- Homepage (brand click) ----------
+  const brandHome = document.getElementById('brandHome');
+  function goHome(){
+    images = []; nextId = 1;
+    mode = 'grid'; cols = 3;
+    view = { zoom:1, panx:0, pany:0 };
+    sliderState = { leftId:null, middleId:null, rightId:null, clip:50, clip2:75, three:false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
+    overlayState = { baseId:null, topId:null, thirdId:null, density:50, thirdDensity:55 };
+    changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12 };
+    liveMap.lat = 12.5657; liveMap.lng = 104.9910; liveMap.zoom = 7; liveMap.provider = 'esri';
+    captionInput.value = ''; notesInput.value = '';
+    setMode('grid');
+    renderImageList(); updateSliderSelects(); applyViewVars(); renderStage(); drawLiveMap();
+    if(history && history.pushState && location.pathname !== '/') history.pushState({}, '', '/');
+  }
+  brandHome.addEventListener('click', goHome);
+  brandHome.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); goHome(); } });
 
   // ---------- init ----------
   if(!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) startTechBackground();

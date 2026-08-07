@@ -41,7 +41,7 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="brand">
+    <div class="brand" id="brandHome" role="button" tabindex="0" title="Return to homepage">
       <div class="brand-title">
         <span class="mark">PHNAEK&middot;PKAY</span>
         <small>Satellite Eye &middot; imagery history</small>
@@ -382,7 +382,8 @@
       </div>
       <div class="seq-timeline" id="seqTimeline" style="display:none;"></div>
       <div class="placeholder" id="placeholder">
-        Upload two or more satellite frames of the same location to begin&#10;building a before/after comparison for documentation.
+        <span>Upload two or more satellite frames of the same location to begin building a before/after comparison for documentation.</span>
+        <small>You can also drop frames here, paste from clipboard, or capture a live satellite view from the sidebar.</small>
       </div>
     </main>
   </div>
@@ -757,7 +758,7 @@
     mapbox: ['high-resolution mosaic','up to z20'],
     sentinel: ['10m dated scenes','best z14 · max z16']
   };
-  let liveMap = { provider:'esri', lat:14.238, lng:103.548, zoom:13, dragging:false, lastX:0, lastY:0, cacheBust:0 };
+  let liveMap = { provider:'esri', lat:12.5657, lng:104.9910, zoom:7, dragging:false, lastX:0, lastY:0, cacheBust:0 };
   const tileCache = new Map();
   const labelTileCache = new Map();
   const thumbCache = new Map();
@@ -1640,7 +1641,12 @@
     changeStats.style.display='grid';
   }
 
+  let _renderRAF=null;
   function renderStage(){
+    if(_renderRAF) return;
+    _renderRAF=requestAnimationFrame(()=>{ _renderRAF=null; _renderStage(); });
+  }
+  function _renderStage(){
     const selected = images.filter(i=>i.selected);
     placeholder.style.display = images.length < 1 ? 'flex' : 'none';
 
@@ -2372,18 +2378,21 @@
   window.addEventListener('beforeunload',saveWorkspace);
 
   function startTechBackground(){
-    const ctx=techBackground.getContext('2d'), nodes=[]; let width=0,height=0,dpr=1;
+    const ctx=techBackground.getContext('2d'), nodes=[]; let width=0,height=0,dpr=1,bgPaused=false;
     function resize(){ dpr=Math.min(2,window.devicePixelRatio||1); width=window.innerWidth; height=window.innerHeight; techBackground.width=width*dpr; techBackground.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
-    function seed(){ nodes.length=0; const count=Math.min(72,Math.max(28,Math.round(width*height/22000))); for(let i=0;i<count;i++) nodes.push({x:Math.random()*width,y:Math.random()*height,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12,p:Math.random()*Math.PI*2}); }
+    function seed(){ nodes.length=0; const count=Math.min(56,Math.max(22,Math.round(width*height/30000))); for(let i=0;i<count;i++) nodes.push({x:Math.random()*width,y:Math.random()*height,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12,p:Math.random()*Math.PI*2}); }
     function draw(ts){
+      if(bgPaused) return;
       ctx.clearRect(0,0,width,height); const dark=document.documentElement.getAttribute('data-theme')!=='light';
       ctx.fillStyle=dark?'rgba(13,16,12,.18)':'rgba(243,242,232,.18)';ctx.fillRect(0,0,width,height);
       nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;n.p+=.012;if(n.x<-20)n.x=width+20;if(n.x>width+20)n.x=-20;if(n.y<-20)n.y=height+20;if(n.y>height+20)n.y=-20;});
-      for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);if(d<145){const alpha=(1-d/145)*.16;ctx.strokeStyle=dark?`rgba(142,161,92,${alpha})`:`rgba(72,96,42,${alpha})`;ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+      ctx.lineWidth=.7;
+      for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy;if(d2<14400){const d=Math.sqrt(d2);const alpha=(1-d/120)*.16;ctx.strokeStyle=dark?`rgba(142,161,92,${alpha})`:`rgba(72,96,42,${alpha})`;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
       nodes.forEach(n=>{const pulse=(Math.sin(n.p+ts*.0007)+1)/2;ctx.fillStyle=dark?`rgba(211,147,79,${.22+pulse*.2})`:`rgba(95,122,58,${.2+pulse*.2})`;ctx.beginPath();ctx.arc(n.x,n.y,1+pulse*1.2,0,Math.PI*2);ctx.fill();});
       requestAnimationFrame(draw);
     }
     resize();seed();window.addEventListener('resize',()=>{resize();seed();});requestAnimationFrame(draw);
+    document.addEventListener('visibilitychange',()=>{ if(document.hidden) { bgPaused=true; } else { bgPaused=false; requestAnimationFrame(draw); } });
   }
 
   // ---------- Theme (light / dark) ----------
@@ -2412,8 +2421,26 @@
     applyTheme(saved === 'light' ? 'light' : 'dark');
   })();
 
+  // ---------- Homepage (brand click) ----------
+  const brandHome = document.getElementById('brandHome');
+  function goHome(){
+    images = []; nextId = 1;
+    mode = 'grid'; cols = 3;
+    view = { zoom:1, panx:0, pany:0 };
+    sliderState = { leftId:null, middleId:null, rightId:null, clip:50, clip2:75, three:false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
+    overlayState = { baseId:null, topId:null, thirdId:null, density:50, thirdDensity:55 };
+    changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12 };
+    liveMap.lat = 12.5657; liveMap.lng = 104.9910; liveMap.zoom = 7; liveMap.provider = 'esri';
+    captionInput.value = ''; notesInput.value = '';
+    setMode('grid');
+    renderImageList(); updateSliderSelects(); applyViewVars(); renderStage(); drawLiveMap();
+    if(history && history.pushState && location.pathname !== '/') history.pushState({}, '', '/');
+  }
+  brandHome.addEventListener('click', goHome);
+  brandHome.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); goHome(); } });
+
   // ---------- init ----------
-  startTechBackground();
+  if(!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) startTechBackground();
   applyViewVars();
   renderStage();
   sizeLiveMapCanvas();

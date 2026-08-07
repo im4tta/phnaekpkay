@@ -19,13 +19,14 @@
 <meta property="og:locale" content="en">
 
 <!-- PWA icons -->
-<link rel="icon" type="image/svg+xml" href="assets/phnaek-pkay.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon-180.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/assets/phnaek-pkay.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon-180.png">
+  <link rel="manifest" href="/manifest.webmanifest">
 
 <!-- iOS standalone-app behavior (Safari ignores the manifest for these) -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Phnaek Pkay">
@@ -390,7 +391,7 @@
 <canvas id="exportCanvas" style="display:none;"></canvas>
 
 <div class="locations-modal-backdrop is-hidden" id="locationsBackdrop"></div>
-<div class="locations-modal is-hidden" id="locationsModal" role="dialog" aria-modal="true" aria-labelledby="locationsTitle">
+<div class="locations-modal is-hidden" id="locationsModal" role="dialog" aria-modal="true" aria-labelledby="locationsTitle" inert>
   <div class="locations-modal-head">
     <h2 id="locationsTitle">Field sites</h2>
     <button type="button" class="locations-close" id="locationsCloseBtn" aria-label="Close locations">&times;</button>
@@ -399,7 +400,7 @@
   <div class="locations-grid" id="locationsGrid"></div>
 </div>
 
-<script src="src/lib/image-processing.js"></script>
+<script src="/src/lib/image-processing.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.min.js"></script>
 
 <script>
@@ -532,7 +533,7 @@
   let upscaleTimer=null, upscaleStartedAt=0;
   function setUpscaleProgress(value,label){ upscaleProgress.value=value; upscaleProgressLabel.textContent=label; }
   try{
-    upscaleWorker=new Worker('src/lib/upscale.worker.js');
+    upscaleWorker=new Worker('/src/lib/upscale.worker.js');
     upscaleWorker.onmessage=event=>{
       const message=event.data||{};
       if(message.type==='progress'){ setUpscaleProgress(message.value,message.label); return; }
@@ -862,7 +863,7 @@
 
   function drawLiveMap(){
     if(!liveMapCanvas.width || !liveMapCanvas.height) return;
-    const ctx = liveMapCanvas.getContext('2d');
+    const ctx = liveMapCanvas.getContext('2d', { willReadFrequently: true });
     const W = liveMapCanvas.width, H = liveMapCanvas.height;
     ctx.fillStyle = '#0a0b08'; ctx.fillRect(0,0,W,H);
     ctx.filter = enhanceImageryChk.checked ? 'contrast(1.12) saturate(1.08)' : 'none';
@@ -2231,12 +2232,15 @@
     locationsBackdrop.classList.remove('is-hidden');
     locationsModal.classList.remove('is-hidden');
     locationsModal.setAttribute('aria-hidden','false');
+    locationsModal.inert = false;
   }
   function closeLocations(){
     seenLocations();
+    locationsModal.inert = true;
     locationsBackdrop.classList.add('is-hidden');
     locationsModal.classList.add('is-hidden');
     locationsModal.setAttribute('aria-hidden','true');
+    if(document.activeElement && locationsModal.contains(document.activeElement)) locationsBtn.focus();
   }
   locationsBtn.addEventListener('click', openLocations);
   locationsCloseBtn.addEventListener('click', closeLocations);
@@ -2289,7 +2293,7 @@
   function openLocation(site){
     closeLocations();
     captureStatus.textContent='Loading '+site.name+' imagery\u2026'; captureStatus.classList.remove('err');
-    fetch('assets/data/'+site.file)
+    fetch('/assets/data/'+site.file)
       .then(r=>{ if(!r.ok) throw Error('http '+r.status); return r.json(); })
       .then(p=>{
         restoreProject(p);
@@ -2394,7 +2398,7 @@
   // ---------- PWA: service worker registration ----------
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('sw.js').catch(()=>{ /* offline support just won't be available */ });
+      navigator.serviceWorker.register('/sw.js').catch(()=>{ /* offline support just won't be available */ });
     });
   }
 })();

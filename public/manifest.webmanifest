@@ -12,43 +12,43 @@
   "categories": ["utilities", "photo"],
   "icons": [
     {
-      "src": "assets/phnaek-pkay.svg",
+      "src": "/assets/phnaek-pkay.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "assets/icons/favicon-16.png",
+      "src": "/assets/icons/favicon-16.png",
       "sizes": "16x16",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/icons/favicon-32.png",
+      "src": "/assets/icons/favicon-32.png",
       "sizes": "32x32",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/icons/icon-192.png",
+      "src": "/assets/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/icons/icon-512.png",
+      "src": "/assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/icons/icon-maskable-192.png",
+      "src": "/assets/icons/icon-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "assets/icons/icon-maskable-512.png",
+      "src": "/assets/icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

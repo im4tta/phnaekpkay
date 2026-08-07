@@ -2,20 +2,19 @@
 // Caches the static app shell only. Live satellite tiles, geocoding calls,
 // and other network requests always go straight to the network so imagery
 // is never served stale from cache.
-const CACHE_VERSION = 'phnaek-pkay-v1';
+const CACHE_VERSION = 'phnaek-pkay-v2';
 const APP_SHELL = [
   './',
   'index.html',
-  'manifest.webmanifest',
-  'src/styles/app.css',
-  'src/styles/mobile.css',
-  'src/lib/image-processing.js',
-  'assets/phnaek-pkay.svg',
-  'assets/icons/icon-192.png',
-  'assets/icons/icon-512.png',
-  'assets/icons/icon-maskable-192.png',
-  'assets/icons/icon-maskable-512.png',
-  'assets/icons/apple-touch-icon-180.png'
+  '/manifest.webmanifest',
+  '/src/lib/image-processing.js',
+  '/src/lib/upscale.worker.js',
+  '/assets/phnaek-pkay.svg',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
+  '/assets/icons/icon-maskable-192.png',
+  '/assets/icons/icon-maskable-512.png',
+  '/assets/icons/apple-touch-icon-180.png'
 ];
 
 self.addEventListener('install', event => {

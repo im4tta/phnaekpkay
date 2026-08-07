@@ -2222,12 +2222,22 @@
     reader.readAsText(file); projectInput.value='';
   });
 
-  // ---------- Field sites (bundled locations) ----------
+// ---------- Field sites (bundled locations) ----------
   const LOCATIONS = [
     { file:'phnaek-pkay-Boeng Trakoun.json', name:'Boeng Trakoun', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.98965635876216, lng:102.85603437036133 },
     { file:'phnaek-pkay-prey chan village.json', name:'Prey Chan', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.81581, lng:102.74037 },
     { file:'phnaek-pkay-chhorkchey Village.json', name:'Chhork Chey', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.7605, lng:102.70142 }
   ];
+  function fmtCoord(v){ return Number(Number(v).toFixed(6)).toString(); }
+  function siteSlug(site){ return '/p/'+fmtCoord(site.lat)+','+fmtCoord(site.lng); }
+  function siteBySlug(){
+    const m = window.location.pathname.match(/^\/p\/([^/]+)$/);
+    if(!m) return null;
+    const parts = m[1].split(',');
+    const lat = Number(parts[0]), lng = Number(parts[1]);
+    if(!isFinite(lat) || !isFinite(lng)) return null;
+    return LOCATIONS.find(s=>Math.abs(s.lat-lat)<1e-6 && Math.abs(s.lng-lng)<1e-6);
+  }
   function openLocations(){
     locationsBackdrop.classList.remove('is-hidden');
     locationsModal.classList.remove('is-hidden');
@@ -2250,6 +2260,7 @@
   function seenLocations(){ try{ localStorage.setItem('phnaek-pkay-locations-seen','1'); }catch(e){} if(locPulse) locPulse.style.display='none'; }
   (function firstVisit(){
     let seen=false; try{ seen=!!localStorage.getItem('phnaek-pkay-locations-seen'); }catch(e){}
+    if(siteBySlug()){ if(locPulse) locPulse.style.display='none'; return; }
     if(!seen && locPulse) locPulse.style.display='block';
     if(!seen) setTimeout(openLocations, 1400);
   })();
@@ -2290,8 +2301,12 @@
       }
     }
   }
-  function openLocation(site){
+  function openLocation(site, pushState){
     closeLocations();
+    if(pushState !== false && history && history.pushState){
+      const slug = siteSlug(site);
+      if(location.pathname !== slug) history.pushState({site:slug}, '', slug);
+    }
     captureStatus.textContent='Loading '+site.name+' imagery\u2026'; captureStatus.classList.remove('err');
     fetch('/assets/data/'+site.file)
       .then(r=>{ if(!r.ok) throw Error('http '+r.status); return r.json(); })
@@ -2302,6 +2317,10 @@
       })
       .catch(()=>{ captureStatus.textContent='Could not load '+site.name+'.'; captureStatus.classList.add('err'); });
   }
+  function copyMsg(body, text){
+    const el=document.createElement('span'); el.className='locations-copied'; el.textContent=text;
+    body.appendChild(el); setTimeout(()=>el.remove(), 1600);
+  }
   function renderLocations(){
     locationsGrid.innerHTML='';
     LOCATIONS.forEach(site=>{
@@ -2310,11 +2329,18 @@
       const body=document.createElement('div'); body.className='locations-body';
       body.innerHTML='<h3>'+escapeHtml(site.name)+'</h3><p>'+escapeHtml(site.desc)+'</p>'+
         '<div class="locations-coords"><code>'+site.lat.toFixed(5)+'&deg; N</code><code>'+site.lng.toFixed(5)+'&deg; E</code></div>'+
-        '<button type="button" class="btn locations-open">Open site</button>';
+        '<button type="button" class="btn locations-open">Open site</button>'+
+        '<button type="button" class="btn ghost locations-link">Copy link</button>';
       card.appendChild(thumb); card.appendChild(body);
       locationsGrid.appendChild(card);
       thumb.addEventListener('click', ()=>openLocation(site));
-      body.addEventListener('click', ()=>openLocation(site));
+      body.querySelector('.locations-open').addEventListener('click', e=>{ e.stopPropagation(); openLocation(site); });
+      body.querySelector('.locations-link').addEventListener('click', e=>{
+        e.stopPropagation();
+        try{ navigator.clipboard.writeText(location.origin + siteSlug(site)); }
+        catch(err){ const t=document.createElement('input'); t.value=location.origin + siteSlug(site); document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); }catch(_){} t.remove(); }
+        copyMsg(body, 'Link copied');
+      });
     });
   }
   renderLocations();
@@ -2394,6 +2420,13 @@
   sizeLiveMapCanvas();
   try{ const savedWorkspace=localStorage.getItem('phnaek-pkay-workspace')||localStorage.getItem('phnaek-pkay-preferences'); if(savedWorkspace) restoreProject(JSON.parse(savedWorkspace)); }catch(err){}
   syncAnnotationCanvas();
+  {
+    const site = siteBySlug();
+    if(site){
+      seenLocations();
+      setTimeout(()=>openLocation(site, false), 250);
+    }
+  }
 
   // ---------- PWA: service worker registration ----------
   if('serviceWorker' in navigator){

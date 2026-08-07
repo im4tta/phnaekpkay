@@ -474,9 +474,11 @@
   .locations-card:hover{border-color:var(--moss); transform:translateY(-2px);}
   .locations-thumb{height:150px; overflow:hidden; background:#0a0b08; flex:none;}
   .locations-canvas{width:100%; height:100%; object-fit:cover; display:block;}
-  .locations-body{padding:12px 14px 14px; display:flex; flex-direction:column; gap:6px;}
+  .locations-body{padding:12px 14px 14px; display:flex; flex-direction:column; gap:6px; position:relative;}
   .locations-body h3{margin:0; font-size:14px;}
   .locations-body p{margin:0; font-size:12px; color:var(--muted); line-height:1.45;}
   .locations-coords{display:flex; gap:8px; flex-wrap:wrap;}
   .locations-coords code{font:11px 'JetBrains Mono',monospace; color:var(--teal); background:rgba(79,125,120,.12); padding:2px 6px; border-radius:3px;}
   .locations-open{margin-top:4px; justify-content:center; padding:8px 10px; font-size:12px;}
+  .locations-link{justify-content:center; padding:7px 10px; font-size:11px;}
+  .locations-copied{position:absolute; bottom:10px; right:14px; font:10.5px 'JetBrains Mono',monospace; color:var(--moss); pointer-events:none;}

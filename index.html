@@ -530,7 +530,6 @@
   const sentinelDatesResults = document.getElementById('sentinelDatesResults');
   let upscaleSession=null;
   let upscaleWorker=null, upscaleRunResolve=null, upscaleRunReject=null, upscaleLoadResolve=null, upscaleLoadReject=null;
-  let upscaleTimer=null, upscaleStartedAt=0;
   function setUpscaleProgress(value,label){ upscaleProgress.value=value; upscaleProgressLabel.textContent=label; }
   try{
     upscaleWorker=new Worker('/src/lib/upscale.worker.js');
@@ -1966,7 +1965,6 @@
 
       const liveRect = gridStage.querySelector('.panel-viewport')?.getBoundingClientRect();
       const onW = liveRect ? liveRect.width : panelW;
-      const onH = liveRect ? liveRect.height : panelH;
       const scaleFactor = panelW/onW;
 
       list.forEach((im,idx)=>{
@@ -2333,6 +2331,7 @@
         '<button type="button" class="btn ghost locations-link">Copy link</button>';
       card.appendChild(thumb); card.appendChild(body);
       locationsGrid.appendChild(card);
+      renderThumb(thumb, site);
       thumb.addEventListener('click', ()=>openLocation(site));
       body.querySelector('.locations-open').addEventListener('click', e=>{ e.stopPropagation(); openLocation(site); });
       body.querySelector('.locations-link').addEventListener('click', e=>{

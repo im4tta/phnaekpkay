@@ -70,6 +70,7 @@
 
   <div class="layout">
     <aside class="sidebar" id="sidebar">
+      <button type="button" class="sidebar-close" id="sidebarCloseBtn" title="Close controls">&times;</button>
 
       <div>
         <h2>Add imagery</h2>
@@ -2144,6 +2145,7 @@
   }
   sidebarToggleBtn.addEventListener('click',()=>setSidebarOpen(sidebar.classList.contains('is-collapsed')));
   sidebarBackdrop.addEventListener('click',()=>setSidebarOpen(false));
+  document.getElementById('sidebarCloseBtn').addEventListener('click',()=>setSidebarOpen(false));
   let wasDesktopWidth = window.innerWidth>820;
   window.addEventListener('resize',()=>{
     const isDesktopWidth = window.innerWidth>820;

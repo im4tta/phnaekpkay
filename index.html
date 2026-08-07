@@ -60,6 +60,7 @@
       <button class="btn ghost" id="loadProjectBtn">Load</button>
       <button class="btn ghost" id="saveWorkspaceBtn">Workspace</button>
       <button class="btn ghost" id="openWorkspaceBtn">Open workspace</button>
+      <button class="btn ghost" id="locationsBtn">Locations<span class="loc-pulse" id="locPulse" title="New field sites to explore"></span></button>
       <button class="btn ghost" id="exportReportBtn">Report</button>
       <button class="btn ghost" id="openUpscaleBtn">Enhance</button>
       <button class="btn ghost" id="exportVideoBtn" style="display:none;">&#9679; Export video</button>
@@ -387,6 +388,17 @@
 </div>
 
 <canvas id="exportCanvas" style="display:none;"></canvas>
+
+<div class="locations-modal-backdrop is-hidden" id="locationsBackdrop"></div>
+<div class="locations-modal is-hidden" id="locationsModal" role="dialog" aria-modal="true" aria-labelledby="locationsTitle">
+  <div class="locations-modal-head">
+    <h2 id="locationsTitle">Field sites</h2>
+    <button type="button" class="locations-close" id="locationsCloseBtn" aria-label="Close locations">&times;</button>
+  </div>
+  <p class="locations-note">Satellite locations documenting affected villages along the Cambodia&ndash;Thailand border. Click a site to open its imagery.</p>
+  <div class="locations-grid" id="locationsGrid"></div>
+</div>
+
 <script src="src/lib/image-processing.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.min.js"></script>
 
@@ -492,6 +504,11 @@
   const openWorkspaceBtn = document.getElementById('openWorkspaceBtn');
   const projectInput = document.getElementById('projectInput');
   const exportReportBtn = document.getElementById('exportReportBtn');
+  const locationsBtn = document.getElementById('locationsBtn');
+  const locationsModal = document.getElementById('locationsModal');
+  const locationsBackdrop = document.getElementById('locationsBackdrop');
+  const locationsCloseBtn = document.getElementById('locationsCloseBtn');
+  const locationsGrid = document.getElementById('locationsGrid');
   const notesInput = document.getElementById('notesInput');
   const includeNotesExport = document.getElementById('includeNotesExport');
   const drawToggleBtn = document.getElementById('drawToggleBtn');
@@ -743,6 +760,7 @@
   let liveMap = { provider:'esri', lat:14.238, lng:103.548, zoom:13, dragging:false, lastX:0, lastY:0, cacheBust:0 };
   const tileCache = new Map();
   const labelTileCache = new Map();
+  const thumbCache = new Map();
   let sentinelPendingTiles=0;
 
   function lon2tileX(lon,z){ return (lon+180)/360*Math.pow(2,z); }
@@ -1831,17 +1849,17 @@
 
   function drawLabel(ctx, text, x, y, align){
     if(!text) return;
-    ctx.font = "500 22px 'Noto Sans Khmer','JetBrains Mono',monospace";
-    const padX=14, padY=10;
+    ctx.font = "500 13px 'Noto Sans Khmer','JetBrains Mono',monospace";
+    const padX=10, padY=6;
     const w = ctx.measureText(text).width + padX*2;
-    const h = 34 + padY;
+    const h = 18 + padY;
     let bx = x;
     if(align==='right') bx = x - w;
-    const grad = ctx.createLinearGradient(0,y,0,y+h+20);
+    const grad = ctx.createLinearGradient(0,y,0,y+h+12);
     grad.addColorStop(0,'rgba(0,0,0,0.72)');
     grad.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(bx, y, w, h+20);
+    ctx.fillRect(bx, y, w, h+12);
     ctx.fillStyle = '#f4f2e8';
     ctx.textBaseline = 'top';
     ctx.fillText(text, bx+padX, y+padY);
@@ -1910,9 +1928,16 @@
   }
 
   function drawExportBrand(ctx,W,H){
-    ctx.save(); ctx.font="600 15px 'Space Grotesk',sans-serif"; ctx.textAlign='right'; ctx.textBaseline='bottom';
-    ctx.fillStyle='rgba(0,0,0,.58)'; ctx.fillRect(W-220,H-34,210,24);
-    ctx.fillStyle='#eef0e4'; ctx.fillText('Phnaek Pkay · Satellite Eye',W-20,H-17); ctx.restore();
+    ctx.save(); ctx.font="600 14px 'Space Grotesk',sans-serif"; ctx.textAlign='right'; ctx.textBaseline='bottom';
+    ctx.fillStyle='rgba(0,0,0,.58)'; ctx.fillRect(W-200,H-34,190,24);
+    ctx.fillStyle='#eef0e4'; ctx.fillText('Phnaek Pkay',W-20,H-17); ctx.restore();
+  }
+  function drawExportCoords(ctx,W,H){
+    ctx.save(); ctx.font="500 13px 'JetBrains Mono',monospace"; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    const label = `lat ${liveMap.lat.toFixed(4)} · lon ${liveMap.lng.toFixed(4)}`;
+    const w = ctx.measureText(label).width + 24;
+    ctx.fillStyle='rgba(0,0,0,.58)'; ctx.fillRect(12,H-34,w,24);
+    ctx.fillStyle='#98a186'; ctx.fillText(label,24,H-17); ctx.restore();
   }
   function drawExportNotes(ctx,W,H){
     if(!includeNotesExport.checked || !notesInput.value.trim()) return;
@@ -1959,7 +1984,7 @@
         ctx.textBaseline='middle';
         ctx.fillText(caption, 14, H-capH/2);
       }
-       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-grid.png');
+       drawExportNotes(ctx,W,H); drawExportCoords(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-grid.png');
     } else if(mode==='slider') {
       const L = images.find(i=>i.id===sliderState.leftId);
       const R = images.find(i=>i.id===sliderState.rightId);
@@ -1979,7 +2004,7 @@
         ctx.textBaseline='middle';
         ctx.fillText(caption, 14, H+capH/2);
       }
-       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-slider.png');
+       drawExportNotes(ctx,W,H); drawExportCoords(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-slider.png');
     } else if(mode==='overlay') {
       const B = images.find(i=>i.id===overlayState.baseId);
       const T = images.find(i=>i.id===overlayState.topId);
@@ -1998,7 +2023,7 @@
         ctx.textBaseline='middle';
         ctx.fillText(caption, 14, H+capH/2);
       }
-       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-overlay.png');
+       drawExportNotes(ctx,W,H); drawExportCoords(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-overlay.png');
     } else if(mode==='change') {
       const before = images.find(i=>i.id===changeState.beforeId);
       const after = images.find(i=>i.id===changeState.afterId);
@@ -2008,7 +2033,7 @@
       exportCanvas.width=W; exportCanvas.height=H+capH;
       const ctx=exportCanvas.getContext('2d'); ctx.drawImage(changeCanvas,0,0);
       if(caption){ ctx.fillStyle='#1a1e15'; ctx.fillRect(0,H,W,capH); ctx.fillStyle='#98a186'; ctx.font="500 16px 'JetBrains Mono',monospace"; ctx.textBaseline='middle'; ctx.fillText(caption,14,H+capH/2); }
-       drawExportNotes(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-change-map.png');
+       drawExportNotes(ctx,W,H); drawExportCoords(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-change-map.png');
     }
   });
 
@@ -2173,7 +2198,9 @@
   function restoreProject(p){
     if(!p || (!Array.isArray(p.images) && !p.preferenceOnly)) throw Error('invalid project');
     if(Array.isArray(p.images)){ images=[]; nextId=Math.max(0,...p.images.map(saved=>Number(saved.id)||0))+1;
-      p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:saved.selected!==false}); renderImageList(); updateSliderSelects(true); renderStage(); }; img.src=saved.src; }); }
+      let loaded=0, total=p.images.length;
+      function commit(){ loaded++; if(loaded<total) return; renderImageList(); updateSliderSelects(true); renderStage(); }
+      p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:saved.selected!==false}); commit(); }; img.onerror=()=>commit(); img.src=saved.src; }); }
     cols=p.cols||3; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,leftView:{zoom:1,x:0,y:0},rightView:{zoom:1,x:0,y:0},thirdView:{zoom:1,x:0,y:0},...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars(); applySliderPanelVars();
     if(p.map){ Object.assign(liveMap,{provider:p.map.provider||liveMap.provider,lat:p.map.lat||liveMap.lat,lng:p.map.lng||liveMap.lng,zoom:p.map.zoom||liveMap.zoom}); mapboxToken.value=p.map.mapboxToken||''; sentinelId.value=p.map.sentinelId||''; sentinelLayer.value=p.map.sentinelLayer||'TRUE_COLOR'; sentinelDate.value=p.map.sentinelDate||''; sentinelCloud.value=p.map.sentinelCloud||20; sentinelSharpness.value=p.map.sentinelSharpness||35; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; nasaLayer.value=p.map.nasaLayer||nasaLayer.value; nasaDate.value=p.map.nasaDate||nasaDate.value; placesApiKey.value=p.map.placesApiKey||''; providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change')); }
     if(p.annotation){ const img=new Image(); img.onload=()=>{syncAnnotationCanvas(); annotationCanvas.getContext('2d').drawImage(img,0,0,annotationCanvas.width,annotationCanvas.height);}; img.src=p.annotation; }
@@ -2193,6 +2220,100 @@
     };
     reader.readAsText(file); projectInput.value='';
   });
+
+  // ---------- Field sites (bundled locations) ----------
+  const LOCATIONS = [
+    { file:'phnaek-pkay-Boeng Trakoun.json', name:'Boeng Trakoun', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.98965635876216, lng:102.85603437036133 },
+    { file:'phnaek-pkay-prey chan village.json', name:'Prey Chan', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.81581, lng:102.74037 },
+    { file:'phnaek-pkay-chhorkchey Village.json', name:'Chhork Chey', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.7605, lng:102.70142 }
+  ];
+  function openLocations(){
+    locationsBackdrop.classList.remove('is-hidden');
+    locationsModal.classList.remove('is-hidden');
+    locationsModal.setAttribute('aria-hidden','false');
+  }
+  function closeLocations(){
+    seenLocations();
+    locationsBackdrop.classList.add('is-hidden');
+    locationsModal.classList.add('is-hidden');
+    locationsModal.setAttribute('aria-hidden','true');
+  }
+  locationsBtn.addEventListener('click', openLocations);
+  locationsCloseBtn.addEventListener('click', closeLocations);
+  locationsBackdrop.addEventListener('click', closeLocations);
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !locationsModal.classList.contains('is-hidden')) closeLocations(); });
+  const locPulse = document.getElementById('locPulse');
+  function seenLocations(){ try{ localStorage.setItem('phnaek-pkay-locations-seen','1'); }catch(e){} if(locPulse) locPulse.style.display='none'; }
+  (function firstVisit(){
+    let seen=false; try{ seen=!!localStorage.getItem('phnaek-pkay-locations-seen'); }catch(e){}
+    if(!seen && locPulse) locPulse.style.display='block';
+    if(!seen) setTimeout(openLocations, 1400);
+  })();
+  function renderThumb(el, site){
+    const c=document.createElement('canvas'); c.width=320; c.height=200; c.className='locations-canvas';
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#0a0b08'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle='#2a301f'; ctx.font="12px monospace"; ctx.textAlign='center';
+    ctx.fillText('loading\u2026', c.width/2, c.height/2);
+    el.appendChild(c);
+    const z=Math.round(site.zoom || 15);
+    const n=Math.pow(2,z);
+    const cx=lon2tileX(site.lng,z), cy=lat2tileY(site.lat,z);
+    const oX=cx*(TILE||256)-c.width/2, oY=cy*(TILE||256)-c.height/2;
+    const t0x=Math.floor(oX/(TILE||256)), t0y=Math.floor(oY/(TILE||256));
+    const txN=Math.ceil(c.width/(TILE||256))+2, tyN=Math.ceil(c.height/(TILE||256))+2;
+    function paint(){
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.fillStyle='#0a0b08'; ctx.fillRect(0,0,c.width,c.height);
+      for(let ty=0; ty<tyN; ty++) for(let tx=0; tx<txN; tx++){
+        const x=t0x+tx, yt=t0y+ty;
+        if(yt<0||yt>=n) continue;
+        const xw=((x%n)+n)%n;
+        const img=thumbCache.get(z+'|'+xw+'|'+yt);
+        if(img&&img.complete&&img.naturalWidth) ctx.drawImage(img, x*(TILE||256)-oX, yt*(TILE||256)-oY, (TILE||256), (TILE||256));
+      }
+    }
+    for(let ty=0; ty<tyN; ty++) for(let tx=0; tx<txN; tx++){
+      const x=t0x+tx, yt=t0y+ty;
+      if(yt<0||yt>=n) continue;
+      const xw=((x%n)+n)%n, key=z+'|'+xw+'|'+yt;
+      let img=thumbCache.get(key);
+      if(!img){
+        img=new Image(); img.crossOrigin='anonymous';
+        img.onload=paint; img.onerror=paint;
+        img.src=`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${yt}/${xw}`;
+        thumbCache.set(key,img);
+      }
+    }
+  }
+  function openLocation(site){
+    closeLocations();
+    captureStatus.textContent='Loading '+site.name+' imagery\u2026'; captureStatus.classList.remove('err');
+    fetch('assets/data/'+site.file)
+      .then(r=>{ if(!r.ok) throw Error('http '+r.status); return r.json(); })
+      .then(p=>{
+        restoreProject(p);
+        setMode(p.mode || 'slider');
+        captureStatus.textContent='Loaded '+site.name+'.'; captureStatus.classList.remove('err');
+      })
+      .catch(()=>{ captureStatus.textContent='Could not load '+site.name+'.'; captureStatus.classList.add('err'); });
+  }
+  function renderLocations(){
+    locationsGrid.innerHTML='';
+    LOCATIONS.forEach(site=>{
+      const card=document.createElement('div'); card.className='locations-card';
+      const thumb=document.createElement('div'); thumb.className='locations-thumb';
+      const body=document.createElement('div'); body.className='locations-body';
+      body.innerHTML='<h3>'+escapeHtml(site.name)+'</h3><p>'+escapeHtml(site.desc)+'</p>'+
+        '<div class="locations-coords"><code>'+site.lat.toFixed(5)+'&deg; N</code><code>'+site.lng.toFixed(5)+'&deg; E</code></div>'+
+        '<button type="button" class="btn locations-open">Open site</button>';
+      card.appendChild(thumb); card.appendChild(body);
+      locationsGrid.appendChild(card);
+      thumb.addEventListener('click', ()=>openLocation(site));
+      body.addEventListener('click', ()=>openLocation(site));
+    });
+  }
+  renderLocations();
   exportReportBtn.addEventListener('click',()=>{
     if(mode==='change' && images.length>=2) renderChangeMap();
     const preview=mode==='change' && changeCanvas.width ? changeCanvas.toDataURL('image/png') : '';

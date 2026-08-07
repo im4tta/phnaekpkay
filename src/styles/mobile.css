@@ -247,6 +247,13 @@
   .seq-play { width: 34px; height: 34px; }
 }
 
+/* ---- Field sites modal responsive ---- */
+@media (max-width: 820px) {
+  .locations-grid { grid-template-columns: 1fr; }
+  .locations-modal { top: 4vh; max-height: 88vh; width: 96vw; }
+  .locations-thumb { height: 160px; }
+}
+
 /* ==========================================================================
    Short landscape viewports (phones rotated sideways) — the fixed
    `calc(100dvh - Npx)` stage heights above eat too much space when the

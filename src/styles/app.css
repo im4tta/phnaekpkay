@@ -42,12 +42,14 @@
   *{box-sizing:border-box;}
   [hidden]{display:none !important;}
   html,body{height:100%;}
+  html{overflow-x:hidden;}
   body{
     margin:0;
     background:var(--ink);
     color:var(--paper);
     font-family:'Inter',system-ui,sans-serif;
     background:#0d100c;
+    overflow-x:hidden;
   }
   #techBackground{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.72;}
   ::selection{background:var(--moss); color:var(--ink);}
@@ -221,7 +223,7 @@
 
   /* ---- Main stage ---- */
   .stage-wrap{flex:1;min-height:calc(100vh - 76px);padding:24px;overflow:auto;display:flex;flex-direction:column;gap:14px;position:relative;}
-  #annotationCanvas{position:absolute;z-index:15;pointer-events:none;display:none;cursor:crosshair;}
+  #annotationCanvas{position:absolute;z-index:15;pointer-events:none;display:none;cursor:crosshair;touch-action:none;}
   #annotationCanvas.active{pointer-events:auto;display:block;}
   .stage-hint{
     font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);
@@ -242,7 +244,7 @@
     --zoom:1; --panx:0px; --pany:0px; min-height:calc(100vh - 170px); grid-auto-rows:minmax(0,1fr);
   }
   .panel{position:relative; background:#000; aspect-ratio:auto; min-height:0; overflow:hidden;}
-  .panel-viewport{position:absolute; inset:0; overflow:hidden; cursor:grab;}
+  .panel-viewport{position:absolute; inset:0; overflow:hidden; cursor:grab; touch-action:none;}
   .panel-viewport:active{cursor:grabbing;}
   .panel-img{
     width:100%; height:100%; object-fit:contain; display:block;
@@ -292,7 +294,7 @@
   .divider{
     position:absolute; top:0; bottom:0; left:var(--clip,50%);
     width:2px; background:var(--amber); cursor:ew-resize; z-index:5;
-    transform:translateX(-1px);
+    transform:translateX(-1px); touch-action:none;
   }
   .divider .handle{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
@@ -312,7 +314,7 @@
   .corner-label.right{right:10px; border-right:2px solid var(--teal);}
   .corner-label.middle{left:50%;transform:translateX(-50%);border-bottom:2px solid var(--amber);}
   .corner-label.third-tag{right:10px;top:52px;border-right:2px solid var(--teal);}
-  .drag-surface{position:absolute; inset:0; cursor:grab; z-index:3;}
+  .drag-surface{position:absolute; inset:0; cursor:grab; z-index:3; touch-action:none;}
   .drag-surface:active{cursor:grabbing;}
 
   .overlay-stage{
@@ -337,7 +339,7 @@
   .sequence-stage{
     position:relative; width:100%; aspect-ratio:3/2; background:#000;
     border:1px solid var(--line); border-radius:2px; overflow:hidden;
-    height:calc(100vh - 220px); max-height:none; margin:0 auto; cursor:grab;
+    height:calc(100vh - 220px); max-height:none; margin:0 auto; cursor:grab; touch-action:none;
   }
   .sequence-stage:active{cursor:grabbing;}
   .sequence-stage canvas{width:100%; height:100%; display:block;}
@@ -396,7 +398,7 @@
   /* ---- Live map capture ---- */
   .map-live{
     position:relative; width:100%; aspect-ratio:4/3; background:#0a0b08;
-    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:grab;
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:grab; touch-action:none;
   }
   .map-live:active{cursor:grabbing;}
   .map-live canvas{width:100%; height:100%; display:block;}

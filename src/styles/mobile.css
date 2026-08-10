@@ -252,6 +252,10 @@
   .locations-grid { grid-template-columns: 1fr; }
   .locations-modal { top: 4vh; max-height: 88vh; width: 96vw; }
   .locations-thumb { height: 160px; }
+
+  /* Slider inline map — shrink on mobile */
+  .slider-map-overlay { width: 180px; bottom: 12px; right: 12px; }
+  .slider-map-toggle { bottom: 12px; right: 12px; }
 }
 
 /* ==========================================================================

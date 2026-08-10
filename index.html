@@ -2541,10 +2541,15 @@
     applyTheme(saved === 'light' ? 'light' : 'dark');
   })();
 
-  // ---------- Default demo frames (Phnom Penh: Esri satellite vs CARTO reference) ----------
+  // ---------- Default demo frames (Phnom Penh: Esri satellite vs Esri hybrid with labels) ----------
   // Captured on first load when no saved workspace exists, so the slider view
   // is immediately populated and users understand what the app does.
-  async function captureProviderFrame(provider, label, imageryDate){
+  // Google tiles cannot be captured to canvas (no CORS headers — canvas gets tainted and
+  // toDataURL throws). We use Esri for both frames: pure satellite on the left, and Esri
+  // satellite + CARTO place/road labels composited on top for the right — giving the same
+  // visual contrast as satellite vs Google Maps hybrid. The inline map overlay shows live
+  // Google tiles as requested.
+  async function captureProviderFrame(provider, label, imageryDate, withLabels){
     const W = 1600, H = 1000;
     const z = Math.min(Math.round(liveMap.zoom), PROVIDER_MAX_ZOOM[provider] || 19);
     const cap = document.createElement('canvas');
@@ -2559,13 +2564,13 @@
     const tilesX = Math.ceil(W/TILE)+2;
     const tilesY = Math.ceil(H/TILE)+2;
     const n = Math.pow(2,z);
-    const loads = [];
-    for(let ty=0; ty<tilesY; ty++){
-      for(let tx=0; tx<tilesX; tx++){
-        const xt=firstTileX+tx, yt=firstTileY+ty;
+    async function drawLayer(urlFn){
+      const loads=[];
+      for(let ty=0;ty<tilesY;ty++) for(let tx=0;tx<tilesX;tx++){
+        const xt=firstTileX+tx,yt=firstTileY+ty;
         if(yt<0||yt>=n) continue;
         const xw=((xt%n)+n)%n;
-        const url=tileUrl(provider,z,xw,yt);
+        const url=urlFn(z,xw,yt);
         if(!url) continue;
         const px=xt*TILE-originPxX, py=yt*TILE-originPxY;
         loads.push(new Promise(resolve=>{
@@ -2575,8 +2580,14 @@
           img.src=url;
         }));
       }
+      await Promise.all(loads);
     }
-    await Promise.all(loads);
+    // Base satellite layer
+    await drawLayer((z,x,y)=>tileUrl(provider,z,x,y));
+    // Optional CARTO label overlay (roads, places, boundaries)
+    if(withLabels){
+      await drawLayer((z,x,y)=>`https://${['a','b','c','d'][(x+y)%4]}.basemaps.cartocdn.com/light_only_labels/${z}/${x}/${y}.png`);
+    }
     let dataUrl;
     try{ dataUrl=cap.toDataURL('image/png'); }catch(e){ return null; }
     return new Promise(resolve=>{
@@ -2587,15 +2598,15 @@
     });
   }
   async function loadDefaultDemoFrames(){
-    // Use two CORS-safe providers: Esri satellite (detailed) + CARTO Voyager (reference map)
-    // This immediately demonstrates the before/after slider with meaningful contrast.
-    const [esriFrame, cartoFrame] = await Promise.all([
-      captureProviderFrame('esri', 'Phnom Penh · Esri Satellite', 'current mosaic'),
-      captureProviderFrame('carto', 'Phnom Penh · CARTO Reference', 'current mosaic')
+    // Left: pure Esri satellite. Right: Esri satellite + road/place labels (hybrid).
+    // Demonstrates the slider instantly. Live map shows Google tiles.
+    const [satFrame, hybridFrame] = await Promise.all([
+      captureProviderFrame('esri', 'Phnom Penh · Satellite', 'current mosaic', false),
+      captureProviderFrame('esri', 'Phnom Penh · Satellite + Labels', 'current mosaic', true)
     ]);
-    if(!esriFrame && !cartoFrame) return; // both failed (e.g. fully offline)
-    if(esriFrame) images.push(esriFrame);
-    if(cartoFrame) images.push(cartoFrame);
+    if(!satFrame && !hybridFrame) return;
+    if(satFrame) images.push(satFrame);
+    if(hybridFrame) images.push(hybridFrame);
     renderImageList();
     updateSliderSelects();
     renderStage();

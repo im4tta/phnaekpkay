@@ -229,8 +229,8 @@
       <div id="gridControls">
         <h2>Grid layout</h2>
         <div class="cols-select" id="colsSelect">
-          <button data-cols="2">2 COL</button>
-          <button data-cols="3" class="active">3 COL</button>
+          <button data-cols="2" class="active">2 COL</button>
+          <button data-cols="3">3 COL</button>
           <button data-cols="4">4 COL</button>
         </div>
       </div>
@@ -356,6 +356,19 @@
          <div class="corner-label right" id="rightLabelTag"></div>
          <div class="corner-label middle" id="middleLabelTag" hidden></div>
          <div class="corner-label third-tag" id="thirdLabelTag" hidden></div>
+         <div class="slider-map-overlay" id="sliderMapOverlay">
+           <div class="slider-map-header">
+             <span class="slider-map-title">&#9974; Live Map</span>
+             <button type="button" class="slider-map-close" id="sliderMapCloseBtn" title="Hide map">&times;</button>
+           </div>
+           <canvas id="sliderMapCanvas"></canvas>
+           <div class="slider-map-zoom">
+             <button type="button" id="sliderMapZoomIn">+</button>
+             <button type="button" id="sliderMapZoomOut">&minus;</button>
+           </div>
+           <div class="slider-map-readout" id="sliderMapReadout">z&mdash;</div>
+         </div>
+         <button type="button" class="slider-map-toggle is-hidden" id="sliderMapToggleBtn" title="Show map">&#9974; Map</button>
       </div>
       <div class="overlay-stage" id="overlayStage" style="display:none;">
          <div class="overlay-panel base"><img id="overlayBaseImg" draggable="false"></div>
@@ -412,7 +425,7 @@
   let images = [];          // {id, src, label, natW, natH, imgEl, selected}
   let nextId = 1;
   let mode = 'grid';         // 'grid' | 'slider'
-  let cols = 3;
+  let cols = 2;
   let view = { zoom: 1, panx: 0, pany: 0 };
   let sliderState = { leftId: null, middleId: null, rightId: null, clip: 50, clip2: 75, three: false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
   let overlayState = { baseId: null, topId: null, thirdId: null, density: 50, thirdDensity: 55 };
@@ -900,6 +913,8 @@
     const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
     mapZoomIn.disabled=liveMap.zoom>=maxZ;
     mapZoomOut.disabled=liveMap.zoom<=2;
+    // Keep slider inline map in sync whenever the main map redraws
+    if(mode==='slider' && sliderMapVisible) drawSliderMap();
   }
 
   function sizeLiveMapCanvas(){
@@ -1028,6 +1043,107 @@
   });
   showMapLabelsChk.addEventListener('change', drawLiveMap);
   enhanceImageryChk.addEventListener('change', drawLiveMap);
+
+  // ---------- Slider inline map overlay ----------
+  const sliderMapOverlay = document.getElementById('sliderMapOverlay');
+  const sliderMapCanvas = document.getElementById('sliderMapCanvas');
+  const sliderMapToggleBtn = document.getElementById('sliderMapToggleBtn');
+  const sliderMapCloseBtn = document.getElementById('sliderMapCloseBtn');
+  const sliderMapZoomIn = document.getElementById('sliderMapZoomIn');
+  const sliderMapZoomOut = document.getElementById('sliderMapZoomOut');
+  const sliderMapReadout = document.getElementById('sliderMapReadout');
+  let sliderMapVisible = true;
+
+  function sizeSliderMapCanvas(){
+    const rect = sliderMapCanvas.getBoundingClientRect();
+    if(!rect.width || !rect.height) return;
+    sliderMapCanvas.width = Math.round(rect.width);
+    sliderMapCanvas.height = Math.round(rect.height);
+    drawSliderMap();
+  }
+  function drawSliderMap(){
+    if(!sliderMapCanvas.width || !sliderMapCanvas.height) return;
+    const ctx = sliderMapCanvas.getContext('2d', { willReadFrequently: true });
+    const W = sliderMapCanvas.width, H = sliderMapCanvas.height;
+    ctx.fillStyle = '#0a0b08'; ctx.fillRect(0,0,W,H);
+    ctx.filter = enhanceImageryChk.checked ? 'contrast(1.12) saturate(1.08)' : 'none';
+    const z = Math.round(liveMap.zoom);
+    const centerXtile = lon2tileX(liveMap.lng, z);
+    const centerYtile = lat2tileY(liveMap.lat, z);
+    const originPxX = centerXtile*TILE - W/2;
+    const originPxY = centerYtile*TILE - H/2;
+    const firstTileX = Math.floor(originPxX/TILE);
+    const firstTileY = Math.floor(originPxY/TILE);
+    const tilesX = Math.ceil(W/TILE)+2;
+    const tilesY = Math.ceil(H/TILE)+2;
+    for(let ty=0; ty<tilesY; ty++){
+      for(let tx=0; tx<tilesX; tx++){
+        const xt=firstTileX+tx, yt=firstTileY+ty;
+        const px=xt*TILE-originPxX, py=yt*TILE-originPxY;
+        const img=getTile(liveMap.provider,z,xt,yt);
+        if(img&&img.complete&&img.naturalWidth) ctx.drawImage(img,px,py,TILE,TILE);
+      }
+    }
+    if(showMapLabelsChk.checked && liveMap.provider!=='google' && liveMap.provider!=='carto'){
+      ctx.filter='none';
+      for(let ty=0;ty<tilesY;ty++) for(let tx=0;tx<tilesX;tx++){
+        const xt=firstTileX+tx,yt=firstTileY+ty,label=getLabelTile(z,xt,yt);
+        if(label&&label.complete&&label.naturalWidth) ctx.drawImage(label,xt*TILE-originPxX,yt*TILE-originPxY,TILE,TILE);
+      }
+    }
+    ctx.filter='none';
+    const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
+    sliderMapZoomIn.disabled=liveMap.zoom>=maxZ;
+    sliderMapZoomOut.disabled=liveMap.zoom<=2;
+    let mapDate='';
+    if(liveMap.provider==='sentinel') mapDate=sentinelDate.value ? ` · ${sentinelDate.value}` : ' · latest';
+    if(liveMap.provider==='nasa') mapDate=` · ${nasaDate.value}`;
+    sliderMapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span style="color:var(--amber)">${mapDate.slice(3)}</span>`:''}`;
+  }
+
+  function setSliderMapVisible(v){
+    sliderMapVisible = v;
+    sliderMapOverlay.classList.toggle('is-hidden', !v);
+    sliderMapToggleBtn.classList.toggle('is-hidden', v);
+    if(v) requestAnimationFrame(sizeSliderMapCanvas);
+  }
+  sliderMapToggleBtn.addEventListener('click', ()=>setSliderMapVisible(true));
+  sliderMapCloseBtn.addEventListener('click', ()=>setSliderMapVisible(false));
+  sliderMapZoomIn.addEventListener('click', ()=>{
+    const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
+    liveMap.zoom=Math.min(maxZ, liveMap.zoom+1); drawLiveMap(); drawSliderMap();
+  });
+  sliderMapZoomOut.addEventListener('click', ()=>{
+    liveMap.zoom=Math.max(2, liveMap.zoom-1); drawLiveMap(); drawSliderMap();
+  });
+  sliderMapCanvas.addEventListener('pointerdown', e=>{
+    liveMap.dragging=true; liveMap.lastX=e.clientX; liveMap.lastY=e.clientY;
+    try{ sliderMapCanvas.setPointerCapture(e.pointerId); }catch(err){}
+    e.stopPropagation();
+  });
+  sliderMapCanvas.addEventListener('pointermove', e=>{
+    if(!liveMap.dragging) return;
+    const dx=e.clientX-liveMap.lastX, dy=e.clientY-liveMap.lastY;
+    liveMap.lastX=e.clientX; liveMap.lastY=e.clientY;
+    const z=Math.round(liveMap.zoom);
+    liveMap.lng=tileX2lon(lon2tileX(liveMap.lng,z)-dx/TILE,z);
+    liveMap.lat=tileY2lat(lat2tileY(liveMap.lat,z)-dy/TILE,z);
+    drawLiveMap(); drawSliderMap();
+  });
+  sliderMapCanvas.addEventListener('pointerup', ()=>{ liveMap.dragging=false; });
+  sliderMapCanvas.addEventListener('pointercancel', ()=>{ liveMap.dragging=false; });
+  sliderMapCanvas.addEventListener('wheel', e=>{
+    e.preventDefault(); e.stopPropagation();
+    const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
+    liveMap.zoom=Math.min(maxZ,Math.max(2,liveMap.zoom+(e.deltaY<0?1:-1)));
+    drawLiveMap(); drawSliderMap();
+  }, {passive:false});
+  // Sync slider map whenever the main map updates (handled inside drawLiveMap itself).
+  // These listeners ensure the slider map also refreshes for sidebar control changes.
+  function drawSliderMapIfVisible(){
+    if(mode==='slider' && sliderMapVisible) drawSliderMap();
+  }
+  window.addEventListener('resize', ()=>{ if(mode==='slider' && sliderMapVisible) sizeSliderMapCanvas(); });
 
   placeSearch.addEventListener('keydown', async e=>{
     if(e.key !== 'Enter') return;
@@ -1701,6 +1817,9 @@
       sliderStage.style.setProperty('--clip2', sliderState.clip2+'%');
       applySliderPanelVars();
       applyViewVars();
+      // Show inline map overlay
+      setSliderMapVisible(sliderMapVisible);
+      requestAnimationFrame(sizeSliderMapCanvas);
     } else if(mode==='overlay'){
       const B = images.find(i=>i.id===overlayState.baseId);
       const T = images.find(i=>i.id===overlayState.topId);
@@ -2206,7 +2325,7 @@
       let loaded=0, total=p.images.length;
       function commit(){ loaded++; if(loaded<total) return; renderImageList(); updateSliderSelects(true); renderStage(); }
       p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:saved.selected!==false}); commit(); }; img.onerror=()=>commit(); img.src=saved.src; }); }
-    cols=p.cols||3; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,leftView:{zoom:1,x:0,y:0},rightView:{zoom:1,x:0,y:0},thirdView:{zoom:1,x:0,y:0},...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars(); applySliderPanelVars();
+    cols=p.cols||2; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,leftView:{zoom:1,x:0,y:0},rightView:{zoom:1,x:0,y:0},thirdView:{zoom:1,x:0,y:0},...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars(); applySliderPanelVars();
     if(p.map){ Object.assign(liveMap,{provider:p.map.provider||liveMap.provider,lat:p.map.lat||liveMap.lat,lng:p.map.lng||liveMap.lng,zoom:p.map.zoom||liveMap.zoom}); mapboxToken.value=p.map.mapboxToken||''; sentinelId.value=p.map.sentinelId||''; sentinelLayer.value=p.map.sentinelLayer||'TRUE_COLOR'; sentinelDate.value=p.map.sentinelDate||''; sentinelCloud.value=p.map.sentinelCloud||20; sentinelSharpness.value=p.map.sentinelSharpness||35; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; nasaLayer.value=p.map.nasaLayer||nasaLayer.value; nasaDate.value=p.map.nasaDate||nasaDate.value; placesApiKey.value=p.map.placesApiKey||''; providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change')); }
     if(p.annotation){ const img=new Image(); img.onload=()=>{syncAnnotationCanvas(); annotationCanvas.getContext('2d').drawImage(img,0,0,annotationCanvas.width,annotationCanvas.height);}; img.src=p.annotation; }
   }
@@ -2425,7 +2544,7 @@
   const brandHome = document.getElementById('brandHome');
   function goHome(){
     images = []; nextId = 1;
-    mode = 'grid'; cols = 3;
+    mode = 'grid'; cols = 2;
     view = { zoom:1, panx:0, pany:0 };
     sliderState = { leftId:null, middleId:null, rightId:null, clip:50, clip2:75, three:false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
     overlayState = { baseId:null, topId:null, thirdId:null, density:50, thirdDensity:55 };

@@ -424,7 +424,7 @@
   // ---------- State ----------
   let images = [];          // {id, src, label, natW, natH, imgEl, selected}
   let nextId = 1;
-  let mode = 'grid';         // 'grid' | 'slider'
+  let mode = 'slider';        // 'grid' | 'slider'
   let cols = 2;
   let view = { zoom: 1, panx: 0, pany: 0 };
   let sliderState = { leftId: null, middleId: null, rightId: null, clip: 50, clip2: 75, three: false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
@@ -771,7 +771,7 @@
     mapbox: ['high-resolution mosaic','up to z20'],
     sentinel: ['10m dated scenes','best z14 · max z16']
   };
-  let liveMap = { provider:'esri', lat:12.5657, lng:104.9910, zoom:7, dragging:false, lastX:0, lastY:0, cacheBust:0 };
+  let liveMap = { provider:'google', lat:11.5625, lng:104.9160, zoom:14, dragging:false, lastX:0, lastY:0, cacheBust:0 };
   const tileCache = new Map();
   const labelTileCache = new Map();
   const thumbCache = new Map();
@@ -986,11 +986,12 @@
   // GIBS products are usually published a few days behind the calendar date.
   nasaDate.value = new Date(Date.now()-3*86400000).toISOString().slice(0,10);
   sentinelDate.value = '';
-  providerNote.textContent = PROVIDER_NOTES.esri;
-  providerResolution.textContent = PROVIDER_CAPABILITIES.esri[0];
-  providerZoomLimit.textContent = PROVIDER_CAPABILITIES.esri[1];
-  placesApiKeyField.hidden = true;
-  placesApiNote.hidden = true;
+  providerSelect.value = 'google';
+  providerNote.textContent = PROVIDER_NOTES.google;
+  providerResolution.textContent = PROVIDER_CAPABILITIES.google[0];
+  providerZoomLimit.textContent = PROVIDER_CAPABILITIES.google[1];
+  placesApiKeyField.hidden = false;
+  placesApiNote.hidden = false;
 
   // Pointer events (not mouse events) so this also works with touch/pen —
   // on a phone in portrait mode this was previously mouse-only and the
@@ -2540,19 +2541,82 @@
     applyTheme(saved === 'light' ? 'light' : 'dark');
   })();
 
+  // ---------- Default demo frames (Phnom Penh: Esri satellite vs CARTO reference) ----------
+  // Captured on first load when no saved workspace exists, so the slider view
+  // is immediately populated and users understand what the app does.
+  async function captureProviderFrame(provider, label, imageryDate){
+    const W = 1600, H = 1000;
+    const z = Math.min(Math.round(liveMap.zoom), PROVIDER_MAX_ZOOM[provider] || 19);
+    const cap = document.createElement('canvas');
+    cap.width = W; cap.height = H;
+    const ctx = cap.getContext('2d');
+    const centerXtile = lon2tileX(liveMap.lng, z);
+    const centerYtile = lat2tileY(liveMap.lat, z);
+    const originPxX = centerXtile*TILE - W/2;
+    const originPxY = centerYtile*TILE - H/2;
+    const firstTileX = Math.floor(originPxX/TILE);
+    const firstTileY = Math.floor(originPxY/TILE);
+    const tilesX = Math.ceil(W/TILE)+2;
+    const tilesY = Math.ceil(H/TILE)+2;
+    const n = Math.pow(2,z);
+    const loads = [];
+    for(let ty=0; ty<tilesY; ty++){
+      for(let tx=0; tx<tilesX; tx++){
+        const xt=firstTileX+tx, yt=firstTileY+ty;
+        if(yt<0||yt>=n) continue;
+        const xw=((xt%n)+n)%n;
+        const url=tileUrl(provider,z,xw,yt);
+        if(!url) continue;
+        const px=xt*TILE-originPxX, py=yt*TILE-originPxY;
+        loads.push(new Promise(resolve=>{
+          const img=new Image(); img.crossOrigin='anonymous';
+          img.onload=()=>{ try{ ctx.drawImage(img,px,py,TILE,TILE); resolve(true); }catch(e){ resolve(false); } };
+          img.onerror=()=>resolve(false);
+          img.src=url;
+        }));
+      }
+    }
+    await Promise.all(loads);
+    let dataUrl;
+    try{ dataUrl=cap.toDataURL('image/png'); }catch(e){ return null; }
+    return new Promise(resolve=>{
+      const img=new Image();
+      img.onload=()=>resolve({id:nextId++,src:dataUrl,label,imageryDate,capturedAt:new Date().toISOString(),natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:true});
+      img.onerror=()=>resolve(null);
+      img.src=dataUrl;
+    });
+  }
+  async function loadDefaultDemoFrames(){
+    // Use two CORS-safe providers: Esri satellite (detailed) + CARTO Voyager (reference map)
+    // This immediately demonstrates the before/after slider with meaningful contrast.
+    const [esriFrame, cartoFrame] = await Promise.all([
+      captureProviderFrame('esri', 'Phnom Penh · Esri Satellite', 'current mosaic'),
+      captureProviderFrame('carto', 'Phnom Penh · CARTO Reference', 'current mosaic')
+    ]);
+    if(!esriFrame && !cartoFrame) return; // both failed (e.g. fully offline)
+    if(esriFrame) images.push(esriFrame);
+    if(cartoFrame) images.push(cartoFrame);
+    renderImageList();
+    updateSliderSelects();
+    renderStage();
+  }
+
   // ---------- Homepage (brand click) ----------
   const brandHome = document.getElementById('brandHome');
   function goHome(){
     images = []; nextId = 1;
-    mode = 'grid'; cols = 2;
+    mode = 'slider'; cols = 2;
     view = { zoom:1, panx:0, pany:0 };
     sliderState = { leftId:null, middleId:null, rightId:null, clip:50, clip2:75, three:false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
     overlayState = { baseId:null, topId:null, thirdId:null, density:50, thirdDensity:55 };
     changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12 };
-    liveMap.lat = 12.5657; liveMap.lng = 104.9910; liveMap.zoom = 7; liveMap.provider = 'esri';
+    liveMap.lat = 11.5625; liveMap.lng = 104.9160; liveMap.zoom = 14; liveMap.provider = 'google';
+    providerSelect.value = 'google';
+    providerSelect.dispatchEvent(new Event('change'));
     captionInput.value = ''; notesInput.value = '';
-    setMode('grid');
+    setMode('slider');
     renderImageList(); updateSliderSelects(); applyViewVars(); renderStage(); drawLiveMap();
+    loadDefaultDemoFrames();
     if(history && history.pushState && location.pathname !== '/') history.pushState({}, '', '/');
   }
   brandHome.addEventListener('click', goHome);
@@ -2560,10 +2624,13 @@
 
   // ---------- init ----------
   if(!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) startTechBackground();
+  setMode('slider');
   applyViewVars();
   renderStage();
   sizeLiveMapCanvas();
-  try{ const savedWorkspace=localStorage.getItem('phnaek-pkay-workspace')||localStorage.getItem('phnaek-pkay-preferences'); if(savedWorkspace) restoreProject(JSON.parse(savedWorkspace)); }catch(err){}
+  let _hasSavedWorkspace = false;
+  try{ const savedWorkspace=localStorage.getItem('phnaek-pkay-workspace')||localStorage.getItem('phnaek-pkay-preferences'); if(savedWorkspace){ restoreProject(JSON.parse(savedWorkspace)); _hasSavedWorkspace=true; } }catch(err){}
+  if(!_hasSavedWorkspace) loadDefaultDemoFrames();
   syncAnnotationCanvas();
   {
     const site = siteBySlug();

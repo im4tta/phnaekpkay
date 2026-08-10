@@ -1,100 +1,95 @@
-# Phnaek Pkay (Satellite Eye)
+# Phnaek Pkay · Satellite Eye
 
-A browser-first tool for building before/after satellite imagery
-comparisons — grid, slider, density overlay, and animated sequence — with
-live tile capture from several free/no-key providers, explainable change maps,
-project files, research links, and PNG/WebM/report export.
+A browser-based tool for satellite imagery comparison — no server, no account, no install. Open it and it immediately shows you a live before/after slider over Phnom Penh using Esri satellite imagery alongside a CARTO reference map, so the interface is self-explanatory from the first second.
 
-It still runs directly from `index.html` with no backend. An optional Vite
-workflow is included for local development and deployment.
+Live at **[phnaekpkay.vercel.app](https://phnaekpkay.vercel.app)**
 
-## Features
+---
 
-- **Grid mode** — lay out any number of frames side by side (2/3/4 columns)
-- **Slider mode** — classic before/after wipe comparison with a draggable divider
-- **Overlay mode** — blend two frames with an adjustable density slider, plus
-  an auto-pulse "blink comparator" mode (the astronomer's trick for spotting
-  subtle differences between two images)
-- **Sequence mode** — auto-playing timelapse through every uploaded frame,
-  with crossfade and a scrubbable timeline
-- **Change map mode** — explainable RGB, brightness, or vegetation-proxy
-  difference maps with adjustable sensitivity, small-region cleanup, changed
-  area, region count, and a review-oriented reliability indicator
-- **Live satellite capture** — pan/zoom a live tile map (Esri World Imagery,
-  NASA GIBS near-real-time layers, Google Satellite tiles, Mapbox Satellite,
-  Sentinel Hub) and capture the current view as a frame, with a place-name
-  search box
-- **Drag-and-drop reordering** of frames in the sidebar (plus up/down buttons)
-- **Synced pan/zoom** across all frames so comparisons stay aligned
-- **PNG export** for grid/slider/overlay, and **WebM video export** for
-  slider sweep, overlay blink, and sequence timelapse; change maps export as
-  annotated PNGs
-- **Light / dark theme** toggle (persists via `localStorage`)
-- **Project save/load** — preserve imagery, ordering, labels, selected frames,
-  comparison settings, and view state in a portable JSON file
-- **Adaptive controls drawer** — the sidebar collapses on desktop, becomes an
-  off-canvas drawer on mobile, and closes automatically after choosing a mode
-- **HTML report export** — package frame metadata and the current change map
-  into a shareable report
-- Paste images directly from the clipboard (`Ctrl/Cmd+V`) — handy for
-  pasting screenshots out of Google Earth Pro's historical imagery slider,
-  which isn't otherwise accessible via any public API
+## What it does
 
-## Usage
+The homepage opens in **Slider mode** with two demo frames of Phnom Penh already loaded — Esri World Imagery on the left, CARTO street reference on the right. Drag the divider to compare them. The inline map in the bottom-right corner shows the live Google satellite layer; pan and zoom it directly without opening the sidebar.
 
-Just open `index.html` in a modern browser (Chrome, Firefox, Edge, Safari).
-There is nothing required to install.
+From there you can:
 
-For the optional development server:
+- Upload your own frames (drag and drop, file picker, or `Ctrl/Cmd+V` to paste from clipboard)
+- Capture a fresh satellite tile from any provider (Esri, NASA GIBS, Google, Mapbox, Sentinel Hub) at the current map position
+- Switch modes, export, and share
+
+---
+
+## Modes
+
+| Mode | What it does |
+|---|---|
+| **Slider** | Draggable before/after wipe. Drag the divider, or drag each frame independently to reposition it. Optional third-frame band. |
+| **Grid** | Side-by-side layout in 2, 3, or 4 columns. Default is 2 columns. |
+| **Overlay** | Two frames blended with a density slider. Auto-pulse "blink comparator" for spotting subtle differences. |
+| **Sequence** | Auto-playing timelapse through every frame, with crossfade and a scrubbable timeline. |
+| **Change Map** | Pixel-level difference map (RGB, brightness, or vegetation proxy) with adjustable sensitivity and region filtering. |
+
+---
+
+## Live satellite capture
+
+The sidebar's **Live satellite capture** section lets you navigate a tile map and capture the current view as a frame. The same map is also embedded directly in the Slider view — you never need to open the sidebar just to change location.
+
+| Provider | Key required | Dated imagery |
+|---|---|---|
+| Esri World Imagery | No | No — current mosaic |
+| CARTO Voyager | No | No — reference map |
+| NASA GIBS | No | Yes — VIIRS/MODIS near-real-time |
+| Google Satellite | No (unofficial) | No — current mosaic |
+| Mapbox Satellite | Free token | No — current mosaic |
+| Sentinel Hub | Free config ID | Yes — dated 10 m Sentinel-2 |
+
+For real before/after by date, use **Sentinel Hub** (free tier, ~10 m resolution). For a quick reference overlay, use Esri or CARTO. For historical imagery from Google Earth Pro, paste screenshots with `Ctrl/Cmd+V`.
+
+---
+
+## Export
+
+- **PNG** — grid layout, slider frame, overlay blend, or annotated change map
+- **WebM video** — slider sweep, overlay blink, or sequence timelapse (native `MediaRecorder`, no external libraries)
+- **HTML report** — frame metadata, notes, and change map packaged into a shareable standalone file
+- **Project JSON** — full workspace save/restore including imagery, labels, settings, and view state
+
+---
+
+## Field sites
+
+The **Locations** button opens a curated set of documented sites along the Cambodia–Thailand border. Clicking a site loads its imagery directly into the slider.
+
+---
+
+## Development
+
+No build step required — open `index.html` directly in any modern browser.
+
+For the optional Vite dev server:
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Image enhancement roadmap
-
-The current Detail Boost uses local unsharp masking and bicubic resampling for
-fast, private visual enhancement. It does not recover missing Sentinel-2
-detail. The practical open-source AI path is an opt-in Real-ESRGAN model
-converted to ONNX and run with ONNX Runtime WebGPU, with a WASM fallback.
-SwinIR is a heavier alternative. Upscayl is a desktop Vulkan application and
-is not directly embeddable in this static browser app.
-
-AI enhancement should remain separate from change detection because generated
-textures can create false changes. Originals remain the analytical source.
-
-To develop with a local server (recommended, since some browsers restrict
-`fetch`/clipboard APIs on `file://` origins):
+Or with Python:
 
 ```bash
 python3 -m http.server 8080
-# then open http://localhost:8080
+# open http://localhost:8080
 ```
 
-### Live imagery providers
+Some browsers restrict `fetch` and clipboard APIs on `file://` origins, so a local server is recommended for the full feature set.
 
-| Provider | Key needed | Dated imagery | Notes |
-|---|---|---|---|
-| Esri World Imagery | No | No (current mosaic) | Good default, reliable |
-| NASA GIBS | No | **Yes** | Near-real-time VIIRS/MODIS monitoring layers; lower resolution |
-| Google Satellite tiles | No | No (current mosaic) | Unofficial endpoint, subject to Google's terms, may fail CORS capture |
-| Mapbox Satellite | Yes (free tier) | No (current mosaic) | Needs a Mapbox access token |
-| Sentinel Hub | Yes (free tier) | **Yes** | The one to use for real before/after by capture date, ~10m resolution |
+---
 
-Google Earth's own historical-imagery timeline (the slider in the desktop
-app) has no public API — see the note in the app's sidebar. For real dated
-satellite history, use Sentinel Hub, or capture manually in Google Earth Pro
-and paste the screenshot in with `Ctrl/Cmd+V`.
+## AI enhancement
 
-## Reference mapping
+The **Enhance** button runs a local ONNX super-resolution model (Real-ESRGAN or SwinIR) entirely in the browser via ONNX Runtime WebAssembly. A hosted `RealESRGAN_x4plus.onnx` model is included. Generated detail is for visual review only — originals remain the analytical source, and enhanced frames are labelled clearly.
 
-The four referenced repositories are research and tooling collections rather
-than one installable application. Their practical ideas are implemented here
-through temporal workflows, provider-aware tile capture, classical explainable
-change analysis, cleaned change regions, and portable project/report artifacts.
-Deep-learning training and large public datasets remain external workflows.
+---
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Do whatever you like with it.
+MIT — see [LICENSE](LICENSE).

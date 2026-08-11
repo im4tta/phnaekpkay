@@ -90,6 +90,7 @@
           <label>PROVIDER</label>
           <select id="providerSelect">
             <option value="esri">Esri World Imagery &middot; no key</option>
+            <option value="wayback">Esri Wayback &middot; dated archive, no key</option>
             <option value="carto">CARTO Voyager map &middot; no key</option>
             <option value="nasa">NASA GIBS near-real-time &middot; no key</option>
             <option value="google">Google Satellite tiles &middot; no key, unofficial</option>
@@ -100,6 +101,11 @@
         <div class="field" id="mapboxTokenField" hidden style="margin-top:8px;">
           <label>MAPBOX ACCESS TOKEN</label>
           <input type="text" id="mapboxToken" placeholder="pk.eyJ1Ijoi&hellip;">
+        </div>
+        <div class="field" id="waybackReleaseField" hidden style="margin-top:8px;">
+          <label>WAYBACK RELEASE</label>
+          <select id="waybackRelease"><option value="">Loading releases&hellip;</option></select>
+          <p class="provider-note" style="margin-top:4px;">Each release is a full global snapshot of Esri World Imagery on that publish date. Local imagery may not have changed between releases.</p>
         </div>
         <div class="field" id="sentinelIdField" hidden style="margin-top:8px;">
           <label>SENTINEL HUB INSTANCE ID</label>
@@ -756,15 +762,17 @@
   const TILE = 256;
   const PROVIDER_NOTES = {
     esri: 'Free, no signup. Current-day mosaic (not date-specific).',
+    wayback: 'Free Esri Wayback archive — dated snapshots of World Imagery going back to 2014. Select a release date to see that version of the basemap. No key required.',
     carto: 'Free CARTO Voyager reference map with roads, places, and boundaries. Use it for geographic context, not satellite detail.',
     nasa: 'Free NASA GIBS layers with no key. These are real near-real-time observations, so clouds can fully obscure the ground. For a clear surface view, try another date or use Esri; for dated 10m imagery, use Sentinel Hub.',
      google: 'Google satellite tiles with native hybrid labels when enabled. Unofficial endpoint; use is subject to Google\'s terms and canvas capture may be blocked by CORS.',
     mapbox: 'Needs a free Mapbox account + access token (mapbox.com/account). Current-day mosaic.',
     sentinel: 'Copernicus Data Space configuration. Uses the exact configured layer name and the latest valid Sentinel-2 scene unless a date is entered. About 10m resolution.'
   };
-  const PROVIDER_MAX_ZOOM = { esri:19, carto:20, nasa:9, google:20, mapbox:20, sentinel:16 };
+  const PROVIDER_MAX_ZOOM = { esri:19, wayback:19, carto:20, nasa:9, google:20, mapbox:20, sentinel:16 };
   const PROVIDER_CAPABILITIES = {
     esri: ['high-resolution mosaic','up to z19'],
+    wayback: ['dated archive 2014–present','up to z19'],
     carto: ['reference map','up to z20'],
     nasa: ['250-375m monitoring','up to z9'],
     google: ['high-resolution mosaic','up to z20'],
@@ -776,6 +784,9 @@
   const labelTileCache = new Map();
   const thumbCache = new Map();
   let sentinelPendingTiles=0;
+  // Wayback: { id, date } for current release; releases[] loaded on first use
+  let waybackRelease = { id: null, date: null };
+  let waybackReleases = null; // null = not loaded yet
 
   function lon2tileX(lon,z){ return (lon+180)/360*Math.pow(2,z); }
   function lat2tileY(lat,z){
@@ -793,7 +804,10 @@
     switch(provider){
       case 'esri':
         return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}${cb?'?'+cb:''}`;
-      case 'carto':
+      case 'wayback': {
+        if(!waybackRelease.id) return null;
+        return `https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/GoogleMapsCompatible/MapServer/tile/${waybackRelease.id}/${z}/${y}/${x}${cb?'?'+cb:''}`;
+      }      case 'carto':
         return `https://${['a','b','c','d'][(x+y)%4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png${cb?'?'+cb:''}`;
       case 'nasa': {
         const layer = nasaLayer.value || 'VIIRS_SNPP_CorrectedReflectance_TrueColor';
@@ -829,13 +843,13 @@
     const n = Math.pow(2,z);
     if(y<0 || y>=n) return null;
     const xw = ((x%n)+n)%n;
-    const key = [provider,z,xw,y,showMapLabelsChk.checked,mapboxToken.value,sentinelId.value,sentinelLayer.value,sentinelDate.value,sentinelWindow.value,sentinelCloud.value,nasaLayer.value,nasaDate.value,liveMap.cacheBust].join('|');
+    const key = [provider,z,xw,y,showMapLabelsChk.checked,mapboxToken.value,sentinelId.value,sentinelLayer.value,sentinelDate.value,sentinelWindow.value,sentinelCloud.value,nasaLayer.value,nasaDate.value,waybackRelease.id,liveMap.cacheBust].join('|');
     let img = tileCache.get(key);
     if(img) return img;
     const url = tileUrl(provider, z, xw, y);
     if(!url) return null;
     img = new Image();
-    if(provider==='sentinel') img.crossOrigin='anonymous';
+    if(provider==='sentinel' || provider==='wayback') img.crossOrigin='anonymous';
     if(provider==='sentinel') sentinelPendingTiles++;
     img.onload = ()=>{ if(provider==='sentinel'){ sentinelPendingTiles=Math.max(0,sentinelPendingTiles-1); if(looksLikeSentinelNoData(img)){ sentinelTestStatus.textContent='No Sentinel-2 scene found for this date and location. Try Latest clear or a wider search window.'; sentinelTestStatus.classList.add('err'); } else if(!sentinelPendingTiles) { sentinelTestStatus.textContent='Sentinel tiles ready.'; sentinelTestStatus.classList.remove('err'); } } if(liveMap.provider===provider) drawLiveMap(); };
     img.onerror = ()=>{ if(provider==='sentinel'){ sentinelPendingTiles=Math.max(0,sentinelPendingTiles-1); sentinelTestStatus.textContent='Some Sentinel tiles failed; try a wider date window or lower cloud limit.'; sentinelTestStatus.classList.add('err'); } };
@@ -909,6 +923,7 @@
     let mapDate='';
     if(liveMap.provider==='sentinel') mapDate=sentinelDate.value ? ` · from ${sentinelDate.value}` : ' · latest valid';
     if(liveMap.provider==='nasa') mapDate=` · ${nasaDate.value}`;
+    if(liveMap.provider==='wayback') mapDate=waybackRelease.date ? ` · ${waybackRelease.date}` : '';
     mapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span class="date">${mapDate.slice(3)}</span>`:''}`;
     const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
     mapZoomIn.disabled=liveMap.zoom>=maxZ;
@@ -928,6 +943,7 @@
   providerSelect.addEventListener('change', ()=>{
     liveMap.provider = providerSelect.value;
     mapboxTokenField.hidden = liveMap.provider!=='mapbox';
+    waybackReleaseField.hidden = liveMap.provider!=='wayback';
     sentinelIdField.hidden = liveMap.provider!=='sentinel';
     sentinelLayerField.hidden = liveMap.provider!=='sentinel';
     sentinelDateField.hidden = liveMap.provider!=='sentinel';
@@ -949,6 +965,7 @@
     if(liveMap.zoom > maxZ) liveMap.zoom = maxZ;
     captureStatus.textContent = '';
     captureStatus.classList.remove('err');
+    if(liveMap.provider==='wayback') loadWaybackReleases();
     drawLiveMap();
   });
   [mapboxToken, sentinelId, sentinelLayer, sentinelDate, sentinelWindow, nasaLayer, nasaDate].forEach(el=>{
@@ -1045,7 +1062,53 @@
   showMapLabelsChk.addEventListener('change', drawLiveMap);
   enhanceImageryChk.addEventListener('change', drawLiveMap);
 
-  // ---------- Slider inline map overlay ----------
+  // ---------- Esri Wayback ----------
+  const waybackReleaseField = document.getElementById('waybackReleaseField');
+  const waybackReleaseSelect = document.getElementById('waybackRelease');
+
+  async function loadWaybackReleases(){
+    if(waybackReleases) { populateWaybackSelect(); return; }
+    waybackReleaseSelect.innerHTML = '<option value="">Loading releases&hellip;</option>';
+    try{
+      const res = await fetch('https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/1.0.0/WMTSCapabilities.xml');
+      if(!res.ok) throw Error('HTTP '+res.status);
+      const xml = await res.text();
+      // Parse <Layer> blocks — each has <ows:Title> with date and <ResourceURL template="...tile/{id}/...">
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, 'text/xml');
+      const layers = [...doc.querySelectorAll('Layer')];
+      waybackReleases = layers.map(layer=>{
+        const title = layer.querySelector('Title')?.textContent || '';
+        const tpl = layer.querySelector('ResourceURL')?.getAttribute('template') || '';
+        const idMatch = tpl.match(/\/tile\/(\d+)\//);
+        const dateMatch = title.match(/(\d{4}-\d{2}-\d{2})/);
+        return idMatch && dateMatch ? { id: idMatch[1], date: dateMatch[1], title: title.replace('World Imagery (Wayback ','').replace(')','') } : null;
+      }).filter(Boolean).sort((a,b)=>b.date.localeCompare(a.date));
+      populateWaybackSelect();
+    }catch(err){
+      waybackReleaseSelect.innerHTML = '<option value="">Could not load releases</option>';
+      captureStatus.textContent = 'Wayback release list failed to load.';
+      captureStatus.classList.add('err');
+    }
+  }
+  function populateWaybackSelect(){
+    if(!waybackReleases || !waybackReleases.length) return;
+    waybackReleaseSelect.innerHTML = waybackReleases.map(r=>`<option value="${r.id}">${r.title}</option>`).join('');
+    // Default to first (most recent) if none selected
+    if(!waybackRelease.id){
+      waybackRelease.id = waybackReleases[0].id;
+      waybackRelease.date = waybackReleases[0].date;
+    }
+    waybackReleaseSelect.value = waybackRelease.id;
+    tileCache.clear();
+    drawLiveMap();
+  }
+  waybackReleaseSelect.addEventListener('change', ()=>{
+    const r = waybackReleases && waybackReleases.find(x=>x.id===waybackReleaseSelect.value);
+    if(r){ waybackRelease.id=r.id; waybackRelease.date=r.date; }
+    tileCache.clear();
+    drawLiveMap();
+  });
   const sliderMapOverlay = document.getElementById('sliderMapOverlay');
   const sliderMapCanvas = document.getElementById('sliderMapCanvas');
   const sliderMapToggleBtn = document.getElementById('sliderMapToggleBtn');
@@ -1099,6 +1162,7 @@
     let mapDate='';
     if(liveMap.provider==='sentinel') mapDate=sentinelDate.value ? ` · ${sentinelDate.value}` : ' · latest';
     if(liveMap.provider==='nasa') mapDate=` · ${nasaDate.value}`;
+    if(liveMap.provider==='wayback') mapDate=waybackRelease.date ? ` · ${waybackRelease.date}` : '';
     sliderMapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span style="color:var(--amber)">${mapDate.slice(3)}</span>`:''}`;
   }
 
@@ -1276,8 +1340,8 @@
       const rec = {
         id: nextId++,
         src: dataUrl,
-        label: `${captureLabel.value.trim() || `${provider} · ${liveMap.provider==='sentinel' && sentinelDate.value ? sentinelDate.value : 'latest'}`} · captured ${formatTimestamp(capturedAt)}`,
-        imageryDate: liveMap.provider==='sentinel' ? (sentinelDate.value || 'latest valid · server-selected') : liveMap.provider==='nasa' ? nasaDate.value : 'current mosaic · provider date varies',
+        label: `${captureLabel.value.trim() || `${provider} · ${liveMap.provider==='sentinel' && sentinelDate.value ? sentinelDate.value : liveMap.provider==='wayback' && waybackRelease.date ? waybackRelease.date : 'latest'}`} · captured ${formatTimestamp(capturedAt)}`,
+        imageryDate: liveMap.provider==='sentinel' ? (sentinelDate.value || 'latest valid · server-selected') : liveMap.provider==='nasa' ? nasaDate.value : liveMap.provider==='wayback' ? (waybackRelease.date || 'wayback archive') : 'current mosaic · provider date varies',
         capturedAt,
         natW: img.naturalWidth,
         natH: img.naturalHeight,

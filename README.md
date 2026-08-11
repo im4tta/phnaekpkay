@@ -13,7 +13,7 @@ The homepage opens in **Slider mode** with two demo frames of Phnom Penh already
 From there you can:
 
 - Upload your own frames (drag and drop, file picker, or `Ctrl/Cmd+V` to paste from clipboard)
-- Capture a fresh satellite tile from any provider (Esri, NASA GIBS, Google, Mapbox, Sentinel Hub) at the current map position
+- Capture a fresh satellite tile from any provider (Esri, Bing, Esri Wayback, Planet NICFI, NASA GIBS, Google, Mapbox, Sentinel Hub) at the current map position
 - Switch modes, export, and share
 
 ---
@@ -37,13 +37,16 @@ The sidebar's **Live satellite capture** section lets you navigate a tile map an
 | Provider | Key required | Dated imagery |
 |---|---|---|
 | Esri World Imagery | No | No — current mosaic |
+| Bing Maps aerial | No (unofficial) | No — current mosaic |
+| Esri Wayback | No | Yes — dated archive 2014–present |
+| Planet NICFI | Free key | Yes — dated 4.8 m monthly/quarterly |
 | CARTO Voyager | No | No — reference map |
 | NASA GIBS | No | Yes — VIIRS/MODIS near-real-time |
 | Google Satellite | No (unofficial) | No — current mosaic |
 | Mapbox Satellite | Free token | No — current mosaic |
 | Sentinel Hub | Free config ID | Yes — dated 10 m Sentinel-2 |
 
-For real before/after by date, use **Sentinel Hub** (free tier, ~10 m resolution). For a quick reference overlay, use Esri or CARTO. For historical imagery from Google Earth Pro, paste screenshots with `Ctrl/Cmd+V`.
+For real before/after by date, use **Planet NICFI** (free key, ~4.8 m, monthly mosaics since 2020-09 — excellent for Cambodia), **Esri Wayback** (no key), or **Sentinel Hub** (free tier, ~10 m Sentinel-2). For a quick reference overlay, use Esri, Bing, or CARTO. For historical imagery from Google Earth Pro, paste screenshots with `Ctrl/Cmd+V`.
 
 ---
 

@@ -90,7 +90,9 @@
           <label>PROVIDER</label>
           <select id="providerSelect">
             <option value="esri">Esri World Imagery &middot; no key</option>
+            <option value="bing">Bing Maps aerial &middot; no key, unofficial</option>
             <option value="wayback">Esri Wayback &middot; dated archive, no key</option>
+            <option value="planet">Planet NICFI basemaps &middot; free key, dated 4.8m mosaics</option>
             <option value="carto">CARTO Voyager map &middot; no key</option>
             <option value="nasa">NASA GIBS near-real-time &middot; no key</option>
             <option value="google">Google Satellite tiles &middot; no key, unofficial</option>
@@ -101,6 +103,15 @@
         <div class="field" id="mapboxTokenField" hidden style="margin-top:8px;">
           <label>MAPBOX ACCESS TOKEN</label>
           <input type="text" id="mapboxToken" placeholder="pk.eyJ1Ijoi&hellip;">
+        </div>
+        <div class="field" id="planetKeyField" hidden style="margin-top:8px;">
+          <label>PLANET NICFI API KEY</label>
+          <input type="text" id="planetKey" placeholder="free key from planet.com/nicfi">
+        </div>
+        <div class="field" id="planetMosaicField" hidden style="margin-top:8px;">
+          <label>MOSAIC PERIOD</label>
+          <select id="planetMosaic"></select>
+          <p class="provider-note" style="margin-top:4px;">Dated 4.8 m monthly mosaics from 2020-09 and quarterly mosaics before that &mdash; the best dated, openly keyed coverage for Cambodia. Pick a period, then capture.</p>
         </div>
         <div class="field" id="waybackReleaseField" hidden style="margin-top:8px;">
           <label>WAYBACK RELEASE</label>
@@ -578,6 +589,10 @@
   const providerSelect = document.getElementById('providerSelect');
   const mapboxTokenField = document.getElementById('mapboxTokenField');
   const mapboxToken = document.getElementById('mapboxToken');
+  const planetKeyField = document.getElementById('planetKeyField');
+  const planetKey = document.getElementById('planetKey');
+  const planetMosaicField = document.getElementById('planetMosaicField');
+  const planetMosaic = document.getElementById('planetMosaic');
   const sentinelIdField = document.getElementById('sentinelIdField');
   const sentinelId = document.getElementById('sentinelId');
   const sentinelLayerField = document.getElementById('sentinelLayerField');
@@ -762,17 +777,21 @@
   const TILE = 256;
   const PROVIDER_NOTES = {
     esri: 'Free, no signup. Current-day mosaic (not date-specific).',
+    bing: 'Bing Maps aerial tiles. Unofficial keyless endpoint with CORS enabled, so capture works. Use is subject to Microsoft\'s terms and the mosaic is not date-specific.',
     wayback: 'Free Esri Wayback archive — dated snapshots of World Imagery going back to 2014. Select a release date to see that version of the basemap. No key required.',
+    planet: 'Free Planet NICFI API key (planet.com/nicfi). Dated ~4.8m monthly/quarterly mosaics — the best openly keyed dated coverage for Cambodia. Enter the key, pick a mosaic period, then capture.',
     carto: 'Free CARTO Voyager reference map with roads, places, and boundaries. Use it for geographic context, not satellite detail.',
     nasa: 'Free NASA GIBS layers with no key. These are real near-real-time observations, so clouds can fully obscure the ground. For a clear surface view, try another date or use Esri; for dated 10m imagery, use Sentinel Hub.',
      google: 'Google satellite tiles with native hybrid labels when enabled. Unofficial endpoint; use is subject to Google\'s terms and canvas capture may be blocked by CORS.',
     mapbox: 'Needs a free Mapbox account + access token (mapbox.com/account). Current-day mosaic.',
     sentinel: 'Copernicus Data Space configuration. Uses the exact configured layer name and the latest valid Sentinel-2 scene unless a date is entered. About 10m resolution.'
   };
-  const PROVIDER_MAX_ZOOM = { esri:19, wayback:19, carto:20, nasa:9, google:20, mapbox:20, sentinel:16 };
+  const PROVIDER_MAX_ZOOM = { esri:19, bing:19, wayback:19, planet:16, carto:20, nasa:9, google:20, mapbox:20, sentinel:16 };
   const PROVIDER_CAPABILITIES = {
     esri: ['high-resolution mosaic','up to z19'],
+    bing: ['high-resolution mosaic','up to z19'],
     wayback: ['dated archive 2014–present','up to z19'],
+    planet: ['4.8m dated monthly/quarterly','best z14–15 · max z16'],
     carto: ['reference map','up to z20'],
     nasa: ['250-375m monitoring','up to z9'],
     google: ['high-resolution mosaic','up to z20'],
@@ -798,12 +817,58 @@
     const n = Math.PI - 2*Math.PI*y/Math.pow(2,z);
     return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)));
   }
+  // Bing Maps quadkey: interleave x/y bits as base-4 digits, most-significant zoom level first.
+  function tileXYToQuadKey(x, y, z){
+    let q = '';
+    for(let i=z; i>0; i--){
+      let d = 0;
+      const mask = 1 << (i-1);
+      if((x & mask) !== 0) d += 1;
+      if((y & mask) !== 0) d += 2;
+      q += d;
+    }
+    return q;
+  }
+  function planetMosaicLabel(id){
+    const mm = id && id.match(/global_monthly_(\d{4})_(\d{2})_mosaic/);
+    if(mm) return mm[1]+'-'+mm[2];
+    const qq = id && id.match(/global_quarterly_(\d{4})q(\d)_mosaic/);
+    if(qq) return qq[1]+' Q'+qq[2];
+    return id || '';
+  }
+  // NICFI coverage: quarterly 2015q3–2020q3, then monthly from 2020-09 to the current month.
+  function buildPlanetMosaicOptions(){
+    const ids = [];
+    let y = new Date().getUTCFullYear(), m = new Date().getUTCMonth()+1;
+    while(y > 2020 || (y === 2020 && m >= 9)){
+      ids.push('global_monthly_'+y+'_'+String(m).padStart(2,'0')+'_mosaic');
+      m--; if(m === 0){ m = 12; y--; }
+    }
+    for(let qy=2015; qy<=2020; qy++){
+      const lo = qy===2015 ? 3 : 1, hi = qy===2020 ? 3 : 4;
+      for(let q=lo; q<=hi; q++) ids.push('global_quarterly_'+qy+'q'+q+'_mosaic');
+    }
+    return ids;
+  }
+  function populatePlanetMosaic(){
+    const ids = buildPlanetMosaicOptions();
+    planetMosaic.innerHTML = ids.map(id=>`<option value="${id}">${planetMosaicLabel(id)}</option>`).join('');
+    if(!ids.includes(planetMosaic.value)) planetMosaic.value = ids[0] || '';
+  }
 
   function tileUrl(provider, z, x, y){
     const cb = liveMap.cacheBust ? `_cb=${liveMap.cacheBust}` : '';
     switch(provider){
       case 'esri':
         return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}${cb?'?'+cb:''}`;
+      case 'bing':
+        return `https://ecn.t${(x+y)%4}.tiles.virtualearth.net/tiles/a${tileXYToQuadKey(x,y,z)}.jpeg?g=1${cb?'&'+cb:''}`;
+      case 'planet': {
+        const key = planetKey.value.trim();
+        const id = planetMosaic.value;
+        if(!key || !id) return null;
+        return `https://tiles.planet.com/basemaps/v1/planet-tiles/${id}/gmap/${z}/${x}/${y}.png?api_key=${encodeURIComponent(key)}${cb?'&'+cb:''}`;
+      }
       case 'wayback': {
         if(!waybackRelease.id) return null;
         return `https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/GoogleMapsCompatible/MapServer/tile/${waybackRelease.id}/${z}/${y}/${x}${cb?'?'+cb:''}`;
@@ -843,13 +908,13 @@
     const n = Math.pow(2,z);
     if(y<0 || y>=n) return null;
     const xw = ((x%n)+n)%n;
-    const key = [provider,z,xw,y,showMapLabelsChk.checked,mapboxToken.value,sentinelId.value,sentinelLayer.value,sentinelDate.value,sentinelWindow.value,sentinelCloud.value,nasaLayer.value,nasaDate.value,waybackRelease.id,liveMap.cacheBust].join('|');
+    const key = [provider,z,xw,y,showMapLabelsChk.checked,mapboxToken.value,planetKey.value,planetMosaic.value,sentinelId.value,sentinelLayer.value,sentinelDate.value,sentinelWindow.value,sentinelCloud.value,nasaLayer.value,nasaDate.value,waybackRelease.id,liveMap.cacheBust].join('|');
     let img = tileCache.get(key);
     if(img) return img;
     const url = tileUrl(provider, z, xw, y);
     if(!url) return null;
     img = new Image();
-    if(provider==='sentinel' || provider==='wayback') img.crossOrigin='anonymous';
+    if(provider==='sentinel' || provider==='wayback' || provider==='bing') img.crossOrigin='anonymous';
     if(provider==='sentinel') sentinelPendingTiles++;
     img.onload = ()=>{ if(provider==='sentinel'){ sentinelPendingTiles=Math.max(0,sentinelPendingTiles-1); if(looksLikeSentinelNoData(img)){ sentinelTestStatus.textContent='No Sentinel-2 scene found for this date and location. Try Latest clear or a wider search window.'; sentinelTestStatus.classList.add('err'); } else if(!sentinelPendingTiles) { sentinelTestStatus.textContent='Sentinel tiles ready.'; sentinelTestStatus.classList.remove('err'); } } if(liveMap.provider===provider) drawLiveMap(); };
     img.onerror = ()=>{ if(provider==='sentinel'){ sentinelPendingTiles=Math.max(0,sentinelPendingTiles-1); sentinelTestStatus.textContent='Some Sentinel tiles failed; try a wider date window or lower cloud limit.'; sentinelTestStatus.classList.add('err'); } };
@@ -924,6 +989,7 @@
     if(liveMap.provider==='sentinel') mapDate=sentinelDate.value ? ` · from ${sentinelDate.value}` : ' · latest valid';
     if(liveMap.provider==='nasa') mapDate=` · ${nasaDate.value}`;
     if(liveMap.provider==='wayback') mapDate=waybackRelease.date ? ` · ${waybackRelease.date}` : '';
+    if(liveMap.provider==='planet' && planetMosaic.value) mapDate=` · ${planetMosaicLabel(planetMosaic.value)}`;
     mapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span class="date">${mapDate.slice(3)}</span>`:''}`;
     const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
     mapZoomIn.disabled=liveMap.zoom>=maxZ;
@@ -943,6 +1009,8 @@
   providerSelect.addEventListener('change', ()=>{
     liveMap.provider = providerSelect.value;
     mapboxTokenField.hidden = liveMap.provider!=='mapbox';
+    planetKeyField.hidden = liveMap.provider!=='planet';
+    planetMosaicField.hidden = liveMap.provider!=='planet';
     waybackReleaseField.hidden = liveMap.provider!=='wayback';
     sentinelIdField.hidden = liveMap.provider!=='sentinel';
     sentinelLayerField.hidden = liveMap.provider!=='sentinel';
@@ -968,7 +1036,7 @@
     if(liveMap.provider==='wayback') loadWaybackReleases();
     drawLiveMap();
   });
-  [mapboxToken, sentinelId, sentinelLayer, sentinelDate, sentinelWindow, nasaLayer, nasaDate].forEach(el=>{
+  [mapboxToken, planetKey, planetMosaic, sentinelId, sentinelLayer, sentinelDate, sentinelWindow, nasaLayer, nasaDate].forEach(el=>{
     el.addEventListener('input', ()=>{ if(liveMap.provider==='sentinel'){ sentinelTestStatus.textContent='Loading Sentinel tiles...'; sentinelTestStatus.classList.remove('err'); } drawLiveMap(); });
   });
   sentinelCloud.addEventListener('input',()=>{ sentinelCloudReadout.textContent=sentinelCloud.value+'%'; if(liveMap.provider==='sentinel') sentinelTestStatus.textContent='Loading Sentinel tiles...'; drawLiveMap(); });
@@ -1003,6 +1071,7 @@
   // GIBS products are usually published a few days behind the calendar date.
   nasaDate.value = new Date(Date.now()-3*86400000).toISOString().slice(0,10);
   sentinelDate.value = '';
+  populatePlanetMosaic();
   providerSelect.value = 'google';
   providerNote.textContent = PROVIDER_NOTES.google;
   providerResolution.textContent = PROVIDER_CAPABILITIES.google[0];
@@ -1163,6 +1232,7 @@
     if(liveMap.provider==='sentinel') mapDate=sentinelDate.value ? ` · ${sentinelDate.value}` : ' · latest';
     if(liveMap.provider==='nasa') mapDate=` · ${nasaDate.value}`;
     if(liveMap.provider==='wayback') mapDate=waybackRelease.date ? ` · ${waybackRelease.date}` : '';
+    if(liveMap.provider==='planet' && planetMosaic.value) mapDate=` · ${planetMosaicLabel(planetMosaic.value)}`;
     sliderMapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span style="color:var(--amber)">${mapDate.slice(3)}</span>`:''}`;
   }
 
@@ -1259,7 +1329,7 @@
     const capturedAt = new Date().toISOString();
     const provider = liveMap.provider;
     const z = Math.min(Math.round(liveMap.zoom), PROVIDER_MAX_ZOOM[provider] || 19);
-    if((provider==='mapbox' && !mapboxToken.value.trim()) || (provider==='sentinel' && !sentinelId.value.trim())){
+    if((provider==='mapbox' && !mapboxToken.value.trim()) || (provider==='sentinel' && !sentinelId.value.trim()) || (provider==='planet' && !planetKey.value.trim())){
       captureStatus.textContent = 'Add the required key / instance ID above first.';
       captureStatus.classList.add('err');
       return;
@@ -1340,8 +1410,8 @@
       const rec = {
         id: nextId++,
         src: dataUrl,
-        label: `${captureLabel.value.trim() || `${provider} · ${liveMap.provider==='sentinel' && sentinelDate.value ? sentinelDate.value : liveMap.provider==='wayback' && waybackRelease.date ? waybackRelease.date : 'latest'}`} · captured ${formatTimestamp(capturedAt)}`,
-        imageryDate: liveMap.provider==='sentinel' ? (sentinelDate.value || 'latest valid · server-selected') : liveMap.provider==='nasa' ? nasaDate.value : liveMap.provider==='wayback' ? (waybackRelease.date || 'wayback archive') : 'current mosaic · provider date varies',
+        label: `${captureLabel.value.trim() || `${provider} · ${liveMap.provider==='sentinel' && sentinelDate.value ? sentinelDate.value : liveMap.provider==='wayback' && waybackRelease.date ? waybackRelease.date : liveMap.provider==='planet' && planetMosaic.value ? planetMosaicLabel(planetMosaic.value) : 'latest'}`} · captured ${formatTimestamp(capturedAt)}`,
+        imageryDate: liveMap.provider==='sentinel' ? (sentinelDate.value || 'latest valid · server-selected') : liveMap.provider==='nasa' ? nasaDate.value : liveMap.provider==='wayback' ? (waybackRelease.date || 'wayback archive') : liveMap.provider==='planet' ? (planetMosaicLabel(planetMosaic.value) || 'selected mosaic period') : 'current mosaic · provider date varies',
         capturedAt,
         natW: img.naturalWidth,
         natH: img.naturalHeight,
@@ -2378,9 +2448,9 @@
   setSidebarOpen(window.innerWidth>820);
 
   function projectPayload(){
-    return {version:1, savedAt:new Date().toISOString(), mode, cols, view, caption:captionInput.value, notes:notesInput.value, includeNotesExport:includeNotesExport.checked, annotation:annotationCanvas.width?annotationCanvas.toDataURL('image/png'):null, map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value}, images:images.map(im=>({id:im.id,src:im.src,label:im.label,imageryDate:im.imageryDate||'',natW:im.natW,natH:im.natH,capturedAt:im.capturedAt||null,generated:!!im.generated,selected:im.selected})), sliderState, overlayState, changeState};
+    return {version:1, savedAt:new Date().toISOString(), mode, cols, view, caption:captionInput.value, notes:notesInput.value, includeNotesExport:includeNotesExport.checked, annotation:annotationCanvas.width?annotationCanvas.toDataURL('image/png'):null, map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,planetKey:planetKey.value,planetMosaic:planetMosaic.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value}, images:images.map(im=>({id:im.id,src:im.src,label:im.label,imageryDate:im.imageryDate||'',natW:im.natW,natH:im.natH,capturedAt:im.capturedAt||null,generated:!!im.generated,selected:im.selected})), sliderState, overlayState, changeState};
   }
-  function preferencePayload(){ return {version:1,preferenceOnly:true,mode,cols,view,caption:captionInput.value,notes:notesInput.value,includeNotesExport:includeNotesExport.checked,map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value},sliderState,overlayState,changeState}; }
+  function preferencePayload(){ return {version:1,preferenceOnly:true,mode,cols,view,caption:captionInput.value,notes:notesInput.value,includeNotesExport:includeNotesExport.checked,map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,planetKey:planetKey.value,planetMosaic:planetMosaic.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value},sliderState,overlayState,changeState}; }
   function saveWorkspace(){ try{ localStorage.setItem('phnaek-pkay-preferences',JSON.stringify(preferencePayload())); }catch(err){} }
   let workspaceSaveTimer=null;
   function queueWorkspaceSave(){ clearTimeout(workspaceSaveTimer); workspaceSaveTimer=setTimeout(saveWorkspace,500); }
@@ -2391,7 +2461,7 @@
       function commit(){ loaded++; if(loaded<total) return; renderImageList(); updateSliderSelects(true); renderStage(); }
       p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:saved.selected!==false}); commit(); }; img.onerror=()=>commit(); img.src=saved.src; }); }
     cols=p.cols||2; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,leftView:{zoom:1,x:0,y:0},rightView:{zoom:1,x:0,y:0},thirdView:{zoom:1,x:0,y:0},...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars(); applySliderPanelVars();
-    if(p.map){ Object.assign(liveMap,{provider:p.map.provider||liveMap.provider,lat:p.map.lat||liveMap.lat,lng:p.map.lng||liveMap.lng,zoom:p.map.zoom||liveMap.zoom}); mapboxToken.value=p.map.mapboxToken||''; sentinelId.value=p.map.sentinelId||''; sentinelLayer.value=p.map.sentinelLayer||'TRUE_COLOR'; sentinelDate.value=p.map.sentinelDate||''; sentinelCloud.value=p.map.sentinelCloud||20; sentinelSharpness.value=p.map.sentinelSharpness||35; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; nasaLayer.value=p.map.nasaLayer||nasaLayer.value; nasaDate.value=p.map.nasaDate||nasaDate.value; placesApiKey.value=p.map.placesApiKey||''; providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change')); }
+    if(p.map){ Object.assign(liveMap,{provider:p.map.provider||liveMap.provider,lat:p.map.lat||liveMap.lat,lng:p.map.lng||liveMap.lng,zoom:p.map.zoom||liveMap.zoom}); mapboxToken.value=p.map.mapboxToken||''; planetKey.value=p.map.planetKey||''; planetMosaic.value=p.map.planetMosaic||planetMosaic.value; if(![...planetMosaic.options].some(o=>o.value===planetMosaic.value)) planetMosaic.value=planetMosaic.options[0]?planetMosaic.options[0].value:''; sentinelId.value=p.map.sentinelId||''; sentinelLayer.value=p.map.sentinelLayer||'TRUE_COLOR'; sentinelDate.value=p.map.sentinelDate||''; sentinelCloud.value=p.map.sentinelCloud||20; sentinelSharpness.value=p.map.sentinelSharpness||35; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; nasaLayer.value=p.map.nasaLayer||nasaLayer.value; nasaDate.value=p.map.nasaDate||nasaDate.value; placesApiKey.value=p.map.placesApiKey||''; providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change')); }
     if(p.annotation){ const img=new Image(); img.onload=()=>{syncAnnotationCanvas(); annotationCanvas.getContext('2d').drawImage(img,0,0,annotationCanvas.width,annotationCanvas.height);}; img.src=p.annotation; }
   }
   saveProjectBtn.addEventListener('click',()=>downloadText('phnaek-pkay-project.json',JSON.stringify(projectPayload()),'application/json'));
@@ -2558,7 +2628,7 @@
   annotationCanvas.addEventListener('pointermove',e=>{ if(!drawing)return; const p=annotationPoint(e),ctx=annotationCanvas.getContext('2d');ctx.lineTo(p.x,p.y);ctx.stroke(); });
   annotationCanvas.addEventListener('pointerup',()=>{drawing=false;saveWorkspace();});
   window.addEventListener('resize',syncAnnotationCanvas);
-  [captionInput,notesInput,includeNotesExport,zoomRange,providerSelect,mapboxToken,sentinelId,sentinelLayer,sentinelDate,sentinelWindow,sentinelCloud,sentinelSharpness,nasaLayer,nasaDate,placesApiKey].forEach(el=>el.addEventListener('input',queueWorkspaceSave));
+  [captionInput,notesInput,includeNotesExport,zoomRange,providerSelect,mapboxToken,planetKey,planetMosaic,sentinelId,sentinelLayer,sentinelDate,sentinelWindow,sentinelCloud,sentinelSharpness,nasaLayer,nasaDate,placesApiKey].forEach(el=>el.addEventListener('input',queueWorkspaceSave));
   providerSelect.addEventListener('change',queueWorkspaceSave);
   includeNotesExport.addEventListener('change',queueWorkspaceSave);
   window.addEventListener('beforeunload',saveWorkspace);

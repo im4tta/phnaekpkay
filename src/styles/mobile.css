@@ -117,6 +117,9 @@
   }
   .sidebar-backdrop.is-hidden { opacity: 0; pointer-events: none; }
 
+  /* Desktop hover-rail has no place on the touch drawer. */
+  .sidebar-peek { display: none !important; }
+
   /* Close button pinned to the top-right of the open drawer. */
   .sidebar .sidebar-close {
     position: absolute; top: 8px; right: 8px; z-index: 5;

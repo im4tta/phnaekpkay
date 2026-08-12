@@ -64,6 +64,9 @@
       <button class="btn ghost" id="locationsBtn">Locations<span class="loc-pulse" id="locPulse" title="New field sites to explore"></span></button>
       <button class="btn ghost" id="exportReportBtn">Report</button>
       <button class="btn ghost" id="openUpscaleBtn">Enhance</button>
+      <button class="btn ghost" id="shareBtn" title="Copy a link that opens the live map at this position">Share</button>
+      <button class="btn ghost" id="undoBtn" title="Undo (Ctrl+Z)">&#8630;</button>
+      <button class="btn ghost" id="redoBtn" title="Redo (Ctrl+Y)">&#8631;</button>
       <button class="btn ghost" id="exportVideoBtn" style="display:none;">&#9679; Export video</button>
       <button class="btn" id="exportBtn">&#8681; Export PNG</button>
     </div>
@@ -111,11 +114,21 @@
         <div class="field" id="planetMosaicField" hidden style="margin-top:8px;">
           <label>MOSAIC PERIOD</label>
           <select id="planetMosaic"></select>
+          <div class="date-actions">
+            <button type="button" class="btn ghost" id="planetPrevMosaic">&larr; prev</button>
+            <button type="button" class="btn ghost" id="planetLastYear">Last year</button>
+            <button type="button" class="btn ghost" id="planetNextMosaic">next &rarr;</button>
+          </div>
           <p class="provider-note" style="margin-top:4px;">Dated 4.8 m monthly mosaics from 2020-09 and quarterly mosaics before that &mdash; the best dated, openly keyed coverage for Cambodia. Pick a period, then capture.</p>
         </div>
         <div class="field" id="waybackReleaseField" hidden style="margin-top:8px;">
           <label>WAYBACK RELEASE</label>
           <select id="waybackRelease"><option value="">Loading releases&hellip;</option></select>
+          <div class="date-actions">
+            <button type="button" class="btn ghost" id="waybackPrevRelease">&larr; older</button>
+            <button type="button" class="btn ghost" id="waybackLastYear">Last year</button>
+            <button type="button" class="btn ghost" id="waybackNextRelease">newer &rarr;</button>
+          </div>
           <p class="provider-note" style="margin-top:4px;">Each release is a full global snapshot of Esri World Imagery on that publish date. Local imagery may not have changed between releases.</p>
         </div>
         <div class="field" id="sentinelIdField" hidden style="margin-top:8px;">
@@ -171,6 +184,7 @@
         </div>
         <p class="provider-note" id="providerNote">Free, no signup. Current-day mosaic (not date-specific).</p>
         <div class="provider-capability"><span id="providerResolution">resolution varies</span><span id="providerZoomLimit">zoom z--</span></div>
+        <button class="btn ghost" id="testProviderBtn" style="width:100%;margin-top:8px;">&#9881; Test connection</button>
         <p class="zoom-advice" id="zoomAdvice" hidden>Sentinel-2 native detail is best around z14. Higher zoom enlarges the same pixels; it does not add detail.</p>
 
         <div class="field" id="placesApiKeyField" style="margin-top:10px;">
@@ -226,7 +240,10 @@
       <div class="annotation-tools">
         <button class="btn ghost" id="drawToggleBtn">Draw on view</button>
         <button class="btn ghost" id="clearDrawingBtn">Clear drawing</button>
+        <button class="btn ghost" id="measureToggleBtn">Measure</button>
+        <button class="btn ghost" id="clearMeasureBtn">Clear measure</button>
       </div>
+      <div class="measure-readout" id="measureReadout" hidden>Measure: click to add points &middot; double-click / Esc to finish</div>
       <details class="collapse upscale-collapse" open>
         <summary>AI visual enhancement</summary>
         <div class="upscale-tools collapse-body" id="upscaleTools">
@@ -249,6 +266,9 @@
           <button data-cols="2" class="active">2 COL</button>
           <button data-cols="3">3 COL</button>
           <button data-cols="4">4 COL</button>
+        </div>
+        <div class="checklist" style="margin-top:6px;">
+          <label><input type="checkbox" id="syncGridChk" checked> Sync pan / zoom across panels</label>
         </div>
       </div>
 
@@ -320,7 +340,23 @@
           <label>MIN REGION SIZE <span id="changeMinSizeReadout">12 px</span></label>
           <input type="range" id="changeMinSize" min="1" max="80" step="1" value="12">
         </div>
+        <div class="field" style="margin-top:12px;">
+          <label>ALIGNMENT (AFTER vs BEFORE)</label>
+          <div class="density-row" style="gap:6px;">
+            <input type="number" id="changeAlignX" value="0" step="1" title="Horizontal offset (px) to shift AFTER so it lines up with BEFORE">
+            <input type="number" id="changeAlignY" value="0" step="1" title="Vertical offset (px) to shift AFTER so it lines up with BEFORE">
+          </div>
+          <div class="date-actions">
+            <button type="button" class="btn ghost" id="autoAlignBtn">Auto align</button>
+            <button type="button" class="btn ghost" id="resetAlignBtn">Reset</button>
+          </div>
+        </div>
+        <div class="date-actions" style="margin-top:10px;">
+          <button type="button" class="btn ghost" id="exportGeoBtn">GeoJSON</button>
+          <button type="button" class="btn ghost" id="exportKmlBtn">KML</button>
+        </div>
         <p class="change-note">Fast, explainable pixel comparison. Brightness and seasonal effects can look like change, so use the mask as a review guide rather than ground truth.</p>
+        <p class="change-note" id="geoExportNote" hidden></p>
       </div>
 
       <div class="view-controls">
@@ -337,10 +373,12 @@
       </div>
 
     </aside>
+    <div class="sidebar-peek" id="sidebarPeek" title="Show controls" role="button" tabindex="0" aria-label="Show controls panel"></div>
     <div class="sidebar-backdrop is-hidden" id="sidebarBackdrop"></div>
 
     <main class="stage-wrap">
       <canvas id="annotationCanvas" aria-label="Freehand map annotations"></canvas>
+      <canvas id="measureCanvas" aria-label="Measure overlays"></canvas>
       <div class="grid-stage" id="gridStage" style="display:none;"></div>
       <div id="sliderControls" hidden>
         <button type="button" class="slider-controls-toggle" id="sliderControlsToggle" aria-expanded="true"><span class="chev" id="sliderControlsChev">&#9660;</span> Slider panels</button>
@@ -444,11 +482,12 @@
   let mode = 'slider';        // 'grid' | 'slider'
   let cols = 2;
   let view = { zoom: 1, panx: 0, pany: 0 };
+  let gridViews = [];   // per-panel views when grid sync is off
   let sliderState = { leftId: null, middleId: null, rightId: null, clip: 50, clip2: 75, three: false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
   let overlayState = { baseId: null, topId: null, thirdId: null, density: 50, thirdDensity: 55 };
   let dragSrcIdx = null;
   let pulseRAF = null, pulseStart = null;
-  let changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12 };
+  let changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12, alignX:0, alignY:0 };
 
   // ---------- Elements ----------
   const dropzone = document.getElementById('dropzone');
@@ -530,6 +569,29 @@
   const sidebar = document.getElementById('sidebar');
   const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
   const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const sidebarPeek = document.getElementById('sidebarPeek');
+  const shareBtn = document.getElementById('shareBtn');
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  const testProviderBtn = document.getElementById('testProviderBtn');
+  const planetLastYear = document.getElementById('planetLastYear');
+  const planetPrevMosaic = document.getElementById('planetPrevMosaic');
+  const planetNextMosaic = document.getElementById('planetNextMosaic');
+  const waybackLastYear = document.getElementById('waybackLastYear');
+  const waybackPrevRelease = document.getElementById('waybackPrevRelease');
+  const waybackNextRelease = document.getElementById('waybackNextRelease');
+  const measureToggleBtn = document.getElementById('measureToggleBtn');
+  const clearMeasureBtn = document.getElementById('clearMeasureBtn');
+  const measureReadout = document.getElementById('measureReadout');
+  const measureCanvas = document.getElementById('measureCanvas');
+  const syncGridChk = document.getElementById('syncGridChk');
+  const changeAlignX = document.getElementById('changeAlignX');
+  const changeAlignY = document.getElementById('changeAlignY');
+  const autoAlignBtn = document.getElementById('autoAlignBtn');
+  const resetAlignBtn = document.getElementById('resetAlignBtn');
+  const exportGeoBtn = document.getElementById('exportGeoBtn');
+  const exportKmlBtn = document.getElementById('exportKmlBtn');
+  const geoExportNote = document.getElementById('geoExportNote');
   const saveProjectBtn = document.getElementById('saveProjectBtn');
   const loadProjectBtn = document.getElementById('loadProjectBtn');
   const saveWorkspaceBtn = document.getElementById('saveWorkspaceBtn');
@@ -676,6 +738,7 @@
             selected: images.length < 6
           };
           images.push(rec);
+          pushHistory();
           renderImageList();
           renderStage();
           updateSliderSelects();
@@ -723,7 +786,7 @@
       const out=canvas.getContext('2d').createImageData(outW,outH); for(let i=0;i<channelSize;i++){out.data[i*4]=Math.max(0,Math.min(255,normalize(values[i])*255));out.data[i*4+1]=Math.max(0,Math.min(255,normalize(values[channelSize+i])*255));out.data[i*4+2]=Math.max(0,Math.min(255,normalize(values[2*channelSize+i])*255));out.data[i*4+3]=255;} canvas.getContext('2d').putImageData(out,0,0);
       let visiblePixels=0; for(let i=0;i<out.data.length;i+=4) if(out.data[i]+out.data[i+1]+out.data[i+2]>12) visiblePixels++;
       if(visiblePixels<channelSize*.01) throw Error('Model returned an empty image. Try the WASM model path or a compatible ONNX export.');
-      const img=new Image(); img.onload=()=>{images.push({id:nextId++,src:canvas.toDataURL('image/png'),label:`AI enhanced · ${source.label}`,imageryDate:source.imageryDate||'derived from source',capturedAt:new Date().toISOString(),natW:outW,natH:outH,imgEl:img,selected:true,generated:true});mode='grid';setMode('grid');renderImageList();updateSliderSelects(true);renderStage();upscaleStatus.textContent=`Created ${outW} × ${outH} AI visual enhancement. It is highlighted in Frames and shown in the grid; original remains unchanged.`;upscaleBtn.disabled=false;}; img.src=canvas.toDataURL('image/png');
+      const img=new Image(); img.onload=()=>{images.push({id:nextId++,src:canvas.toDataURL('image/png'),label:`AI enhanced · ${source.label}`,imageryDate:source.imageryDate||'derived from source',capturedAt:new Date().toISOString(),natW:outW,natH:outH,imgEl:img,selected:true,generated:true});pushHistory();mode='grid';setMode('grid');renderImageList();updateSliderSelects(true);renderStage();upscaleStatus.textContent=`Created ${outW} × ${outH} AI visual enhancement. It is highlighted in Frames and shown in the grid; original remains unchanged.`;upscaleBtn.disabled=false;}; img.src=canvas.toDataURL('image/png');
     }catch(err){upscaleStatus.textContent=`Upscale failed: ${err.message}`;upscaleStatus.classList.add('err');upscaleBtn.disabled=false;}
   });
   openUpscaleBtn.addEventListener('click',()=>{
@@ -991,6 +1054,8 @@
     if(liveMap.provider==='wayback') mapDate=waybackRelease.date ? ` · ${waybackRelease.date}` : '';
     if(liveMap.provider==='planet' && planetMosaic.value) mapDate=` · ${planetMosaicLabel(planetMosaic.value)}`;
     mapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span class="date">${mapDate.slice(3)}</span>`:''}`;
+    const mpp=metersPerPixel(liveMap.lat,z);
+    if(mpp) drawScaleBar(ctx,W,H,mpp,false);
     const maxZ=PROVIDER_MAX_ZOOM[liveMap.provider]||19;
     mapZoomIn.disabled=liveMap.zoom>=maxZ;
     mapZoomOut.disabled=liveMap.zoom<=2;
@@ -1049,6 +1114,40 @@
   sentinelPrevDay.addEventListener('click',()=>shiftSentinelDate(-1));
   sentinelNextDay.addEventListener('click',()=>shiftSentinelDate(1));
   sentinelLatest.addEventListener('click',()=>{ sentinelDate.value=''; drawLiveMap(); });
+
+  // ---------- Per-provider connection test ----------
+  function loadTileTest(url){
+    return new Promise(resolve=>{
+      const img=new Image(); img.crossOrigin='anonymous';
+      img.onload=()=>resolve(true); img.onerror=()=>resolve(false);
+      img.src=url;
+    });
+  }
+  testProviderBtn.addEventListener('click', async ()=>{
+    const provider=liveMap.provider;
+    if(provider==='mapbox' && !mapboxToken.value.trim()){ captureStatus.textContent='Enter a Mapbox access token first.'; captureStatus.classList.add('err'); return; }
+    if(provider==='planet' && !planetKey.value.trim()){ captureStatus.textContent='Enter a Planet NICFI API key first.'; captureStatus.classList.add('err'); return; }
+    if(provider==='sentinel' && !sentinelId.value.trim()){ captureStatus.textContent='Enter a Sentinel Hub instance ID first.'; captureStatus.classList.add('err'); return; }
+    if(provider==='wayback' && !waybackRelease.id){ await loadWaybackReleases(); }
+    testProviderBtn.disabled=true;
+    captureStatus.classList.remove('err');
+    captureStatus.textContent='Testing '+provider+' tiles\u2026';
+    const z=Math.min(6, PROVIDER_MAX_ZOOM[provider]||19), n=Math.pow(2,z);
+    const x=Math.floor(lon2tileX(liveMap.lng,z)), y=Math.floor(lat2tileY(liveMap.lat,z));
+    const candidates=[{x,y},{x:Math.min(n-1,x+1),y},{x,y:Math.min(n-1,y+1)}];
+    let ok=0, total=0;
+    for(const c of candidates){
+      const url=tileUrl(provider,z,c.x,c.y);
+      if(!url) continue;
+      total++;
+      if(await loadTileTest(url)) ok++;
+    }
+    testProviderBtn.disabled=false;
+    if(total===0){ captureStatus.textContent='Nothing to test — add the required key/configuration first.'; captureStatus.classList.add('err'); return; }
+    if(ok===total){ captureStatus.textContent='Connection OK — '+provider+' tiles are reachable.'; captureStatus.classList.remove('err'); }
+    else if(ok===0){ captureStatus.textContent='Connection failed — no '+provider+' tiles loaded. Check the key/network, then retry.'; captureStatus.classList.add('err'); }
+    else { captureStatus.textContent=ok+'/'+total+' tiles loaded — '+provider+' is partially reachable.'; captureStatus.classList.add('err'); }
+  });
   sentinelTestBtn.addEventListener('click', async()=>{
     const id=sentinelId.value.trim();
     if(!id){ sentinelTestStatus.textContent='Enter a Sentinel Hub configuration instance ID first.'; sentinelTestStatus.classList.add('err'); return; }
@@ -1078,6 +1177,17 @@
   providerZoomLimit.textContent = PROVIDER_CAPABILITIES.google[1];
   placesApiKeyField.hidden = false;
   placesApiNote.hidden = false;
+  // Share links: #map=provider,lat,lng,zoom → jump the live map there.
+  (function applyMapHash(){
+    const m=(location.hash||'').match(/^#map=([a-z]+),([-\d.]+),([-\d.]+),(\d{1,2})$/i);
+    if(!m) return;
+    if(PROVIDER_MAX_ZOOM[m[1].toLowerCase()]){
+      liveMap.provider=m[1].toLowerCase();
+      liveMap.lat=Math.max(-85,Math.min(85,parseFloat(m[2])));
+      liveMap.lng=Math.max(-180,Math.min(180,parseFloat(m[3])));
+      liveMap.zoom=Math.min(PROVIDER_MAX_ZOOM[liveMap.provider],Math.max(2,parseInt(m[4],10)));
+    }
+  })();
 
   // Pointer events (not mouse events) so this also works with touch/pen —
   // on a phone in portrait mode this was previously mouse-only and the
@@ -1178,6 +1288,62 @@
     tileCache.clear();
     drawLiveMap();
   });
+  function selectWaybackRelease(r){
+    if(!r) return;
+    waybackReleaseSelect.value=r.id;
+    waybackReleaseSelect.dispatchEvent(new Event('change'));
+  }
+  function closestWaybackDate(targetStr){
+    if(!waybackReleases || !waybackReleases.length) return null;
+    const t=Date.parse(targetStr);
+    let best=null, bestDiff=Infinity;
+    waybackReleases.forEach(r=>{ const d=Math.abs(Date.parse(r.date)-t); if(d<bestDiff){ bestDiff=d; best=r; } });
+    return best;
+  }
+  waybackPrevRelease.addEventListener('click', ()=>{
+    if(!waybackRelease.id) return;
+    const i=waybackReleases.findIndex(r=>r.id===waybackRelease.id);
+    if(i>=0 && i<waybackReleases.length-1) selectWaybackRelease(waybackReleases[i+1]);
+  });
+  waybackNextRelease.addEventListener('click', ()=>{
+    if(!waybackRelease.id) return;
+    const i=waybackReleases.findIndex(r=>r.id===waybackRelease.id);
+    if(i>0) selectWaybackRelease(waybackReleases[i-1]);
+  });
+  waybackLastYear.addEventListener('click', ()=>{
+    if(!waybackRelease.date || !waybackReleases) return;
+    const d=new Date(waybackRelease.date+'T00:00:00Z'); d.setUTCFullYear(d.getUTCFullYear()-1);
+    const r=closestWaybackDate(d.toISOString().slice(0,10));
+    if(r && r.id!==waybackRelease.id){ selectWaybackRelease(r); captureStatus.textContent='Wayback release: '+r.title+' (closest to same period last year).'; captureStatus.classList.remove('err'); }
+  });
+  function selectPlanetMosaic(id){
+    const opts=buildPlanetMosaicOptions();
+    if(id && opts.indexOf(id)>=0){ planetMosaic.value=id; planetMosaic.dispatchEvent(new Event('input')); drawLiveMap(); }
+  }
+  planetPrevMosaic.addEventListener('click', ()=>{
+    const opts=buildPlanetMosaicOptions(), i=opts.indexOf(planetMosaic.value);
+    if(i>=0 && i<opts.length-1) selectPlanetMosaic(opts[i+1]);
+  });
+  planetNextMosaic.addEventListener('click', ()=>{
+    const opts=buildPlanetMosaicOptions(), i=opts.indexOf(planetMosaic.value);
+    if(i>0) selectPlanetMosaic(opts[i-1]);
+  });
+  planetLastYear.addEventListener('click', ()=>{
+    const cur=planetMosaic.value, opts=buildPlanetMosaicOptions();
+    const mm=cur && cur.match(/global_monthly_(\d{4})_(\d{2})_mosaic/);
+    if(mm){
+      const target='global_monthly_'+(parseInt(mm[1],10)-1)+'_'+mm[2]+'_mosaic';
+      selectPlanetMosaic(target);
+      if(planetMosaic.value===target) captureStatus.textContent='NICFI mosaic: '+planetMosaicLabel(target)+' (same period last year).';
+      return;
+    }
+    const qq=cur && cur.match(/global_quarterly_(\d{4})q(\d)_mosaic/);
+    if(qq){
+      const target='global_quarterly_'+(parseInt(qq[1],10)-1)+'q'+qq[2]+'_mosaic';
+      selectPlanetMosaic(target);
+      if(planetMosaic.value===target) captureStatus.textContent='NICFI mosaic: '+planetMosaicLabel(target)+' (same period last year).';
+    }
+  });
   const sliderMapOverlay = document.getElementById('sliderMapOverlay');
   const sliderMapCanvas = document.getElementById('sliderMapCanvas');
   const sliderMapToggleBtn = document.getElementById('sliderMapToggleBtn');
@@ -1234,6 +1400,8 @@
     if(liveMap.provider==='wayback') mapDate=waybackRelease.date ? ` · ${waybackRelease.date}` : '';
     if(liveMap.provider==='planet' && planetMosaic.value) mapDate=` · ${planetMosaicLabel(planetMosaic.value)}`;
     sliderMapReadout.innerHTML = `<span>z${z}</span><span>${liveMap.lat.toFixed(4)}, ${liveMap.lng.toFixed(4)}</span>${mapDate?`<span style="color:var(--amber)">${mapDate.slice(3)}</span>`:''}`;
+    const mpp=metersPerPixel(liveMap.lat,z);
+    if(mpp) drawScaleBar(ctx,W,H,mpp,false);
   }
 
   function setSliderMapVisible(v){
@@ -1370,7 +1538,16 @@
         }));
       }
     }
-    const results = await Promise.all(loads);
+    let fetched = 0;
+    const totalTiles = loads.length;
+    const track = p=>p.then(r=>{
+      fetched++;
+      if(fetched===1 || fetched%3===0 || fetched===totalTiles){
+        captureStatus.textContent = totalTiles ? `Fetching tiles ${fetched}/${totalTiles}\u2026` : 'Capturing\u2026';
+      }
+      return r;
+    });
+    const results = await Promise.all(loads.map(track));
     if(provider==='sentinel' && parseInt(sentinelSharpness.value,10)>0) applySharpen(ctx,W,H,parseInt(sentinelSharpness.value,10)/100);
     ctx.filter='none';
     if(showMapLabelsChk.checked && provider!=='google' && provider!=='carto'){
@@ -1415,10 +1592,15 @@
         capturedAt,
         natW: img.naturalWidth,
         natH: img.naturalHeight,
+        lat: liveMap.lat,
+        lng: liveMap.lng,
+        zoom: z,
+        mapProvider: provider,
         imgEl: img,
         selected: images.length < 6
       };
       images.push(rec);
+      pushHistory();
       renderImageList(); renderStage(); updateSliderSelects();
       captureStatus.textContent = 'Captured \u2014 added to Frames below.';
       captureMapBtn.disabled = false;
@@ -1448,7 +1630,7 @@
            <input type="text" value="${im.label.replace(/"/g,'&quot;')}" placeholder="date / label">
            ${im.generated ? '<span class="generated-badge">AI ENHANCED · VISUAL ONLY</span>' : ''}
           <input type="text" class="imagery-date" value="${escapeHtml(im.imageryDate||'')}" placeholder="imagery date / latest valid">
-          <span class="dims">${im.natW}&times;${im.natH}px${im.capturedAt ? ' · '+escapeHtml(formatTimestamp(im.capturedAt)) : ''}</span>
+          <span class="dims">${im.natW}&times;${im.natH}px${(im.lat!=null && im.lng!=null) ? ' · '+Number(im.lat).toFixed(4)+', '+Number(im.lng).toFixed(4) : ''}${im.capturedAt ? ' · '+escapeHtml(formatTimestamp(im.capturedAt)) : ''}</span>
         </div>
         <div class="order-btns">
           <button data-act="up" title="Move up">&#9650;</button>
@@ -1456,18 +1638,21 @@
         </div>
         <div class="row-actions"><button data-act="del" title="Remove">&#10005;</button></div>
       `;
-      row.querySelector('.chk').addEventListener('change', e=>{ im.selected = e.target.checked; renderStage(); });
+      row.querySelector('.chk').addEventListener('change', e=>{ im.selected = e.target.checked; renderStage(); pushHistory(); });
       row.querySelector('input[type=text]').addEventListener('input', e=>{ im.label = e.target.value; renderStage(); updateSliderSelects(true); });
+      row.querySelector('input[type=text]').addEventListener('blur', pushHistory);
       row.querySelector('.imagery-date').addEventListener('input', e=>{ im.imageryDate=e.target.value; renderStage(); updateSliderSelects(true); saveWorkspace(); });
+      row.querySelector('.imagery-date').addEventListener('blur', pushHistory);
       row.querySelector('[data-act=del]').addEventListener('click', ()=>{
         images = images.filter(x=>x.id!==im.id);
+        pushHistory();
         renderImageList(); renderStage(); updateSliderSelects();
       });
       row.querySelector('[data-act=up]').addEventListener('click', ()=>{
-        if(idx>0){ [images[idx-1],images[idx]] = [images[idx],images[idx-1]]; renderImageList(); renderStage(); updateSliderSelects(true); }
+        if(idx>0){ [images[idx-1],images[idx]] = [images[idx],images[idx-1]]; pushHistory(); renderImageList(); renderStage(); updateSliderSelects(true); }
       });
       row.querySelector('[data-act=down]').addEventListener('click', ()=>{
-        if(idx<images.length-1){ [images[idx+1],images[idx]] = [images[idx],images[idx+1]]; renderImageList(); renderStage(); updateSliderSelects(true); }
+        if(idx<images.length-1){ [images[idx+1],images[idx]] = [images[idx],images[idx+1]]; pushHistory(); renderImageList(); renderStage(); updateSliderSelects(true); }
       });
       row.addEventListener('dragstart', e=>{
         dragSrcIdx = idx;
@@ -1577,11 +1762,7 @@
     sliderControls.classList.toggle('collapsed');
     document.getElementById('sliderControlsToggle').setAttribute('aria-expanded', !sliderControls.classList.contains('collapsed'));
   });
-  document.getElementById('swapBtn').addEventListener('click', ()=>{
-    [sliderState.leftId, sliderState.rightId] = [sliderState.rightId, sliderState.leftId];
-    leftSelect.value = sliderState.leftId; rightSelect.value = sliderState.rightId;
-    renderStage();
-  });
+  document.getElementById('swapBtn').addEventListener('click', swapSliderPanels);
 
   // ---------- Overlay select dropdowns + density ----------
   function updateOverlaySelects(preserve){
@@ -1664,6 +1845,12 @@
     if(mode==='overlay') return overlayStage;
     return sliderStage;
   }
+  function applyGridPanelVars(panel, pv){
+    panel.style.setProperty('--zoom', pv.zoom);
+    panel.style.setProperty('--panx', pv.panx+'px');
+    panel.style.setProperty('--pany', pv.pany+'px');
+  }
+  syncGridChk.addEventListener('change', ()=>{ if(mode==='grid') renderStage(); });
   function applyViewVars(){
     gridStage.style.setProperty('--zoom', view.zoom);
     gridStage.style.setProperty('--panx', view.panx+'px');
@@ -1680,11 +1867,12 @@
     zoomRange.value = view.zoom;
     queueWorkspaceSave();
   }
-  function clampPan(rectW, rectH){
-    const maxX = Math.max(0, rectW*(view.zoom-1)/2);
-    const maxY = Math.max(0, rectH*(view.zoom-1)/2);
-    view.panx = Math.min(maxX, Math.max(-maxX, view.panx));
-    view.pany = Math.min(maxY, Math.max(-maxY, view.pany));
+  function clampPan(rectW, rectH, v){
+    v = v || view;
+    const maxX = Math.max(0, rectW*(v.zoom-1)/2);
+    const maxY = Math.max(0, rectH*(v.zoom-1)/2);
+    v.panx = Math.min(maxX, Math.max(-maxX, v.panx));
+    v.pany = Math.min(maxY, Math.max(-maxY, v.pany));
   }
   zoomRange.addEventListener('input', ()=>{
     view.zoom = parseFloat(zoomRange.value);
@@ -1695,6 +1883,8 @@
   });
   resetViewBtn.addEventListener('click', ()=>{
     view = {zoom:1, panx:0, pany:0};
+    gridViews.forEach(pv=>{ pv.zoom=1; pv.panx=0; pv.pany=0; });
+    if(mode==='grid' && !syncGridChk.checked) renderStage();
     if(mode==='slider'){
       sliderState.leftView = {zoom:1,x:0,y:0};
       sliderState.rightView = {zoom:1,x:0,y:0};
@@ -1705,10 +1895,27 @@
     if(mode==='sequence') drawSeqStatic();
   });
 
-  // Keyboard: arrow keys nudge pan, +/- zoom, 0 resets. Ignored while typing in a field.
+  function swapSliderPanels(){
+    [sliderState.leftId, sliderState.rightId] = [sliderState.rightId, sliderState.leftId];
+    leftSelect.value = sliderState.leftId; rightSelect.value = sliderState.rightId;
+    renderStage();
+  }
+  // Keyboard: 1-5 switch modes, C capture, [ / ] swap slider, arrows nudge pan,
+  // +/- zoom, 0 reset, Ctrl+Z / Ctrl+Y undo/redo. Ignored while typing in a field.
   window.addEventListener('keydown', e=>{
     const tag = (document.activeElement && document.activeElement.tagName) || '';
     if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const mod = e.ctrlKey || e.metaKey;
+    if(mod && e.key.toLowerCase()==='z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if(mod && e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); return; }
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    if(e.key==='1'){ setMode('grid'); e.preventDefault(); return; }
+    if(e.key==='2'){ setMode('slider'); e.preventDefault(); return; }
+    if(e.key==='3'){ setMode('overlay'); e.preventDefault(); return; }
+    if(e.key==='4'){ setMode('sequence'); e.preventDefault(); return; }
+    if(e.key==='5'){ setMode('change'); e.preventDefault(); return; }
+    if(e.key==='c' || e.key==='C'){ captureLiveView(); e.preventDefault(); return; }
+    if(e.key==='[' || e.key===']'){ swapSliderPanels(); e.preventDefault(); return; }
     const stageEl = activeStageEl();
     if(!stageEl) return;
     const r = stageEl.getBoundingClientRect();
@@ -1732,32 +1939,39 @@
     }
   });
 
-  function attachPanHandlers(el){
+  // Pan/zoom handler. `viewFn` returns the view object to mutate; `varsFn`
+  // applies CSS vars. Defaults keep the old shared-view behaviour.
+  function attachPanHandlers(el, viewFn, varsFn){
     let dragging=false, sx=0, sy=0, startX=0, startY=0, rectW=0, rectH=0;
+    const getV = viewFn || (()=>view);
+    const apply = varsFn || applyViewVars;
     const refStage = ()=> mode==='grid' ? el : activeStageEl();
     el.addEventListener('pointerdown', e=>{
-      dragging=true; sx=e.clientX; sy=e.clientY; startX=view.panx; startY=view.pany;
+      const v=getV();
+      dragging=true; sx=e.clientX; sy=e.clientY; startX=v.panx; startY=v.pany;
       const r = refStage().getBoundingClientRect();
       rectW=r.width; rectH=r.height;
       el.setPointerCapture(e.pointerId);
     });
     el.addEventListener('pointermove', e=>{
       if(!dragging) return;
-      view.panx = startX + (e.clientX - sx);
-      view.pany = startY + (e.clientY - sy);
-      clampPan(rectW, rectH);
-      applyViewVars();
+      const v=getV();
+      v.panx = startX + (e.clientX - sx);
+      v.pany = startY + (e.clientY - sy);
+      clampPan(rectW, rectH, v);
+      apply();
       if(mode==='sequence') drawSeqStatic();
     });
     el.addEventListener('pointerup', ()=>{ dragging=false; });
     el.addEventListener('pointercancel', ()=>{ dragging=false; });
     el.addEventListener('wheel', e=>{
       e.preventDefault();
+      const v=getV();
       const delta = e.deltaY < 0 ? 0.08 : -0.08;
-      view.zoom = Math.min(4, Math.max(1, view.zoom + delta));
+      v.zoom = Math.min(4, Math.max(1, v.zoom + delta));
       const r = refStage().getBoundingClientRect();
-      clampPan(r.width, r.height);
-      applyViewVars();
+      clampPan(r.width, r.height, v);
+      apply();
       if(mode==='sequence') drawSeqStatic();
     }, {passive:false});
   }
@@ -1834,6 +2048,39 @@
   attachSliderPanelDrag(sliderThirdWrap, ()=>sliderState.thirdView);
 
   // ---------- Render stage ----------
+  const CHANGE_W = 800, CHANGE_H = 500;
+  let changeComponents = [];   // [ [pixelIdx...], ... ] for GeoJSON/KML export
+  function coverDraw(ctx, im, W, H, ox, oy){
+    const scale=Math.max(W/im.natW, H/im.natH);
+    const cX=(W-im.natW*scale)/2, cY=(H-im.natH*scale)/2;
+    ctx.setTransform(scale,0,0,scale,cX+ox,cY+oy);
+    ctx.drawImage(im.imgEl,0,0);
+    ctx.setTransform(1,0,0,1,0,0);
+  }
+  function autoAlignOffsets(before, after){
+    // Downscale both frames and search the integer offset that best aligns
+    // AFTER onto BEFORE; returns the (dx,dy) shift to apply to AFTER.
+    const SW=96, SH=60;
+    const c1=document.createElement('canvas'), c2=document.createElement('canvas');
+    c1.width=c2.width=SW; c1.height=c2.height=SH;
+    coverDraw(c1.getContext('2d'),before,SW,SH,0,0);
+    coverDraw(c2.getContext('2d'),after,SW,SH,0,0);
+    const lum=canvas=>{ const ctx=canvas.getContext('2d'), d=ctx.getImageData(0,0,SW,SH).data, g=new Uint8Array(SW*SH); for(let i=0;i<SW*SH;i++) g[i]=d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114; return g; };
+    const g1=lum(c1), g2=lum(c2);
+    let best={dx:0,dy:0,err:Infinity};
+    const R=5;
+    for(let dy=-R;dy<=R;dy++) for(let dx=-R;dx<=R;dx++){
+      let err=0, n=0;
+      for(let y=0;y<SH;y++) for(let x=0;x<SW;x++){
+        const sx=x-dx, sy=y-dy;
+        if(sx<0||sy<0||sx>=SW||sy>=SH) continue;
+        err+=Math.abs(g2[sy*SW+sx]-g1[y*SW+x]); n++;
+      }
+      const m=err/Math.max(1,n);
+      if(m<best.err) best={dx,dy,err:m};
+    }
+    return {dx:Math.round(best.dx*(CHANGE_W/SW)), dy:Math.round(best.dy*(CHANGE_H/SH))};
+  }
   function renderChangeMap(){
     const before = images.find(i=>i.id===changeState.beforeId);
     const after = images.find(i=>i.id===changeState.afterId);
@@ -1841,16 +2088,12 @@
       changeStats.style.display='none';
       return;
     }
-    const W=800, H=500;
+    const W=CHANGE_W, H=CHANGE_H;
     changeCanvas.width=W; changeCanvas.height=H;
     const a=document.createElement('canvas'), b=document.createElement('canvas');
     a.width=b.width=W; a.height=b.height=H;
-    const drawAligned=(canvas, im)=>{
-      const ctx=canvas.getContext('2d');
-      const r=computeSourceRect(im.natW,im.natH,W,H,1,0,0);
-      ctx.drawImage(im.imgEl,r.sx,r.sy,r.sw,r.sh,0,0,W,H);
-    };
-    drawAligned(a,before); drawAligned(b,after);
+    coverDraw(a.getContext('2d'),before,W,H,0,0);
+    coverDraw(b.getContext('2d'),after,W,H,changeState.alignX||0,changeState.alignY||0);
     const ai=a.getContext('2d').getImageData(0,0,W,H).data;
     const bi=b.getContext('2d').getImageData(0,0,W,H).data;
     const mask=new Uint8Array(W*H), visited=new Uint8Array(W*H), keep=new Uint8Array(W*H), sizes=[];
@@ -1864,6 +2107,7 @@
       if(delta>=threshold) mask[p]=1;
     }
     const neighbors=[-1,1,-W,W];
+    changeComponents=[];
     for(let p=0;p<W*H;p++) if(mask[p]&&!visited[p]){
       const queue=[p], component=[]; visited[p]=1; let size=0;
       while(queue.length){
@@ -1871,7 +2115,7 @@
         const x=q%W;
         for(const n of neighbors){ const next=q+n; if((n===-1&&x===0)||(n===1&&x===W-1)||next<0||next>=W*H) continue; if(mask[next]&&!visited[next]){visited[next]=1;queue.push(next);} }
       }
-      if(size>=changeState.minSize){ sizes.push(size); component.forEach(q=>keep[q]=1); }
+      if(size>=changeState.minSize){ sizes.push(size); changeComponents.push(component); component.forEach(q=>keep[q]=1); }
     }
     const ctx=changeCanvas.getContext('2d');
     ctx.drawImage(a,0,0);
@@ -1891,6 +2135,134 @@
     reliabilityStat.textContent=area<1?'HIGH':area<18?'REVIEW':'LOW';
     changeStats.style.display='grid';
   }
+  function setChangeAlign(dx,dy){
+    changeState.alignX=Math.round(dx); changeState.alignY=Math.round(dy);
+    changeAlignX.value=changeState.alignX; changeAlignY.value=changeState.alignY;
+    renderChangeMap();
+  }
+  autoAlignBtn.addEventListener('click', ()=>{
+    const before=images.find(i=>i.id===changeState.beforeId), after=images.find(i=>i.id===changeState.afterId);
+    if(!before||!after||before.id===after.id) return;
+    const off=autoAlignOffsets(before,after);
+    setChangeAlign(off.dx,off.dy);
+    changeAlignX.title='Auto-aligned'; changeAlignY.title='Auto-aligned';
+    captureStatus.textContent='Auto-aligned AFTER by ('+changeState.alignX+', '+changeState.alignY+') px.';
+    captureStatus.classList.remove('err');
+  });
+  resetAlignBtn.addEventListener('click', ()=>{ setChangeAlign(0,0); changeAlignX.title=''; changeAlignY.title=''; });
+  changeAlignX.addEventListener('input', ()=>{ changeState.alignX=parseInt(changeAlignX.value,10)||0; renderChangeMap(); });
+  changeAlignY.addEventListener('input', ()=>{ changeState.alignY=parseInt(changeAlignY.value,10)||0; renderChangeMap(); });
+
+  // ---------- GeoJSON / KML export (change regions + annotations) ----------
+  function pixelToGeo(px, py, im){
+    const scale=Math.max(CHANGE_W/im.natW, CHANGE_H/im.natH);
+    const cX=(CHANGE_W-im.natW*scale)/2, cY=(CHANGE_H-im.natH*scale)/2;
+    const ix=(px-cX)/scale, iy=(py-cY)/scale;
+    const mpp=156543.03392*Math.cos(im.lat*Math.PI/180)/Math.pow(2,im.zoom);
+    const dx=(ix-im.natW/2)*mpp, dy=(iy-im.natH/2)*mpp;
+    const lng=im.lng + dx/(111320*Math.cos(im.lat*Math.PI/180));
+    const lat=im.lat - dy/110540;
+    return [lng, lat];
+  }
+  function traceBoundary(comp, W, H){
+    const inC=new Uint8Array(W*H);
+    for(const p of comp) inC[p]=1;
+    let start=-1;
+    for(let p=0;p<W*H;p++) if(inC[p]){
+      const x=p%W, y=(p/W)|0;
+      if(x===0||y===0||x===W-1||y===H-1 || !inC[p-1] || !inC[p+1] || !inC[p-W] || !inC[p+W]){ start=p; break; }
+    }
+    if(start<0) return null;
+    const startX=start%W, startY=Math.floor(start/W);
+    const mx=[-1,-1,0,1,1,1,0,-1], my=[0,-1,-1,-1,0,1,1,1];
+    let b={x:startX, y:startY};
+    let prev={x:b.x-1, y:b.y};
+    const pts=[]; let guard=0;
+    while(guard++ < comp.length*64){
+      let d0=-1;
+      for(let k=0;k<8;k++) if(mx[k]===prev.x-b.x && my[k]===prev.y-b.y){ d0=k; break; }
+      if(d0<0) break;
+      let found=-1;
+      for(let k=1;k<=8;k++){
+        const d=(d0+k)%8, nx=b.x+mx[d], ny=b.y+my[d];
+        if(nx>=0&&ny>=0&&nx<W&&ny<H&&inC[ny*W+nx]){ found=d; break; }
+      }
+      if(found<0) break;
+      const nx=b.x+mx[found], ny=b.y+my[found];
+      prev=b; b={x:nx,y:ny};
+      pts.push(b);
+      if(b.x===startX && b.y===startY && pts.length>3) break;
+    }
+    return pts;
+  }
+  function simplifyRuns(pts){
+    const out=[];
+    for(let i=0;i<pts.length;i++){
+      const p=pts[i], p0=pts[(i-1+pts.length)%pts.length], p1=pts[(i+1)%pts.length];
+      if((p.x-p0.x)!==(p1.x-p.x) || (p.y-p0.y)!==(p1.y-p.y)) out.push(p);
+    }
+    return out;
+  }
+  function componentMpp(im){
+    return 156543.03392*Math.cos(im.lat*Math.PI/180)/Math.pow(2,im.zoom);
+  }
+  function buildGeoExport(){
+    renderChangeMap();
+    const before=images.find(i=>i.id===changeState.beforeId);
+    if(!changeComponents || !changeComponents.length){ geoExportNote.hidden=false; geoExportNote.textContent='Run change detection first (both frames selected).'; return null; }
+    if(!before || before.lat==null || before.lng==null || before.zoom==null){
+      geoExportNote.hidden=false; geoExportNote.textContent='To export real coordinates, capture BOTH frames from the live map so they are geotagged.';
+      return null;
+    }
+    const mpp=componentMpp(before);
+    const feats=[];
+    changeComponents.forEach((comp,ci)=>{
+      const loop=traceBoundary(comp, CHANGE_W, CHANGE_H);
+      if(!loop || loop.length<3) return;
+      const simp=simplifyRuns(loop);
+      const coords=simp.map(p=>pixelToGeo(p.x,p.y,before));
+      coords.push(coords[0]);
+      feats.push({type:'Feature', properties:{id:ci+1, type:'change-region', areaPx:comp.length, areaM2:Math.round(comp.length*mpp*mpp)}, geometry:{type:'Polygon', coordinates:[coords]}});
+    });
+    // Annotations (recorded strokes) → LineStrings, mapped via the change canvas transform
+    if(annotationStrokes.length){
+      const r=changeStage.getBoundingClientRect();
+      const sx=CHANGE_W/Math.max(1,r.width), sy=CHANGE_H/Math.max(1,r.height);
+      annotationStrokes.forEach((stroke,si)=>{
+        if(stroke.length<2) return;
+        const coords=stroke.map(p=>pixelToGeo(p.x*sx, p.y*sy, before));
+        feats.push({type:'Feature', properties:{id:feats.length+1, type:'annotation'}, geometry:{type:'LineString', coordinates:coords}});
+      });
+    }
+    return {features:feats, beforeLabel:before.label};
+  }
+  exportGeoBtn.addEventListener('click', ()=>{
+    const geo=buildGeoExport();
+    if(!geo){ geoExportNote.hidden=false; return; }
+    geoExportNote.hidden=true;
+    const gj={type:'FeatureCollection', features:geo.features, crs:{type:'name', properties:{name:'urn:ogc:def:crs:OGC:1.3:CRS84'}}};
+    downloadText('phnaek-pkay-change.geojson', JSON.stringify(gj,null,2), 'application/geo+json');
+    captureStatus.textContent='Exported '+geo.features.length+' region(s) to GeoJSON.'; captureStatus.classList.remove('err');
+  });
+  exportKmlBtn.addEventListener('click', ()=>{
+    const geo=buildGeoExport();
+    if(!geo){ geoExportNote.hidden=false; return; }
+    geoExportNote.hidden=true;
+    const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const kml='<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2">'+
+      '<Document><name>Phnaek Pkay change regions</name><description>'+esc(geo.beforeLabel||'')+'</description>'+
+      geo.features.map(f=>{
+        if(f.geometry.type==='Polygon'){
+          const ring=f.geometry.coordinates[0].map(c=>c[1]+','+c[0]+',0').join(' ');
+          return '<Placemark><name>Change region '+f.properties.id+'</name><description>Area: '+f.properties.areaM2+' m²</description><Polygon><outerBoundaryIs><LinearRing><coordinates>'+ring+'</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>';
+        }
+        const coords=f.geometry.coordinates.map(c=>c[1]+','+c[0]+',0').join(' ');
+        return '<Placemark><name>Annotation '+f.properties.id+'</name><LineString><tessellate>1</tessellate><coordinates>'+coords+'</coordinates></LineString></Placemark>';
+      }).join('')+
+      '</Document></kml>';
+    downloadText('phnaek-pkay-change.kml', kml, 'application/vnd.google-earth.kml+xml');
+    captureStatus.textContent='Exported '+geo.features.length+' feature(s) to KML.'; captureStatus.classList.remove('err');
+  });
 
   let _renderRAF=null;
   function renderStage(){
@@ -1916,7 +2288,9 @@
       const list = selected.length ? selected : images.slice(0,6);
       if(list.length===0){ placeholder.style.display='flex'; placeholder.textContent='Check at least one frame in the sidebar to show it in the grid.'; gridStage.style.display='none'; return; }
       gridStage.style.gridTemplateColumns = `repeat(${effectiveGridCols(list.length)}, 1fr)`;
-      list.forEach(im=>{
+      gridViews = gridViews.slice(0, list.length);
+      list.forEach((im, idx)=>{
+        if(!gridViews[idx]) gridViews[idx] = {zoom:1, panx:0, pany:0};
         const panel = document.createElement('div');
         panel.className='panel';
         panel.innerHTML = `
@@ -1926,10 +2300,19 @@
           <div class="panel-label">${escapeHtml(im.label)}</div>
            <div class="panel-tag">PHNAEK&middot;PKAY</div>
         `;
-        attachPanHandlers(panel.querySelector('.panel-viewport'));
+        const viewport = panel.querySelector('.panel-viewport');
+        if(syncGridChk.checked){
+          attachPanHandlers(viewport);
+        } else {
+          attachPanHandlers(viewport, ()=>gridViews[idx], ()=>{
+            applyGridPanelVars(viewport, gridViews[idx]);
+            queueWorkspaceSave();
+          });
+          applyGridPanelVars(viewport, gridViews[idx]);
+        }
         gridStage.appendChild(panel);
       });
-      applyViewVars();
+      if(syncGridChk.checked) applyViewVars();
     } else if(mode==='slider'){
       const L = images.find(i=>i.id===sliderState.leftId);
       const R = images.find(i=>i.id===sliderState.rightId);
@@ -2192,12 +2575,49 @@
     ctx.fillStyle='rgba(0,0,0,.58)'; ctx.fillRect(W-200,H-34,190,24);
     ctx.fillStyle='#eef0e4'; ctx.fillText('Phnaek Pkay',W-20,H-17); ctx.restore();
   }
+  // Geotag the current view: prefer the frame(s) actually on screen, else the live map.
+  function exportCoords(){
+    let rec=null;
+    if(mode==='slider') rec=images.find(i=>i.id===sliderState.leftId);
+    else if(mode==='overlay') rec=images.find(i=>i.id===overlayState.baseId);
+    else if(mode==='change') rec=images.find(i=>i.id===changeState.beforeId);
+    else { const sel=images.filter(i=>i.selected); rec=sel[0]||images[0]; }
+    if(rec && rec.lat!=null && rec.lng!=null) return {lat:rec.lat,lng:rec.lng,zoom:rec.zoom,provider:rec.mapProvider,frame:rec};
+    return {lat:liveMap.lat,lng:liveMap.lng,zoom:Math.round(liveMap.zoom),provider:liveMap.provider,frame:null};
+  }
+  function metersPerPixel(lat,zoom){
+    if(lat==null||zoom==null) return null;
+    return 156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,zoom);
+  }
+  function drawScaleBar(ctx,W,H,mpp,alignRight){
+    if(!mpp) return;
+    const steps=[10,20,50,100,200,500,1000,2000,5000,10000,20000,50000];
+    const targetPx=90, targetM=targetPx*mpp;
+    let meters=steps[steps.length-1];
+    for(const s of steps){ if(s>=targetM){ meters=s; break; } }
+    const px=Math.round(meters/mpp);
+    const y=H-16, x=alignRight ? W-px-14 : 14;
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,.55)';
+    ctx.fillRect(Math.min(x,alignRight?x:14)-4,y-12,px+8,20);
+    ctx.fillStyle='#f4f2e8';
+    ctx.fillRect(x,y,px,3);
+    ctx.fillStyle='#f4f2e8';
+    ctx.font="10px 'JetBrains Mono',monospace";
+    ctx.textBaseline='alphabetic';
+    ctx.textAlign='left';
+    ctx.fillText(meters>=1000 ? (meters/1000)+' km' : meters+' m', x, y-4);
+    ctx.restore();
+  }
   function drawExportCoords(ctx,W,H){
+    const c=exportCoords();
     ctx.save(); ctx.font="500 13px 'JetBrains Mono',monospace"; ctx.textAlign='left'; ctx.textBaseline='bottom';
-    const label = `lat ${liveMap.lat.toFixed(4)} · lon ${liveMap.lng.toFixed(4)}`;
+    const label = `lat ${c.lat.toFixed(4)} · lon ${c.lng.toFixed(4)}`;
     const w = ctx.measureText(label).width + 24;
     ctx.fillStyle='rgba(0,0,0,.58)'; ctx.fillRect(12,H-34,w,24);
     ctx.fillStyle='#98a186'; ctx.fillText(label,24,H-17); ctx.restore();
+    const mpp=metersPerPixel(c.lat,c.zoom);
+    if(mpp) drawScaleBar(ctx,W,H,mpp,true);
   }
   function drawExportNotes(ctx,W,H){
     if(!includeNotesExport.checked || !notesInput.value.trim()) return;
@@ -2230,8 +2650,9 @@
       list.forEach((im,idx)=>{
         const col = idx%cols, row = Math.floor(idx/cols);
         const x = col*(panelW+gap), y = row*(panelH+gap);
-        const tx = view.panx*scaleFactor, ty = view.pany*scaleFactor;
-        const {sx,sy,sw,sh} = computeSourceRect(im.natW, im.natH, panelW, panelH, view.zoom, tx, ty);
+        const pv = syncGridChk.checked ? view : (gridViews[idx] || view);
+        const tx = pv.panx*scaleFactor, ty = pv.pany*scaleFactor;
+        const {sx,sy,sw,sh} = computeSourceRect(im.natW, im.natH, panelW, panelH, pv.zoom, tx, ty);
         ctx.drawImage(im.imgEl, sx, sy, sw, sh, x, y, panelW, panelH);
         drawLabel(ctx, im.label, x, y, 'left');
       });
@@ -2255,8 +2676,9 @@
       const liveRect = sliderStage.getBoundingClientRect();
       const scaleFactor = W/liveRect.width;
       const M=images.find(i=>i.id===sliderState.middleId);
-      if(sliderState.three && M && M.id!==L.id && M.id!==R.id) renderThreeSliderFrame(ctx,W,H,L,M,R,sliderState.clip,sliderState.clip2,scaleFactor);
+       if(sliderState.three && M && M.id!==L.id && M.id!==R.id) renderThreeSliderFrame(ctx,W,H,L,M,R,sliderState.clip,sliderState.clip2,scaleFactor);
       else renderSliderFrame(ctx, W, H, L, R, sliderState.clip, scaleFactor);
+      drawMeasureExport(ctx, scaleFactor);
       if(caption){
         ctx.fillStyle = '#1a1e15'; ctx.fillRect(0,H,W,capH);
         ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'JetBrains Mono',monospace";
@@ -2276,6 +2698,7 @@
       const scaleFactor = W/liveRect.width;
       const O3=images.find(i=>i.id===overlayState.thirdId);
       renderOverlayFrame(ctx, W, H, B, T, overlayState.density, scaleFactor, O3 && O3.id!==B.id && O3.id!==T.id ? O3 : null, overlayState.thirdDensity);
+      drawMeasureExport(ctx, scaleFactor);
       if(caption){
         ctx.fillStyle = '#1a1e15'; ctx.fillRect(0,H,W,capH);
         ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'JetBrains Mono',monospace";
@@ -2291,6 +2714,9 @@
       const W=changeCanvas.width, H=changeCanvas.height, capH=caption?46:0;
       exportCanvas.width=W; exportCanvas.height=H+capH;
       const ctx=exportCanvas.getContext('2d'); ctx.drawImage(changeCanvas,0,0);
+      const chRect=changeStage.getBoundingClientRect();
+      const mScale=chRect.width ? W/chRect.width : 1;
+      drawMeasureExport(ctx, mScale);
       if(caption){ ctx.fillStyle='#1a1e15'; ctx.fillRect(0,H,W,capH); ctx.fillStyle='#98a186'; ctx.font="500 16px 'JetBrains Mono',monospace"; ctx.textBaseline='middle'; ctx.fillText(caption,14,H+capH/2); }
        drawExportNotes(ctx,W,H); drawExportCoords(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-change-map.png');
     }
@@ -2416,6 +2842,12 @@
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),500);
   }
 
+  // Desktop auto-hide: the sidebar collapses when the cursor leaves it and
+  // reappears when the cursor returns to the far-left edge or hovers the slim
+  // rail there. The topbar hamburger toggles auto-hide on/off (pin on/off).
+  // On mobile it stays a normal off-canvas drawer, unchanged.
+  let sidebarAutoHide = window.innerWidth>820;
+  let sidebarLeaveTimer = null;
   function setSidebarOpen(open){
     sidebar.classList.toggle('is-collapsed',!open);
     document.body.classList.toggle('sidebar-open',open && window.innerWidth<=820);
@@ -2424,10 +2856,47 @@
     // (open=false, width<=820) the dim backdrop stayed fully visible and
     // clickable over the whole page even though the sidebar was collapsed.
     sidebarBackdrop.classList.toggle('is-hidden',!open);
+    sidebarPeek.classList.toggle('is-visible',!open && window.innerWidth>820);
     sidebarToggleBtn.setAttribute('aria-expanded',String(open));
-    sidebarToggleBtn.title=open?'Hide controls':'Show controls';
+    if(window.innerWidth>820){
+      sidebarToggleBtn.title = sidebarAutoHide
+        ? (open ? 'Auto-hide on · sidebar closes when your cursor leaves' : 'Auto-hide on · move the cursor to the left edge to show')
+        : (open ? 'Pinned open · click to enable auto-hide' : 'Click to enable auto-hide');
+    } else {
+      sidebarToggleBtn.title = open ? 'Hide controls' : 'Show controls';
+    }
   }
-  sidebarToggleBtn.addEventListener('click',()=>setSidebarOpen(sidebar.classList.contains('is-collapsed')));
+  function scheduleSidebarHide(){
+    if(!sidebarAutoHide || window.innerWidth<=820 || sidebar.contains(document.activeElement)) return;
+    clearTimeout(sidebarLeaveTimer);
+    sidebarLeaveTimer = setTimeout(()=>setSidebarOpen(false), 450);
+  }
+  function showSidebar(){
+    if(window.innerWidth<=820) return;
+    clearTimeout(sidebarLeaveTimer);
+    if(sidebar.classList.contains('is-collapsed')) setSidebarOpen(true);
+  }
+  sidebar.addEventListener('mouseleave', scheduleSidebarHide);
+  sidebarPeek.addEventListener('pointerenter', showSidebar);
+  sidebarPeek.addEventListener('click', showSidebar);
+  sidebarPeek.addEventListener('keydown', e=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showSidebar(); }
+  });
+  window.addEventListener('pointermove', e=>{
+    if(window.innerWidth<=820 || !sidebarAutoHide) return;
+    if(e.clientX <= 24 && sidebar.classList.contains('is-collapsed')) showSidebar();
+  });
+  document.addEventListener('pointerdown', e=>{
+    if(window.innerWidth<=820 || !sidebarAutoHide) return;
+    if(sidebar.contains(e.target) || sidebarPeek.contains(e.target)) return;
+    if(e.target===sidebarToggleBtn || sidebarToggleBtn.contains(e.target)) return;
+    scheduleSidebarHide();
+  });
+  sidebarToggleBtn.addEventListener('click', ()=>{
+    if(window.innerWidth<=820){ setSidebarOpen(sidebar.classList.contains('is-collapsed')); return; }
+    sidebarAutoHide = !sidebarAutoHide;
+    setSidebarOpen(!sidebarAutoHide);
+  });
   sidebarBackdrop.addEventListener('click',()=>setSidebarOpen(false));
   document.getElementById('sidebarCloseBtn').addEventListener('click',()=>setSidebarOpen(false));
   let wasDesktopWidth = window.innerWidth>820;
@@ -2437,18 +2906,21 @@
       // Only re-sync when actually crossing the breakpoint (e.g. rotating
       // the phone), so we don't fight a manual open/close within the same
       // layout mode, and so both drawer + backdrop stay in sync in both
-      // directions (portrait -> landscape -> portrait).
-      setSidebarOpen(isDesktopWidth);
+      // directions (portrait -> landscape -> portrait). Re-enable auto-hide
+      // when returning to a desktop-width window.
+      sidebarAutoHide = isDesktopWidth;
+      setSidebarOpen(false);
       wasDesktopWidth = isDesktopWidth;
     }
   });
   [modeGridBtn,modeSliderBtn,modeOverlayBtn,modeSequenceBtn,modeChangeBtn].forEach(btn=>btn.addEventListener('click',()=>{
     if(window.innerWidth<=820) setSidebarOpen(false);
   }));
-  setSidebarOpen(window.innerWidth>820);
+  sidebarAutoHide = window.innerWidth>820;
+  setSidebarOpen(window.innerWidth>820 ? !sidebarAutoHide : false);
 
   function projectPayload(){
-    return {version:1, savedAt:new Date().toISOString(), mode, cols, view, caption:captionInput.value, notes:notesInput.value, includeNotesExport:includeNotesExport.checked, annotation:annotationCanvas.width?annotationCanvas.toDataURL('image/png'):null, map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,planetKey:planetKey.value,planetMosaic:planetMosaic.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value}, images:images.map(im=>({id:im.id,src:im.src,label:im.label,imageryDate:im.imageryDate||'',natW:im.natW,natH:im.natH,capturedAt:im.capturedAt||null,generated:!!im.generated,selected:im.selected})), sliderState, overlayState, changeState};
+    return {version:1, savedAt:new Date().toISOString(), mode, cols, view, caption:captionInput.value, notes:notesInput.value, includeNotesExport:includeNotesExport.checked, annotation:annotationCanvas.width?annotationCanvas.toDataURL('image/png'):null, map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,planetKey:planetKey.value,planetMosaic:planetMosaic.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value}, images:images.map(im=>({id:im.id,src:im.src,label:im.label,imageryDate:im.imageryDate||'',natW:im.natW,natH:im.natH,capturedAt:im.capturedAt||null,generated:!!im.generated,selected:im.selected,lat:im.lat!=null?im.lat:null,lng:im.lng!=null?im.lng:null,zoom:im.zoom!=null?im.zoom:null,mapProvider:im.mapProvider||null})), sliderState, overlayState, changeState};
   }
   function preferencePayload(){ return {version:1,preferenceOnly:true,mode,cols,view,caption:captionInput.value,notes:notesInput.value,includeNotesExport:includeNotesExport.checked,map:{provider:liveMap.provider,lat:liveMap.lat,lng:liveMap.lng,zoom:liveMap.zoom,mapboxToken:mapboxToken.value,planetKey:planetKey.value,planetMosaic:planetMosaic.value,sentinelId:sentinelId.value,sentinelLayer:sentinelLayer.value,sentinelDate:sentinelDate.value,sentinelCloud:sentinelCloud.value,sentinelSharpness:sentinelSharpness.value,nasaLayer:nasaLayer.value,nasaDate:nasaDate.value,placesApiKey:placesApiKey.value},sliderState,overlayState,changeState}; }
   function saveWorkspace(){ try{ localStorage.setItem('phnaek-pkay-preferences',JSON.stringify(preferencePayload())); }catch(err){} }
@@ -2459,9 +2931,10 @@
     if(Array.isArray(p.images)){ images=[]; nextId=Math.max(0,...p.images.map(saved=>Number(saved.id)||0))+1;
       let loaded=0, total=p.images.length;
       function commit(){ loaded++; if(loaded<total) return; renderImageList(); updateSliderSelects(true); renderStage(); }
-      p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:saved.selected!==false}); commit(); }; img.onerror=()=>commit(); img.src=saved.src; }); }
-    cols=p.cols||2; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,leftView:{zoom:1,x:0,y:0},rightView:{zoom:1,x:0,y:0},thirdView:{zoom:1,x:0,y:0},...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; applyViewVars(); applySliderPanelVars();
+      p.images.forEach(saved=>{ const img=new Image(); img.onload=()=>{ images.push({id:saved.id||nextId++,src:saved.src,label:saved.label||'frame',imageryDate:saved.imageryDate||'',capturedAt:saved.capturedAt||null,generated:!!saved.generated,natW:img.naturalWidth,natH:img.naturalHeight,lat:saved.lat!=null?saved.lat:null,lng:saved.lng!=null?saved.lng:null,zoom:saved.zoom!=null?saved.zoom:null,mapProvider:saved.mapProvider||null,imgEl:img,selected:saved.selected!==false}); commit(); }; img.onerror=()=>commit(); img.src=saved.src; }); }
+    cols=p.cols||2; view=p.view||{zoom:1,panx:0,pany:0}; captionInput.value=p.caption||''; notesInput.value=p.notes||''; includeNotesExport.checked=!!p.includeNotesExport; sliderState={leftId:null,middleId:null,rightId:null,clip:50,clip2:75,three:false,leftView:{zoom:1,x:0,y:0},rightView:{zoom:1,x:0,y:0},thirdView:{zoom:1,x:0,y:0},...(p.sliderState||{})}; overlayState={baseId:null,topId:null,thirdId:null,density:50,thirdDensity:55,...(p.overlayState||{})}; changeState={beforeId:null,afterId:null,method:'rgb',threshold:30,minSize:12,alignX:0,alignY:0,...(p.changeState||{})}; sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three; overlayThirdDensity.value=overlayState.thirdDensity||55; overlayThirdReadout.textContent=(overlayState.thirdDensity||55)+'%'; changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px'; changeAlignX.value=changeState.alignX||0; changeAlignY.value=changeState.alignY||0; applyViewVars(); applySliderPanelVars();
     if(p.map){ Object.assign(liveMap,{provider:p.map.provider||liveMap.provider,lat:p.map.lat||liveMap.lat,lng:p.map.lng||liveMap.lng,zoom:p.map.zoom||liveMap.zoom}); mapboxToken.value=p.map.mapboxToken||''; planetKey.value=p.map.planetKey||''; planetMosaic.value=p.map.planetMosaic||planetMosaic.value; if(![...planetMosaic.options].some(o=>o.value===planetMosaic.value)) planetMosaic.value=planetMosaic.options[0]?planetMosaic.options[0].value:''; sentinelId.value=p.map.sentinelId||''; sentinelLayer.value=p.map.sentinelLayer||'TRUE_COLOR'; sentinelDate.value=p.map.sentinelDate||''; sentinelCloud.value=p.map.sentinelCloud||20; sentinelSharpness.value=p.map.sentinelSharpness||35; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%'; nasaLayer.value=p.map.nasaLayer||nasaLayer.value; nasaDate.value=p.map.nasaDate||nasaDate.value; placesApiKey.value=p.map.placesApiKey||''; providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change')); }
+    annotationStrokes=[]; clearMeasure();
     if(p.annotation){ const img=new Image(); img.onload=()=>{syncAnnotationCanvas(); annotationCanvas.getContext('2d').drawImage(img,0,0,annotationCanvas.width,annotationCanvas.height);}; img.src=p.annotation; }
   }
   saveProjectBtn.addEventListener('click',()=>downloadText('phnaek-pkay-project.json',JSON.stringify(projectPayload()),'application/json'));
@@ -2478,6 +2951,72 @@
       }catch(err){ captureStatus.textContent='Could not load that project file.'; captureStatus.classList.add('err'); }
     };
     reader.readAsText(file); projectInput.value='';
+  });
+
+  // ---------- Undo / redo (frames, labels, annotations, notes) ----------
+  let historyStack=[], historyPos=-1;
+  function historySnapshot(){
+    return {
+      images: images.map(im=>({id:im.id,src:im.src,label:im.label,imageryDate:im.imageryDate||'',capturedAt:im.capturedAt||null,generated:!!im.generated,selected:im.selected,natW:im.natW,natH:im.natH,lat:im.lat!=null?im.lat:null,lng:im.lng!=null?im.lng:null,zoom:im.zoom!=null?im.zoom:null,mapProvider:im.mapProvider||null})),
+      annotation: annotationCanvas.width ? annotationCanvas.toDataURL('image/png') : null,
+      caption: captionInput.value, notes: notesInput.value
+    };
+  }
+  function applySnapshot(snap){
+    images=[]; nextId=1;
+    const total=snap.images.length;
+    let loaded=0;
+    function finish(){
+      nextId=Math.max(0,...images.map(x=>Number(x.id)||0))+1;
+      captionInput.value=snap.caption||''; notesInput.value=snap.notes||'';
+      if(snap.annotation){
+        const img=new Image();
+        img.onload=()=>{ syncAnnotationCanvas(); annotationCanvas.getContext('2d').drawImage(img,0,0,annotationCanvas.width,annotationCanvas.height); };
+        img.src=snap.annotation;
+      } else {
+        annotationCanvas.getContext('2d').clearRect(0,0,annotationCanvas.width,annotationCanvas.height);
+      }
+      renderImageList(); updateSliderSelects(true); renderStage();
+      annotationStrokes=[]; clearMeasure();
+      updateUndoRedoButtons();
+    }
+    if(!total){ finish(); return; }
+    snap.images.forEach(s=>{
+      const img=new Image();
+      img.onload=()=>{ images.push({id:s.id||nextId++,src:s.src,label:s.label||'frame',imageryDate:s.imageryDate||'',capturedAt:s.capturedAt||null,generated:!!s.generated,natW:img.naturalWidth,natH:img.naturalHeight,lat:s.lat!=null?s.lat:null,lng:s.lng!=null?s.lng:null,zoom:s.zoom!=null?s.zoom:null,mapProvider:s.mapProvider||null,imgEl:img,selected:s.selected!==false}); loaded++; if(loaded===total) finish(); };
+      img.onerror=()=>{ loaded++; if(loaded===total) finish(); };
+      img.src=s.src;
+    });
+  }
+  function pushHistory(){
+    if(historyStack.length>60) historyStack.shift();
+    historyStack=historyStack.slice(0,historyPos+1);
+    historyStack.push(historySnapshot());
+    historyPos=historyStack.length-1;
+    updateUndoRedoButtons();
+  }
+  function updateUndoRedoButtons(){
+    undoBtn.disabled=historyPos<=0;
+    redoBtn.disabled=historyPos>=historyStack.length-1;
+  }
+  function undo(){ if(historyPos<=0) return; historyPos--; applySnapshot(historyStack[historyPos]); }
+  function redo(){ if(historyPos>=historyStack.length-1) return; historyPos++; applySnapshot(historyStack[historyPos]); }
+  undoBtn.addEventListener('click', undo);
+  redoBtn.addEventListener('click', redo);
+
+  // ---------- Share a map-view link via URL hash ----------
+  function copyTextToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(()=>{}); return; }
+    const t=document.createElement('input'); t.value=text; document.body.appendChild(t); t.select();
+    try{ document.execCommand('copy'); }catch(_){}
+    t.remove();
+  }
+  shareBtn.addEventListener('click', ()=>{
+    const params=[liveMap.provider, liveMap.lat.toFixed(6), liveMap.lng.toFixed(6), Math.round(liveMap.zoom)].join(',');
+    const url=(location.origin||'')+location.pathname+'#map='+params;
+    copyTextToClipboard(url);
+    shareBtn.textContent='Copied!';
+    setTimeout(()=>{ shareBtn.textContent='Share'; }, 1600);
   });
 
 // ---------- Field sites (bundled locations) ----------
@@ -2609,7 +3148,7 @@
     if(mode==='change' && images.length>=2) renderChangeMap();
     const preview=mode==='change' && changeCanvas.width ? changeCanvas.toDataURL('image/png') : '';
     const rows=images.map(im=>`<tr><td>${escapeHtml(im.label)}</td><td>${escapeHtml(im.imageryDate||'Not specified')}</td><td>${im.capturedAt?escapeHtml(formatTimestamp(im.capturedAt)):'Uploaded'}</td><td>${im.natW} x ${im.natH}</td><td>${im.selected?'Included':'Excluded'}</td></tr>`).join('');
-    const report=`<!doctype html><meta charset="utf-8"><title>Phnaek Pkay report</title><style>body{font:14px system-ui;max-width:980px;margin:40px auto;color:#20251c}h1{font-size:28px}small{color:#66705e}pre{white-space:pre-wrap;background:#f1f3ed;padding:14px}table{border-collapse:collapse;width:100%;margin-top:20px}td,th{border-bottom:1px solid #d8decf;padding:9px;text-align:left}img{max-width:100%;margin-top:22px;border:1px solid #ccd3c3}</style><h1>Phnaek Pkay · Satellite Eye</h1><small>Generated ${new Date().toLocaleString()} · mode: ${escapeHtml(mode)}</small><p>${escapeHtml(captionInput.value||'Satellite imagery comparison')}</p>${notesInput.value?`<h2>Notes</h2><pre>${escapeHtml(notesInput.value)}</pre>`:''}${preview?`<h2>Change map</h2><img src="${preview}" alt="Generated change map">`:''}<h2>Frames</h2><table><tr><th>Label</th><th>Imagery date</th><th>Captured</th><th>Dimensions</th><th>Status</th></tr>${rows}</table>`;
+    const report=`<!doctype html><meta charset="utf-8"><title>Phnaek Pkay report</title><style>body{font:14px system-ui;max-width:980px;margin:40px auto;color:#20251c}h1{font-size:28px}small{color:#66705e}pre{white-space:pre-wrap;background:#f1f3ed;padding:14px}table{border-collapse:collapse;width:100%;margin-top:20px}td,th{border-bottom:1px solid #d8decf;padding:9px;text-align:left}img{max-width:100%;margin-top:22px;border:1px solid #ccd3c3}@media print{body{margin:0;max-width:none;color:#000}small{color:#444}pre{background:#f6f6f6;border:1px solid #ccc;page-break-inside:avoid}h1,h2{page-break-after:avoid}tr{page-break-inside:avoid}table{page-break-before:auto}img{page-break-inside:avoid}}@page{margin:14mm}</style><h1>Phnaek Pkay · Satellite Eye</h1><small>Generated ${new Date().toLocaleString()} · mode: ${escapeHtml(mode)}</small><p>${escapeHtml(captionInput.value||'Satellite imagery comparison')}</p>${notesInput.value?`<h2>Notes</h2><pre>${escapeHtml(notesInput.value)}</pre>`:''}${preview?`<h2>Change map</h2><img src="${preview}" alt="Generated change map">`:''}<h2>Frames</h2><table><tr><th>Label</th><th>Imagery date</th><th>Captured</th><th>Dimensions</th><th>Status</th></tr>${rows}</table>`;
     downloadText('phnaek-pkay-report.html',report,'text/html');
   });
 
@@ -2620,14 +3159,128 @@
     annotationCanvas.width=Math.max(1,Math.round(r.width)); annotationCanvas.height=Math.max(1,Math.round(r.height));
     annotationCanvas.style.left=(r.left-wr.left+stageWrap.scrollLeft)+'px'; annotationCanvas.style.top=(r.top-wr.top+stageWrap.scrollTop)+'px';
     if(old.width) annotationCanvas.getContext('2d').drawImage(old,0,0,annotationCanvas.width,annotationCanvas.height);
+    if(measuring){ positionMeasureCanvas(); drawMeasure(); }
   }
   function annotationPoint(e){ const r=annotationCanvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+  let annotationStrokes=[];   // recorded strokes for GeoJSON export
   drawToggleBtn.addEventListener('click',()=>{ drawingEnabled=!drawingEnabled; annotationCanvas.classList.toggle('active',drawingEnabled); drawToggleBtn.classList.toggle('active',drawingEnabled); drawToggleBtn.textContent=drawingEnabled?'Drawing enabled':'Draw on view'; syncAnnotationCanvas(); });
-  clearDrawingBtn.addEventListener('click',()=>{ annotationCanvas.getContext('2d').clearRect(0,0,annotationCanvas.width,annotationCanvas.height); saveWorkspace(); });
-  annotationCanvas.addEventListener('pointerdown',e=>{ drawing=true; const p=annotationPoint(e),ctx=annotationCanvas.getContext('2d'); ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.strokeStyle='#e56c4c';ctx.lineWidth=3;ctx.lineCap='round';annotationCanvas.setPointerCapture(e.pointerId); });
-  annotationCanvas.addEventListener('pointermove',e=>{ if(!drawing)return; const p=annotationPoint(e),ctx=annotationCanvas.getContext('2d');ctx.lineTo(p.x,p.y);ctx.stroke(); });
-  annotationCanvas.addEventListener('pointerup',()=>{drawing=false;saveWorkspace();});
+  clearDrawingBtn.addEventListener('click',()=>{ annotationCanvas.getContext('2d').clearRect(0,0,annotationCanvas.width,annotationCanvas.height); annotationStrokes=[]; pushHistory(); saveWorkspace(); });
+  annotationCanvas.addEventListener('pointerdown',e=>{ drawing=true; const p=annotationPoint(e),ctx=annotationCanvas.getContext('2d'); annotationStrokes.push([p]); ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.strokeStyle='#e56c4c';ctx.lineWidth=3;ctx.lineCap='round';annotationCanvas.setPointerCapture(e.pointerId); });
+  annotationCanvas.addEventListener('pointermove',e=>{ if(!drawing)return; const p=annotationPoint(e),ctx=annotationCanvas.getContext('2d'); annotationStrokes[annotationStrokes.length-1].push(p); ctx.lineTo(p.x,p.y);ctx.stroke(); });
+  annotationCanvas.addEventListener('pointerup',()=>{ drawing=false; pushHistory(); saveWorkspace(); });
   window.addEventListener('resize',syncAnnotationCanvas);
+
+  // ---------- Measure tool (distance/area over the active view) ----------
+  let measuring=false, measurePts=[];
+  function positionMeasureCanvas(){
+    const target=activeStageEl(); if(!target) return;
+    const r=target.getBoundingClientRect(), wr=stageWrap.getBoundingClientRect();
+    measureCanvas.width=Math.max(1,Math.round(r.width)); measureCanvas.height=Math.max(1,Math.round(r.height));
+    measureCanvas.style.left=(r.left-wr.left+stageWrap.scrollLeft)+'px';
+    measureCanvas.style.top=(r.top-wr.top+stageWrap.scrollTop)+'px';
+  }
+  function measureMpp(){
+    const c=exportCoords();
+    if(c.lat==null||c.zoom==null) return null;
+    return metersPerPixel(c.lat,c.zoom)/Math.max(1,view.zoom||1);
+  }
+  function drawMeasure(){
+    if(!measureCanvas.width) return;
+    const ctx=measureCanvas.getContext('2d');
+    ctx.clearRect(0,0,measureCanvas.width,measureCanvas.height);
+    if(measurePts.length===0) return;
+    const mpp=measureMpp();
+    ctx.lineWidth=2; ctx.strokeStyle='#d3934f'; ctx.fillStyle='#d3934f';
+    ctx.beginPath();
+    measurePts.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+    ctx.stroke();
+    let totalPx=0;
+    measurePts.forEach((p,i)=>{
+      ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fill();
+      if(i>0){
+        const prev=measurePts[i-1];
+        const seg=Math.hypot(p.x-prev.x,p.y-prev.y); totalPx+=seg;
+        const mx=(p.x+prev.x)/2, my=(p.y+prev.y)/2;
+        const label=(mpp!=null ? (seg*mpp).toFixed(0)+' m' : Math.round(seg)+' px');
+        ctx.font="10px 'JetBrains Mono',monospace"; ctx.textAlign='center';
+        ctx.fillStyle='rgba(0,0,0,.6)';
+        const tw=ctx.measureText(label).width+8;
+        ctx.fillRect(mx-tw/2,my-9,tw,15);
+        ctx.fillStyle='#f4f2e8'; ctx.fillText(label,mx,my+1);
+      }
+    });
+    const total=measureMeters(totalPx,mpp);
+    measureReadout.innerHTML=total;
+  }
+  function measureMeters(px,mpp){
+    const base=Math.round(px)+(mpp!=null ? ' px · '+Math.round(px*mpp)+' m' : ' px');
+    return 'Measure: '+measurePts.length+' point(s) · total '+base+(mpp!=null&&measurePts.length>=3 ? ' · area '+Math.round(measureArea(mpp))+' m²':'')+' &middot; double-click / Esc to finish';
+  }
+  function measureArea(mpp){
+    if(measurePts.length<3) return 0;
+    let a=0;
+    for(let i=0;i<measurePts.length;i++){
+      const p=measurePts[i], q=measurePts[(i+1)%measurePts.length];
+      a+=(p.x*q.y - q.x*p.y);
+    }
+    return Math.abs(a)/2 * mpp * mpp;
+  }
+  function finishMeasure(){ if(!measuring) return; measuring=false; measureToggleBtn.classList.remove('active'); measureToggleBtn.textContent='Measure'; measureReadout.hidden=true; }
+  function clearMeasure(){ measurePts=[]; if(measureCanvas.width) measureCanvas.getContext('2d').clearRect(0,0,measureCanvas.width,measureCanvas.height); measureReadout.hidden=true; }
+  measureToggleBtn.addEventListener('click',()=>{
+    measuring=!measuring;
+    measureToggleBtn.classList.toggle('active',measuring);
+    measureToggleBtn.textContent=measuring?'Measuring (double-click to finish)':'Measure';
+    measureReadout.hidden=!measuring;
+    if(measuring){ positionMeasureCanvas(); drawMeasure(); }
+  });
+  clearMeasureBtn.addEventListener('click',clearMeasure);
+  stageWrap.addEventListener('pointerdown', e=>{
+    if(!measuring) return;
+    if(e.detail > 1) return;   // second click of a double-click already ends measuring
+    const target=activeStageEl(); if(!target) return;
+    const r=target.getBoundingClientRect();
+    if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) return;
+    e.stopPropagation();
+    positionMeasureCanvas();
+    measurePts.push({x:e.clientX-r.left,y:e.clientY-r.top});
+    drawMeasure();
+  });
+  stageWrap.addEventListener('dblclick', e=>{ if(measuring){ e.preventDefault(); finishMeasure(); } });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && measuring) finishMeasure(); });
+  window.addEventListener('pointermove', e=>{
+    if(!measuring) return;
+    const target=activeStageEl(); if(!target) return;
+    const r=target.getBoundingClientRect();
+    const cur={x:Math.min(r.width,Math.max(0,e.clientX-r.left)),y:Math.min(r.height,Math.max(0,e.clientY-r.top))};
+    if(measurePts.length===0) return;
+    const prev=measurePts[measurePts.length-1];
+    const ctx=measureCanvas.getContext('2d');
+    ctx.clearRect(0,0,measureCanvas.width,measureCanvas.height);
+    drawMeasure();
+    ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(cur.x,cur.y);
+    ctx.lineWidth=1; ctx.strokeStyle='rgba(211,147,79,.55)'; ctx.stroke();
+  });
+  // Draw measure overlay on exports
+  function drawMeasureExport(ctx, scaleFactor){
+    if(!measurePts || measurePts.length<2) return;
+    const mpp=measureMpp();
+    ctx.save();
+    ctx.lineWidth=2; ctx.strokeStyle='#d3934f';
+    ctx.beginPath();
+    measurePts.forEach((p,i)=>{ const x=p.x*scaleFactor, y=p.y*scaleFactor; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    ctx.stroke();
+    let totalPx=0;
+    for(let i=1;i<measurePts.length;i++) totalPx+=Math.hypot(measurePts[i].x-measurePts[i-1].x,measurePts[i].y-measurePts[i-1].y);
+    const label=(mpp!=null ? Math.round(totalPx*mpp)+' m' : Math.round(totalPx)+' px');
+    ctx.font="500 14px 'JetBrains Mono',monospace"; ctx.textAlign='right'; ctx.textBaseline='top';
+    ctx.fillStyle='rgba(0,0,0,.6)';
+    const tw=ctx.measureText(label).width+12;
+    const lx=measurePts[measurePts.length-1].x*scaleFactor, ly=measurePts[measurePts.length-1].y*scaleFactor;
+    ctx.fillRect(lx-tw-6,ly+6,tw,20);
+    ctx.fillStyle='#f4f2e8'; ctx.fillText(label,lx-6,ly+12);
+    ctx.restore();
+  }
   [captionInput,notesInput,includeNotesExport,zoomRange,providerSelect,mapboxToken,planetKey,planetMosaic,sentinelId,sentinelLayer,sentinelDate,sentinelWindow,sentinelCloud,sentinelSharpness,nasaLayer,nasaDate,placesApiKey].forEach(el=>el.addEventListener('input',queueWorkspaceSave));
   providerSelect.addEventListener('change',queueWorkspaceSave);
   includeNotesExport.addEventListener('change',queueWorkspaceSave);
@@ -2728,7 +3381,7 @@
     try{ dataUrl=cap.toDataURL('image/png'); }catch(e){ return null; }
     return new Promise(resolve=>{
       const img=new Image();
-      img.onload=()=>resolve({id:nextId++,src:dataUrl,label,imageryDate,capturedAt:new Date().toISOString(),natW:img.naturalWidth,natH:img.naturalHeight,imgEl:img,selected:true});
+      img.onload=()=>resolve({id:nextId++,src:dataUrl,label,imageryDate,capturedAt:new Date().toISOString(),natW:img.naturalWidth,natH:img.naturalHeight,lat:liveMap.lat,lng:liveMap.lng,zoom:z,mapProvider:provider,imgEl:img,selected:true});
       img.onerror=()=>resolve(null);
       img.src=dataUrl;
     });
@@ -2736,16 +3389,20 @@
   async function loadDefaultDemoFrames(){
     // Left: pure Esri satellite. Right: Esri satellite + road/place labels (hybrid).
     // Demonstrates the slider instantly. Live map shows Google tiles.
+    captureStatus.classList.remove('err');
+    captureStatus.textContent = 'Loading demo frames\u2026';
     const [satFrame, hybridFrame] = await Promise.all([
       captureProviderFrame('esri', 'Phnom Penh · Satellite', 'current mosaic', false),
       captureProviderFrame('esri', 'Phnom Penh · Satellite + Labels', 'current mosaic', true)
     ]);
-    if(!satFrame && !hybridFrame) return;
+    if(!satFrame && !hybridFrame){ captureStatus.textContent=''; return; }
     if(satFrame) images.push(satFrame);
     if(hybridFrame) images.push(hybridFrame);
     renderImageList();
     updateSliderSelects();
     renderStage();
+    pushHistory();
+    captureStatus.textContent = 'Demo frames ready.';
   }
 
   // ---------- Homepage (brand click) ----------
@@ -2754,16 +3411,19 @@
     images = []; nextId = 1;
     mode = 'slider'; cols = 2;
     view = { zoom:1, panx:0, pany:0 };
+    gridViews = [];
     sliderState = { leftId:null, middleId:null, rightId:null, clip:50, clip2:75, three:false, leftView:{zoom:1,x:0,y:0}, rightView:{zoom:1,x:0,y:0}, thirdView:{zoom:1,x:0,y:0} };
     overlayState = { baseId:null, topId:null, thirdId:null, density:50, thirdDensity:55 };
-    changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12 };
+    changeState = { beforeId:null, afterId:null, method:'rgb', threshold:30, minSize:12, alignX:0, alignY:0 };
     liveMap.lat = 11.5625; liveMap.lng = 104.9160; liveMap.zoom = 14; liveMap.provider = 'google';
     providerSelect.value = 'google';
     providerSelect.dispatchEvent(new Event('change'));
     captionInput.value = ''; notesInput.value = '';
+    annotationStrokes=[]; clearMeasure();
     setMode('slider');
     renderImageList(); updateSliderSelects(); applyViewVars(); renderStage(); drawLiveMap();
     loadDefaultDemoFrames();
+    historyStack=[]; historyPos=-1;
     if(history && history.pushState && location.pathname !== '/') history.pushState({}, '', '/');
   }
   brandHome.addEventListener('click', goHome);
@@ -2779,6 +3439,8 @@
   try{ const savedWorkspace=localStorage.getItem('phnaek-pkay-workspace')||localStorage.getItem('phnaek-pkay-preferences'); if(savedWorkspace){ restoreProject(JSON.parse(savedWorkspace)); _hasSavedWorkspace=true; } }catch(err){}
   if(!_hasSavedWorkspace) loadDefaultDemoFrames();
   syncAnnotationCanvas();
+  historyStack=[historySnapshot()]; historyPos=0;
+  updateUndoRedoButtons();
   {
     const site = siteBySlug();
     if(site){

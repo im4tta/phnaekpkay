@@ -27,15 +27,15 @@
     --panel:#ffffff;
     --panel-rgb:255,255,255;
     --panel2:#ece8d8;
-    --line:#c7c2a8;
-    --line-soft:#ddd9c4;
-    --moss:#5f7a3a;
-    --moss-dim:#48602a;
-    --amber:#a8641f;
-    --paper:#1c1f16;
-    --muted:#6b6a57;
-    --teal:#356560;
-    --danger:#a13d2c;
+    --line:#c0b99c;
+    --line-soft:#d7d2ba;
+    --moss:#4f6d2a;
+    --moss-dim:#3b531d;
+    --amber:#97561a;
+    --paper:#14160e;
+    --muted:#4c4a35;
+    --teal:#2f5a54;
+    --danger:#96382c;
   }
   html{transition:background-color .15s;}
   body{transition:background-color .15s, color .15s;}
@@ -48,7 +48,6 @@
     background:var(--ink);
     color:var(--paper);
     font-family:'Inter',system-ui,sans-serif;
-    background:#0d100c;
     overflow-x:hidden;
   }
   #techBackground{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.72;}
@@ -123,6 +122,19 @@
   .sidebar:hover::-webkit-scrollbar-thumb,.sidebar:focus-within::-webkit-scrollbar-thumb{background:var(--line);}
   .sidebar::-webkit-scrollbar-thumb:hover{background:var(--moss-dim);}
   .sidebar.is-collapsed{width:0;padding-left:0;padding-right:0;border-right:0;overflow:hidden;gap:0;}
+  .sidebar-peek{
+    position:fixed; left:0; top:0; bottom:0; width:16px;
+    z-index:30; display:none; cursor:pointer;
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    opacity:.55; transition:opacity .15s, background-color .15s;
+  }
+  .sidebar-peek.is-visible{display:block;}
+  .sidebar-peek:hover{opacity:.95;}
+  .sidebar-peek::after{
+    content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:3px; height:54px; border-radius:99px; background:var(--line);
+  }
   .sidebar-backdrop{display:none;}
   .sidebar .sidebar-close{display:none;}
   .sidebar h2{
@@ -232,6 +244,11 @@
   .stage-wrap{flex:1;min-height:calc(100vh - 76px);padding:24px;overflow:auto;display:flex;flex-direction:column;gap:14px;position:relative;contain:layout paint;}
   #annotationCanvas{position:absolute;z-index:15;pointer-events:none;display:none;cursor:crosshair;touch-action:none;}
   #annotationCanvas.active{pointer-events:auto;display:block;}
+  #measureCanvas{position:absolute;z-index:14;pointer-events:none;display:block;}
+  .measure-readout{font:11px 'JetBrains Mono',monospace;color:var(--muted);line-height:1.4;}
+  .btn.active{background:var(--moss);color:var(--ink);border-color:var(--moss);}
+  .density-row input[type=number]{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);color:var(--paper);padding:7px 8px;font:12px 'JetBrains Mono',monospace;width:100%;outline:none;}
+  .density-row input[type=number]:focus{border-color:var(--moss);}
   .stage-hint{
     font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);
     display:flex; align-items:center; gap:8px;
@@ -359,10 +376,10 @@
   .sequence-stage canvas{width:100%; height:100%; display:block;}
   .seq-play{
     position:absolute; bottom:14px; left:14px; width:38px; height:38px; border-radius:50%;
-    background:rgba(0,0,0,.6); border:1px solid rgba(238,240,228,.3); color:var(--paper);
+    background:rgba(0,0,0,.6); border:1px solid rgba(238,240,228,.3); color:#f4f2e8;
     cursor:pointer; font-size:14px; z-index:6; display:flex; align-items:center; justify-content:center;
   }
-  .seq-play:hover{border-color:var(--amber); color:var(--amber);}
+  .seq-play:hover{border-color:#d3934f; color:#d3934f;}
   .seq-progress{
     position:absolute; bottom:0; left:0; right:0; height:3px; background:rgba(238,240,228,.15); z-index:6;
   }
@@ -555,3 +572,11 @@
   }
   .slider-map-toggle:hover{border-color:var(--moss); color:var(--paper);}
   .slider-map-toggle.is-hidden{display:none !important;}
+
+  /* ---- Light theme: keep controls that float over the themed map overlay
+     readable on a light background. Imagery labels stay fixed-light. ---- */
+  [data-theme="light"] .slider-map-header,
+  [data-theme="light"] .slider-map-readout{background:rgba(0,0,0,.07);}
+  [data-theme="light"] .slider-map-title{color:var(--moss);}
+  [data-theme="light"] .slider-map-readout{color:var(--muted);}
+  [data-theme="light"] .seq-progress{background:rgba(0,0,0,.2);}

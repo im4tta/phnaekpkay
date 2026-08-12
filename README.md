@@ -13,8 +13,9 @@ The homepage opens in **Slider mode** with two demo frames of Phnom Penh already
 From there you can:
 
 - Upload your own frames (drag and drop, file picker, or `Ctrl/Cmd+V` to paste from clipboard)
-- Capture a fresh satellite tile from any provider (Esri, Bing, Esri Wayback, Planet NICFI, NASA GIBS, Google, Mapbox, Sentinel Hub) at the current map position
-- Switch modes, export, and share
+- Capture a fresh satellite tile from any provider (Esri, Bing, Esri Wayback, Planet NICFI, NASA GIBS, Google, Mapbox, Sentinel Hub) at the current map position — frames are **geotagged** with their center coordinates and zoom
+- Measure distances and areas directly on the imagery, with live meter readouts from the frame geotag
+- Switch modes, export (PNG, WebM, HTML report, GeoJSON/KML of change regions), undo/redo, and share a map-view link
 
 ---
 
@@ -23,10 +24,10 @@ From there you can:
 | Mode | What it does |
 |---|---|
 | **Slider** | Draggable before/after wipe. Drag the divider, or drag each frame independently to reposition it. Optional third-frame band. |
-| **Grid** | Side-by-side layout in 2, 3, or 4 columns. Default is 2 columns. |
+| **Grid** | Side-by-side layout in 2, 3, or 4 columns. Pan/zoom can be synced across all panels or unlinked per panel. |
 | **Overlay** | Two frames blended with a density slider. Auto-pulse "blink comparator" for spotting subtle differences. |
 | **Sequence** | Auto-playing timelapse through every frame, with crossfade and a scrubbable timeline. |
-| **Change Map** | Pixel-level difference map (RGB, brightness, or vegetation proxy) with adjustable sensitivity and region filtering. |
+| **Change Map** | Pixel-level difference map (RGB, brightness, or vegetation proxy) with adjustable sensitivity, region filtering, and **one-click or manual alignment** of the two frames before differencing. |
 
 ---
 
@@ -47,6 +48,17 @@ The sidebar's **Live satellite capture** section lets you navigate a tile map an
 | Sentinel Hub | Free config ID | Yes — dated 10 m Sentinel-2 |
 
 For real before/after by date, use **Planet NICFI** (free key, ~4.8 m, monthly mosaics since 2020-09 — excellent for Cambodia), **Esri Wayback** (no key), or **Sentinel Hub** (free tier, ~10 m Sentinel-2). For a quick reference overlay, use Esri, Bing, or CARTO. For historical imagery from Google Earth Pro, paste screenshots with `Ctrl/Cmd+V`.
+
+Each provider has a **Test connection** button, and the Wayback/NICFI pickers include **"last year"** quick-jump plus prev/next period buttons so you can compare the same season across years.
+
+### Toolbox
+
+- **Measure** — click to drop points, double-click or `Esc` to finish. Segment and total distances are shown in pixels and (for geotagged frames) meters, with an area readout for closed shapes. Measure overlays are baked into PNG exports.
+- **Geotagged frames** — captures store center `lat/lng`/zoom; exports and the live map show a **scale bar** and print the frame's own coordinates instead of the current map position.
+- **GIS export** — the Change Map can be exported as **GeoJSON** or **KML** polygons of each changed region (and annotation line strokes), georeferenced via the geotagged frames — ready for QGIS/Google Earth.
+- **Undo/redo** — `Ctrl+Z` / `Ctrl+Shift+Z` / `Ctrl+Y` (and toolbar buttons) revert frame, label, annotation, and notes changes.
+- **Share** — copies a `#map=provider,lat,lng,zoom` link that reopens the live map at that position.
+- **Keyboard** — `1`–`5` switch modes, `C` captures the view, `[` / `]` swap slider panels, arrows/`+`/`-`/`0` pan and zoom.
 
 ---
 

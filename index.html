@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Phnaek Pkay | Satellite Eye — satellite imagery history and comparison</title>
 <meta name="description" content="Phnaek Pkay (Satellite Eye) is a free browser-based tool to upload, capture, compare, and analyze satellite imagery over time — with side-by-side slider, overlay, sequence, change detection, annotations, and offline-ready PWA support.">
-<meta name="keywords" content="satellite imagery, imagery comparison, change detection, GIS, remote sensing, Phnaek Pkay, Cambodia, earth observation, before and after, satellite history">
+<meta name="keywords" content="satellite imagery, imagery comparison, change detection, GIS, remote sensing, Phnaek Pkay, Cambodia, Nepal, floods, world, earth observation, before and after, satellite history">
 <meta name="author" content="Phnaek Pkay">
 <meta name="theme-color" content="#12140f">
 <meta name="color-scheme" content="dark light">
@@ -465,7 +465,7 @@
     <h2 id="locationsTitle">Field sites</h2>
     <button type="button" class="locations-close" id="locationsCloseBtn" aria-label="Close locations">&times;</button>
   </div>
-  <p class="locations-note">Satellite locations documenting affected villages along the Cambodia&ndash;Thailand border. Click a site to open its imagery.</p>
+  <p class="locations-note">Field sites from around the world &mdash; conflict zones, flood disasters, and affected villages. Click a site to open its imagery.</p>
   <div class="locations-grid" id="locationsGrid"></div>
 </div>
 
@@ -3021,6 +3021,7 @@
 
 // ---------- Field sites (bundled locations) ----------
   const LOCATIONS = [
+    { file:'phnaek-pkay-nepal-floods.json', name:'Rasuwagadhi \u00b7 Nepal Floods 2026', desc:'Bhote Koshi debris surge at the China\u2013Nepal border, Aug 2026', lat:28.2781, lng:85.377, zoom:16 },
     { file:'phnaek-pkay-Boeng Trakoun.json', name:'Boeng Trakoun', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.98965635876216, lng:102.85603437036133 },
     { file:'phnaek-pkay-prey chan village.json', name:'Prey Chan', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.81581, lng:102.74037 },
     { file:'phnaek-pkay-chhorkchey Village.json', name:'Chhork Chey', desc:'Village site along the Cambodia\u2013Thailand border', lat:13.7605, lng:102.70142 },

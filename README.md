@@ -73,7 +73,7 @@ Each provider has a **Test connection** button, and the Wayback/NICFI pickers in
 
 ## Field sites
 
-The **Locations** button opens a curated set of documented sites along the Cambodia–Thailand border. Clicking a site loads its imagery directly into the slider.
+The **Locations** button opens a curated set of documented field sites from around the world — conflict zones, flood disasters, and affected villages. Clicking a site loads its before/after imagery directly into the slider (e.g. the 2026 Nepal flood at Rasuwagadhi on the China–Nepal border, alongside the original Cambodia–Thailand border villages).
 
 ---
 

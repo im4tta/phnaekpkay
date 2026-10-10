@@ -82,7 +82,7 @@
   .mode-toggle button {
     min-height: 52px; padding: 4px 2px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .01em;
+    font-family: 'Inter Variable','Inter', system-ui, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .01em;
     background: transparent; color: var(--muted); border-radius: 10px; white-space: nowrap;
   }
   .mode-toggle button .mode-lbl { text-transform: none; }
@@ -103,7 +103,7 @@
   #sliderControls { border-radius: 12px; background: var(--panel); border-color: var(--line); }
   #sliderControls .slider-controls-toggle {
     min-height: 48px; padding: 8px 14px; gap: 10px;
-    font-family: 'Inter', system-ui, sans-serif; font-size: var(--fs-ui);
+    font-family: 'Inter Variable','Inter', system-ui, sans-serif; font-size: var(--fs-ui);
     text-transform: none; letter-spacing: 0; color: var(--paper); text-align: left;
   }
   #sliderControls .toggle-label { display: none; }
@@ -122,7 +122,7 @@
   .panel-tag { font-size: 12px; }
 
   /* Inline live map starts collapsed; its toggle is a proper button */
-  .slider-map-toggle { min-height: var(--tap); min-width: 72px; font-size: var(--fs-ui); padding: 0 14px; border-radius: 22px; bottom: 14px; right: 14px; font-family: 'Inter', system-ui, sans-serif; }
+  .slider-map-toggle { min-height: var(--tap); min-width: 72px; font-size: var(--fs-ui); padding: 0 14px; border-radius: 22px; bottom: 14px; right: 14px; font-family: 'Inter Variable','Inter', system-ui, sans-serif; }
   .slider-map-close { width: var(--tap); height: var(--tap); font-size: 22px; }
   .map-expand-btn, .map-refresh-btn, #mapZoomIn, #mapZoomOut, #sliderMapZoomIn, #sliderMapZoomOut { width: var(--tap); height: var(--tap); font-size: 20px; }
   .slider-map-readout, .map-readout, .map-live .readout { font-size: var(--fs-caption); }
@@ -133,7 +133,7 @@
     position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: space-between;
     padding: max(10px, env(safe-area-inset-top)) 12px 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
   }
-  .sidebar .drawer-head strong { font-family: 'Inter', system-ui, sans-serif; font-size: 18px; font-weight: 600; }
+  .sidebar .drawer-head strong { font-family: 'Inter Variable','Inter', system-ui, sans-serif; font-size: 18px; font-weight: 600; }
   .sidebar .sidebar-close { display: flex; position: static; width: var(--tap); height: var(--tap); border-radius: 10px; font-size: 26px; }
   .sidebar > div:not(.drawer-head), .sidebar > details, .sidebar > section { margin: 16px 16px 0; }
   .sidebar h2 { font-size: var(--fs-caption); letter-spacing: .1em; color: var(--moss); margin-bottom: 10px; font-weight: 500; }
@@ -146,10 +146,10 @@
   .dropzone { padding: 22px 16px; border-radius: 12px; font-size: 16px; line-height: 1.45; }
   .dropzone .dz-desktop { display: none; }
   .dropzone .dz-mobile { display: inline; }
-  .dropzone .hint { font-family: 'Inter', system-ui, sans-serif; font-size: var(--fs-caption); letter-spacing: 0; margin-top: 8px; }
+  .dropzone .hint { font-family: 'Inter Variable','Inter', system-ui, sans-serif; font-size: var(--fs-caption); letter-spacing: 0; margin-top: 8px; }
 
   .field label, .sidebar label, #sliderControls .field label {
-    font-family: 'Inter', system-ui, sans-serif; font-size: var(--fs-label); font-weight: 500;
+    font-family: 'Inter Variable','Inter', system-ui, sans-serif; font-size: var(--fs-label); font-weight: 500;
     letter-spacing: 0; text-transform: none; color: var(--paper); opacity: .82; margin-bottom: 6px;
   }
   select, .field input[type="text"], .field input[type="password"], .field input[type="date"], .field textarea,
@@ -159,7 +159,7 @@
   }
   .sidebar input[type=password] { background: var(--ink); color: var(--paper); border: 1px solid var(--line); width: 100%; }
   .btn, .annotation-tools .btn, .date-actions .btn, #sliderControls .btn {
-    min-height: 48px; font-size: var(--fs-ui); letter-spacing: .01em; border-radius: 10px; padding: 10px 16px; font-family: 'Inter', system-ui, sans-serif;
+    min-height: 48px; font-size: var(--fs-ui); letter-spacing: .01em; border-radius: 10px; padding: 10px 16px; font-family: 'Inter Variable','Inter', system-ui, sans-serif;
   }
   .checklist, #sliderControls .checklist { gap: 0; max-height: none; font-size: 15px; }
   .checklist label, .sidebar .checklist label { min-height: var(--tap); display: flex; align-items: center; gap: 12px; font-size: 15px; opacity: 1; margin: 0; color: var(--paper); }
@@ -168,12 +168,12 @@
 
   .provider-note, .sidebar small, .sidebar .hint, .empty-note, .capture-status, .dims, .imagery-date, .map-meta, .sidebar p,
   .map-chip, .provider-meta, .generated-badge {
-    font-family: 'Inter', system-ui, sans-serif; font-size: 13px; line-height: 1.5; letter-spacing: 0;
+    font-family: 'Inter Variable','Inter', system-ui, sans-serif; font-size: 13px; line-height: 1.5; letter-spacing: 0;
   }
   .capture-status { color: #7fc4bb; }   /* teal lifted from 3.7:1 to ~7:1 on --panel */
   .model-link { display: inline-flex; align-items: center; min-height: var(--tap); font-size: var(--fs-ui); }
   #upscaleModelInput { min-height: 48px; font-size: var(--fs-ui); }
-  #upscaleModelInput::file-selector-button { min-height: 40px; padding: 0 14px; margin-right: 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--paper); font: 600 14px 'Inter', system-ui, sans-serif; }
+  #upscaleModelInput::file-selector-button { min-height: 40px; padding: 0 14px; margin-right: 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--paper); font: 600 14px 'Inter Variable','Inter', system-ui, sans-serif; }
 
   /* Frame rows: [check][thumb][label + date .......][remove / reorder]; no drag grip on touch */
   .img-row { display: grid; grid-template-columns: 24px 56px minmax(0, 1fr) 44px; column-gap: 10px; row-gap: 0; align-items: start; padding: 12px; border-radius: 12px; }

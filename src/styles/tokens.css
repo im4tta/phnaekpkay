@@ -29,8 +29,8 @@
   --r-lg: 20px;
   --r-xl: 28px;
   --tap: 44px;
-  --bar-top: 60px;
-  --bar-bottom: 68px;
+  --bar-top: 52px;
+  --bar-bottom: 60px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --font-ui: 'Inter Variable', 'Inter', 'Noto Sans Khmer', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;

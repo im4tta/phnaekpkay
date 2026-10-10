@@ -61,4 +61,17 @@ test.describe('phone layout', () => {
     await page.click('#addTabPaste');
     await expect(page.locator('#pasteBtn')).toBeVisible();
   });
+
+  test('the dock is a slim row by default so the photos get the screen, and expands on tap', async ({ page }) => {
+    await openAnSes(page);
+    const dock = page.locator('#dock');
+    const compact = await dock.boundingBox();
+    expect(compact.height).toBeLessThan(90);
+    await expect(page.locator('#pickerRow')).toBeHidden();
+    await page.click('#pickerToggle');
+    await expect(page.locator('#pickerRow')).toBeVisible();
+    expect((await dock.boundingBox()).height).toBeGreaterThan(compact.height + 60);
+    await page.reload(); // the choice is remembered
+    await expect(page.locator('#pickerRow')).toBeVisible();
+  });
 });

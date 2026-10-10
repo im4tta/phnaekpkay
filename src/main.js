@@ -41,6 +41,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   const pickerRow = document.getElementById('pickerRow');
   const pickerTitle = document.getElementById('pickerTitle');
   const swapBtn = document.getElementById('swapBtn');
+  const pickerSummary = document.getElementById('pickerSummary');
   const modeGridBtn = document.getElementById('modeGridBtn');
   const modeSliderBtn = document.getElementById('modeSliderBtn');
   const modeOverlayBtn = document.getElementById('modeOverlayBtn');
@@ -966,8 +967,6 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     overlayControls.hidden = (m!=='overlay');
     sequenceControls.hidden = (m!=='sequence');
     changeControls.hidden = (m!=='change');
-    // On phones the picker starts collapsed in Blend / Changes so the controls leave room for the photos.
-    if(window.innerWidth<=820){ datePicker.classList.toggle('collapsed', m!=='slider'); syncPickerToggle(); }
     exportVideoBtn.hidden = !(m==='slider' || m==='sequence' || m==='overlay');
     exportBtn.hidden = (m==='sequence');
     renderStage();
@@ -1039,8 +1038,12 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     const pair = PAIRS[mode];
     const show = !!pair && images.length>0;
     datePicker.hidden = !show;
+    dock.classList.toggle('has-picker', show);
     if(!show) return;
     const st = pair.state();
+    // The ring colour ties each thumbnail to its slot, so the text is the slot name; the full name is the tooltip.
+    const mini = (id, cls, slot) => { const im = images.find(i=>i.id===id); return h('span',{class:'mini '+cls,title:im?im.label:''}, im && h('img',{src:im.thumb||im.src,alt:'',decoding:'async'}), h('span',null,t('picker.'+slot+'.'+mode))); };
+    setChildren(pickerSummary, mini(st[pair.a],'is-a','a'), mini(st[pair.b],'is-b','b'));
     pickerTitle.textContent = t('picker.title');
     renderPicker(pickerRow,{
       frames:images, aId:st[pair.a], bId:st[pair.b],
@@ -1054,14 +1057,25 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     const st = pair.state();
     setPair(pair, st[pair.b], st[pair.a]);
   });
+  // The dock starts compact on phones (one slim row) so the photos get the screen; the choice is remembered.
+  const DOCK_KEY = 'phnaek-pkay-dock-compact';
   const pickerToggle = document.getElementById('pickerToggle');
+  let dockCompact = (()=>{ try{ const v=localStorage.getItem(DOCK_KEY); if(v!==null) return v==='1'; }catch(err){} return window.innerWidth<=820; })();
   function syncPickerToggle(){
-    const collapsed = datePicker.classList.contains('collapsed');
-    const label = t(collapsed ? 'picker.show' : 'picker.hide');
-    pickerToggle.setAttribute('aria-expanded', String(!collapsed));
+    dock.classList.toggle('is-compact', dockCompact);
+    const label = t(dockCompact ? 'picker.show' : 'picker.hide');
+    pickerToggle.setAttribute('aria-expanded', String(!dockCompact));
     pickerToggle.setAttribute('aria-label', label); pickerToggle.title = label;
+    pickerSummary.setAttribute('aria-label', label);
   }
-  pickerToggle.addEventListener('click', ()=>{ datePicker.classList.toggle('collapsed'); syncPickerToggle(); });
+  function toggleDock(){
+    dockCompact = !dockCompact;
+    try{ localStorage.setItem(DOCK_KEY, dockCompact?'1':'0'); }catch(err){}
+    syncPickerToggle();
+  }
+  pickerToggle.addEventListener('click', toggleDock);
+  pickerSummary.addEventListener('click', toggleDock);
+  syncPickerToggle();
   overlaySwapBtn.addEventListener('click', ()=> swapBtn.click());
 
   // ---------- Overlay select dropdowns + density ----------

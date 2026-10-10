@@ -1,95 +1,74 @@
-// Phnaek Pkay — service worker
-// Caches the static app shell only. Live satellite tiles, geocoding calls,
-// and other network requests always go straight to the network so imagery
-// is never served stale from cache.
-//
-// Strategy:
-//  - Page navigations (index.html): NETWORK-FIRST, cache as offline fallback,
-//    so a deployed fix (security or otherwise) reaches users on the next load.
-//  - Small static assets in the app shell: stale-while-revalidate.
-//  - Bundled site project files (/assets/data/*.json, ~10 MB each) are never
-//    cached here — they are large and only needed when a site is opened.
-const CACHE_VERSION = 'phnaek-pkay-v3';
-const APP_SHELL = [
-  './',
-  'index.html',
-  '/manifest.webmanifest',
-  '/src/lib/image-processing.js',
-  '/src/lib/upscale.worker.js',
-  '/src/styles/app.css',
-  '/src/styles/mobile.css',
-  '/src/styles/mobile-ux.css',
-  '/assets/phnaek-pkay.svg',
-  '/assets/icons/icon-192.png',
-  '/assets/icons/icon-512.png',
-  '/assets/icons/icon-maskable-192.png',
-  '/assets/icons/icon-maskable-512.png',
-  '/assets/icons/apple-touch-icon-180.png'
-];
+/* Phnaek Pkay service worker.
+   PRECACHE and VERSION are injected at build time (see vite.config.js); in dev they stay
+   empty and the worker is not registered.
 
-self.addEventListener('install', event => {
+   - Navigations: network-first, falling back to the cached app shell when offline, so a
+     deployed fix reaches users on their next load.
+   - /static/* (content-hashed bundles and fonts): cache-first, they never change.
+   - /assets/*, other same-origin GETs: stale-while-revalidate.
+   - Big optional downloads (/vendor/ort, /models) and every cross-origin request (imagery
+     tiles, geocoding) go straight to the network. */
+const VERSION = /*__SW_VERSION__*/'dev';
+const PRECACHE = /*__SW_PRECACHE__*/[];
+const CACHE = 'phnaek-pkay-' + VERSION;
+
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then(cache => cache.addAll(APP_SHELL))
-      .catch(() => {}) // never block install on a single missing asset
+    caches.open(CACHE)
+      .then((cache) => Promise.allSettled(PRECACHE.map((url) => cache.add(url))))
+      .then(() => self.skipWaiting()),
   );
-  self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_VERSION).map(key => caches.delete(key)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('phnaek-pkay-') && k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
   );
-  self.clients.claim();
 });
 
-function cacheable(response) {
-  // Only complete, successful, same-origin responses (206 partials cannot be cached).
-  return response && response.status === 200 && response.type === 'basic';
+const cacheable = (response) => response && response.status === 200 && response.type === 'basic';
+
+async function networkFirstNavigation(request) {
+  const cache = await caches.open(CACHE);
+  try {
+    const response = await fetch(request);
+    if (cacheable(response)) cache.put('/', response.clone());
+    return response;
+  } catch {
+    return (await cache.match('/')) || Response.error();
+  }
 }
 
-self.addEventListener('fetch', event => {
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+  const response = await fetch(request);
+  if (cacheable(response)) cache.put(request, response.clone());
+  return response;
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE);
+  const hit = await cache.match(request);
+  const refresh = fetch(request).then((response) => {
+    if (cacheable(response)) cache.put(request, response.clone());
+    return response;
+  });
+  if (hit) { refresh.catch(() => {}); return hit; }
+  return refresh;
+}
+
+self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET') return;
-
+  if (request.method !== 'GET' || request.headers.has('range')) return;
   const url = new URL(request.url);
-  // Only manage same-origin app-shell files. Everything else (satellite
-  // tile providers, geocoding APIs, ONNX model CDN, fonts, etc.) is left
-  // completely untouched so it behaves exactly as it would with no
-  // service worker at all.
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/assets/data/') || url.pathname.startsWith('/models/')) return;
+  if (url.pathname.startsWith('/vendor/') || url.pathname.startsWith('/models/')) return;
 
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (cacheable(response)) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then(cache => cache.put('index.html', copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match('index.html').then(cached => cached || caches.match('./')))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(request).then(cached => {
-      const network = fetch(request)
-        .then(response => {
-          if (cacheable(response)) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then(cache => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      // Stale-while-revalidate: show cached asset instantly, refresh in background.
-      return cached || network;
-    })
-  );
+  if (request.mode === 'navigate') event.respondWith(networkFirstNavigation(request));
+  else if (url.pathname.startsWith('/static/')) event.respondWith(cacheFirst(request));
+  else event.respondWith(staleWhileRevalidate(request));
 });

@@ -2133,6 +2133,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       themeToggleBtn.textContent = '\u263C'; // sun = click to go light
       themeToggleBtn.title = 'Switch to light theme';
     }
+    const themeMeta=document.querySelector('meta[name="theme-color"]'); if(themeMeta) themeMeta.setAttribute('content', theme==='light'?'#f3f2e8':'#12140f');
     try{ localStorage.setItem('phnaek-pkay-theme', theme); }catch(e){}
   }
   themeToggleBtn.addEventListener('click', ()=>{
@@ -2177,9 +2178,9 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     if(site) openLocation(site, false);
   })();
 
-  // ---------- PWA: service worker registration ----------
-  if('serviceWorker' in navigator){
+  // ---------- PWA: service worker registration (production builds only) ----------
+  if('serviceWorker' in navigator && import.meta.env.PROD){
     window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('/sw.js').catch(()=>{ /* offline support just won't be available */ });
+      navigator.serviceWorker.register('/sw.js', {updateViaCache:'none'}).catch(()=>{ /* offline support just won't be available */ });
     });
   }

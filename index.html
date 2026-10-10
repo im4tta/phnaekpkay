@@ -387,6 +387,7 @@
         <div class="picker" id="datePicker" hidden>
           <div class="picker-head">
             <strong class="picker-title" id="pickerTitle" data-i18n="picker.title">Pick two photos</strong>
+            <button type="button" class="picker-summary" id="pickerSummary" aria-controls="pickerRow" data-i18n-label="picker.show"></button>
             <button type="button" class="link-btn" id="swapBtn"><svg class="ico"><use href="#i-swap"/></svg><span data-i18n="picker.swap">Swap</span></button>
             <button type="button" class="icon-btn small" id="pickerToggle" aria-expanded="true" aria-controls="pickerRow" data-i18n-label="picker.hide" data-i18n-title="picker.hide"><svg class="ico"><use href="#i-down"/></svg></button>
           </div>
@@ -419,7 +420,7 @@
         <div class="dock-body" id="overlayControls" hidden>
           <label class="dock-label" for="densityRange" data-i18n="overlay.amount">Show more of the top photo</label>
           <div class="density-row"><input type="range" id="densityRange" min="0" max="100" step="1" value="50"><span class="density-readout" id="densityReadout">50%</span></div>
-          <div class="chips"><label class="chip toggle"><input type="checkbox" id="densityPulseChk"><span data-i18n="overlay.blink">Blink to spot changes</span></label></div>
+          <div class="chips" data-secondary><label class="chip toggle"><input type="checkbox" id="densityPulseChk"><span data-i18n="overlay.blink">Blink to spot changes</span></label></div>
           <details class="more">
             <summary data-i18n="more.options">More options</summary>
             <div class="more-body">
@@ -438,20 +439,27 @@
             <button type="button" class="btn primary" id="playSeqBtn"><svg class="ico"><use href="#i-play"/></svg><span id="playSeqLabel" data-i18n="seq.play">Play</span></button>
             <label class="chip toggle"><input type="checkbox" id="crossfadeChk" checked><span data-i18n="seq.fade">Smooth fade</span></label>
           </div>
-          <label class="dock-label" for="secPerFrame" data-i18n="seq.speed">Seconds per photo</label>
-          <input type="range" id="secPerFrame" min="0.5" max="5" step="0.1" value="1.5">
-          <div class="seq-timeline" id="seqTimeline"></div>
+          <details class="more">
+            <summary data-i18n="more.options">More options</summary>
+            <div class="more-body">
+              <label class="dock-label" for="secPerFrame" data-i18n="seq.speed">Seconds per photo</label>
+              <input type="range" id="secPerFrame" min="0.5" max="5" step="0.1" value="1.5">
+              <div class="seq-timeline" id="seqTimeline"></div>
+            </div>
+          </details>
         </div>
 
         <div class="dock-body" id="changeControls" hidden>
           <div class="sens-head"><label class="dock-label" for="changeSensitivity" data-i18n="change.sensitivity">Sensitivity</label><span class="sens-value" id="changeThresholdReadout">Medium</span></div>
           <input type="range" id="changeSensitivity" min="5" max="90" step="1" value="65" aria-describedby="sensHint">
-          <div class="sens-hint" id="sensHint"><span data-i18n="change.low">Only big changes</span><span data-i18n="change.high">Every small change</span></div>
-          <span class="dock-label" data-i18n="change.method">Compare by</span>
-          <div class="chips" id="changeMethodChips" role="group" aria-label="Compare by">
-            <button type="button" class="chip active" data-method="rgb" data-i18n="change.rgb">Colour</button>
-            <button type="button" class="chip" data-method="luma" data-i18n="change.luma">Brightness</button>
-            <button type="button" class="chip" data-method="ndvi" data-i18n="change.ndvi">Vegetation</button>
+          <div class="sens-hint" id="sensHint" data-secondary><span data-i18n="change.low">Only big changes</span><span data-i18n="change.high">Every small change</span></div>
+          <div class="dock-body" data-secondary>
+            <span class="dock-label" data-i18n="change.method">Compare by</span>
+            <div class="chips" id="changeMethodChips" role="group" aria-label="Compare by">
+              <button type="button" class="chip active" data-method="rgb" data-i18n="change.rgb">Colour</button>
+              <button type="button" class="chip" data-method="luma" data-i18n="change.luma">Brightness</button>
+              <button type="button" class="chip" data-method="ndvi" data-i18n="change.ndvi">Vegetation</button>
+            </div>
           </div>
           <details class="more">
             <summary data-i18n="more.options">More options</summary>

@@ -1,6 +1,6 @@
 # Phnaek Pkay · Satellite Eye
 
-A browser-based tool for satellite imagery comparison — no server, no account, no install. Open it and it immediately shows you a live before/after slider over Phnom Penh using Esri satellite imagery alongside a CARTO reference map, so the interface is self-explanatory from the first second.
+A browser-based tool for satellite imagery comparison — no server, no account, no install. Your photos and keys stay on your device.
 
 Live at **[phnaekpkay.vercel.app](https://phnaekpkay.vercel.app)**
 
@@ -8,25 +8,24 @@ Live at **[phnaekpkay.vercel.app](https://phnaekpkay.vercel.app)**
 
 ## What it does
 
-The homepage opens in **Slider mode** with two demo frames of Phnom Penh already loaded — Esri World Imagery on the left, CARTO street reference on the right. Drag the divider to compare them. The inline map in the bottom-right corner shows the live Google satellite layer; pan and zoom it directly without opening the sidebar.
+Open it and you get a friendly start screen: **add photos**, **capture from the map**, open one of the bundled **field sites**, or **continue** your last project (autosaved on your device). Pick two photos by tapping their thumbnails and drag the divider to compare.
 
-From there you can:
-
-- Upload your own frames (drag and drop, file picker, or `Ctrl/Cmd+V` to paste from clipboard)
-- Capture a fresh satellite tile from any provider (Esri, NASA GIBS, Google, Mapbox, Sentinel Hub) at the current map position
-- Switch modes, export, and share
+- Add your own photos (choose, drag and drop, paste from the clipboard, or `Ctrl/Cmd+V`)
+- Capture a satellite view from any provider (Esri, NASA GIBS, Google, Mapbox, Sentinel Hub) at the current map position
+- Switch views, save an image, or share it with your phone's share sheet
+- English and Khmer interface (the Khmer text is a first draft and needs native review)
 
 ---
 
-## Modes
+## Views
 
-| Mode | What it does |
+| View | What it does |
 |---|---|
-| **Slider** | Draggable before/after wipe. Drag the divider, or drag each frame independently to reposition it. Optional third-frame band. |
-| **Grid** | Side-by-side layout in 2, 3, or 4 columns. Default is 2 columns. |
-| **Overlay** | Two frames blended with a density slider. Auto-pulse "blink comparator" for spotting subtle differences. |
-| **Sequence** | Auto-playing timelapse through every frame, with crossfade and a scrubbable timeline. |
-| **Change Map** | Pixel-level difference map (RGB, brightness, or vegetation proxy) with adjustable sensitivity and region filtering. |
+| **All** | Side-by-side grid in 2, 3 or 4 columns (1–2 on phones). |
+| **Compare** | Draggable before/after divider (keyboard accessible). Drag or pinch each photo independently. Optional third photo. |
+| **Blend** | Two photos blended with one slider; "Blink" auto-pulses for spotting subtle differences. |
+| **Play** | Timelapse through every photo with smooth fades and a tappable timeline. |
+| **Changes** | Highlights likely change and says how much of the area changed. One sensitivity slider, compare by colour, brightness or vegetation. |
 
 ---
 
@@ -49,44 +48,68 @@ For real before/after by date, use **Sentinel Hub** (free tier, ~10 m resolution
 
 ## Export
 
-- **PNG** — grid layout, slider frame, overlay blend, or annotated change map
-- **WebM video** — slider sweep, overlay blink, or sequence timelapse (native `MediaRecorder`, no external libraries)
-- **HTML report** — frame metadata, notes, and change map packaged into a shareable standalone file
-- **Project JSON** — full workspace save/restore including imagery, labels, settings, and view state
+- **Image (PNG)** at the on-screen framing, shared through the native share sheet when available
+- **Video (WebM)**: compare sweep, blend blink, or play timelapse (native `MediaRecorder`)
+- **HTML report** with frame metadata, notes and the change map
+- **Project file (JSON)** with photos, labels, settings and view state. API keys are never included.
 
 ---
 
 ## Field sites
 
-The **Locations** button opens a curated set of documented sites along the Cambodia–Thailand border. Clicking a site loads its imagery directly into the slider.
+The **Field sites** carousel (and menu entry) opens documented villages along the Cambodia–Thailand border. Each site is a small `project.json` plus WebP frames under `public/assets/sites/<slug>/` (about 0.9 MB per site; the old 10 MB base64 JSON files were converted with `tools/convert-sites.py`). Share links look like `/p/<lat>,<lng>`.
 
 ---
 
 ## Development
 
-No build step required — open `index.html` directly in any modern browser.
-
-For the optional Vite dev server:
-
 ```bash
 npm install
-npm run dev
+npm run dev          # Vite dev server
+npm run lint         # ESLint (also forbids innerHTML)
+npm test             # unit tests (Vitest)
+npm run build        # production build to dist/
+npm run test:e2e     # build, then Playwright on phone + desktop profiles
+npm run serve:dist   # serve dist/ with the headers from vercel.json
 ```
 
-Or with Python:
+End-to-end tests run against `tools/serve-dist.mjs`, which applies the same headers and rewrites as `vercel.json`, so the enforced Content-Security-Policy is exercised. Locally, point Playwright at a browser with `PW_CHROMIUM_PATH=/path/to/chrome`; in CI run `npx playwright install --with-deps chromium` first.
 
-```bash
-python3 -m http.server 8080
-# open http://localhost:8080
+### Layout
+
+```
+index.html            markup only (no inline script)
+src/main.js           app controller (being split into modules)
+src/lib/              tested, DOM-light modules: dom, geo, format, project (validation),
+                      change-detect, blob, secrets, store (IndexedDB), i18n, toast, share, install-help
+src/components/       picker, start screen pieces
+src/styles/           tokens → layout → components → stage
+src/workers/          AI upscale worker (onnxruntime-web, self-hosted)
+public/               static files: icons, splash images, field sites, sw.js, manifest
+tools/                icon + splash generator, site converter, dist server
+tests/                unit (Vitest) and e2e (Playwright)
 ```
 
-Some browsers restrict `fetch` and clipboard APIs on `file://` origins, so a local server is recommended for the full feature set.
+### Icons and the iPhone Home Screen
+
+iOS reads `<link rel="apple-touch-icon">` (not the manifest) and needs an opaque, square PNG. `tools/make-icons.mjs` generates the whole set (120/152/167/180 px, root `/apple-touch-icon.png`, maskable/any PWA icons, `favicon.ico`, 12 launch screens) from one design; run `python3 -I tools/optimize-splash.py` afterwards. If the icon is still blank after deploying:
+
+1. Make sure **Vercel → Settings → Deployment Protection** does not cover your production domain (icon requests must not receive a login page). Preview URLs may be protected; production should not be.
+2. iOS caches the icon: **delete the Home Screen app and add it again**.
 
 ---
 
 ## AI enhancement
 
-The **Enhance** button runs a local ONNX super-resolution model (Real-ESRGAN or SwinIR) entirely in the browser via ONNX Runtime WebAssembly. A hosted `RealESRGAN_x4plus.onnx` model is included. Generated detail is for visual review only — originals remain the analytical source, and enhanced frames are labelled clearly.
+**Enhance** runs a local ONNX super-resolution model (Real-ESRGAN or SwinIR) in the browser through ONNX Runtime WebAssembly, self-hosted under `/vendor/ort/` and only started when you load a model. Generated detail is for visual review only; originals remain the analytical source and enhanced photos are labelled.
+
+`public/models/RealESRGAN_x4plus.onnx` is stored with **Git LFS**. For the hosted model to work on Vercel, enable *Settings → Git → Git Large File Storage (LFS)*; otherwise the file served is a tiny pointer and loading fails (use the file picker instead).
+
+---
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for the model and for the keys that remain in git history and must be rotated.
 
 ---
 

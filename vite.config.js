@@ -52,7 +52,7 @@ function serviceWorkerManifest() {
       const rel = (f) => '/' + path.relative(outDir, f).split(path.sep).join('/');
       const shell = walk(path.join(outDir, 'static'))
         .map(rel)
-        .filter((u) => /\.(js|css)$/.test(u) || /(inter|jetbrains-mono)-latin-[^/]*\.woff2$/.test(u));
+        .filter((u) => /\.(js|css)$/.test(u) || /inter-latin-wght-normal[^/]*\.woff2$/.test(u));
       const urls = ['/', '/manifest.webmanifest', '/assets/phnaek-pkay.svg', '/assets/icons/icon-192.png', '/assets/icons/icon-512.png', '/assets/sites/index.json', ...shell].sort();
       const hash = crypto.createHash('sha1');
       for (const u of urls) {

@@ -34,7 +34,7 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --font-ui: 'Inter Variable', 'Inter', 'Noto Sans Khmer', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: var(--font-ui); /* numeric readouts use Inter's tabular figures */
 }
 
 [data-theme='light'] {
@@ -71,6 +71,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 html[lang='km'] body { line-height: 1.7; }
+.density-readout, .zoom-readout, .coord-readout, .map-readout, .slider-map-readout, .seq-tick .idx, .locations-coords code, .date-results button { font-variant-numeric: tabular-nums; }
 ::selection { background: var(--moss); color: var(--ink); }
 h1, h2, h3, p { margin: 0; }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -168,3 +169,5 @@ input[type='checkbox'] { width: 22px; height: 22px; accent-color: var(--amber); 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+.capture-status:empty { display: none; }

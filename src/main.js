@@ -452,6 +452,8 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   }
 
   function drawLiveMap(){
+    // The sidebar map lives in a tab that is usually closed; don't fetch tiles for something nobody can see.
+    if(liveMapWrap.getClientRects().length===0){ if(mode==='slider' && sliderMapVisible) drawSliderMap(); return; }
     if(!liveMapCanvas.width || !liveMapCanvas.height) return;
     const ctx = liveMapCanvas.getContext('2d', { willReadFrequently: true });
     const W = liveMapCanvas.width, H = liveMapCanvas.height;
@@ -1593,7 +1595,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
 
   function drawLabel(ctx, text, x, y, align){
     if(!text) return;
-    ctx.font = "500 13px 'Noto Sans Khmer','JetBrains Mono',monospace";
+    ctx.font = "500 13px 'Inter Variable','Noto Sans Khmer',sans-serif";
     const padX=10, padY=6;
     const w = ctx.measureText(text).width + padX*2;
     const h = 18 + padY;
@@ -1610,7 +1612,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   }
 
   function drawCornerLabel(ctx, text, x, y, align, accent){
-    ctx.font = "500 20px 'Noto Sans Khmer','JetBrains Mono',monospace";
+    ctx.font = "500 20px 'Inter Variable','Noto Sans Khmer',sans-serif";
     const padX=12;
     const w = ctx.measureText(text).width + padX*2;
     const h = 34;
@@ -1627,7 +1629,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   async function ensureFontsReady(){
     // Canvas text only uses a font that is already loaded, so request the ones the exports draw with.
     try{
-      await Promise.all(["600 14px 'Inter Variable'","500 13px 'JetBrains Mono'","500 13px 'Noto Sans Khmer'"].map(f=>document.fonts.load(f,'Aa \u1780')));
+      await Promise.all(["600 14px 'Inter Variable'","500 13px 'Inter Variable'","500 13px 'Noto Sans Khmer'"].map(f=>document.fonts.load(f,'Aa \u1780')));
       await document.fonts.ready;
     }catch(e){}
   }
@@ -1681,7 +1683,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     ctx.fillStyle='#eef0e4'; ctx.fillText('Phnaek Pkay',W-20,H-17); ctx.restore();
   }
   function drawExportCoords(ctx,W,H){
-    ctx.save(); ctx.font="500 13px 'JetBrains Mono',monospace"; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.save(); ctx.font="500 13px 'Inter Variable','Noto Sans Khmer',sans-serif"; ctx.textAlign='left'; ctx.textBaseline='bottom';
     const label = `lat ${liveMap.lat.toFixed(4)} · lon ${liveMap.lng.toFixed(4)}`;
     const w = ctx.measureText(label).width + 24;
     ctx.fillStyle='rgba(0,0,0,.58)'; ctx.fillRect(12,H-34,w,24);
@@ -1691,7 +1693,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     if(!includeNotesExport.checked || !notesInput.value.trim()) return;
     const lines=notesInput.value.trim().split(/\r?\n/).flatMap(line=>{const words=line.split(/\s+/),out=[];let cur='';words.forEach(word=>{if((cur+' '+word).trim().length>90){out.push(cur);cur=word;}else cur=(cur+' '+word).trim();});if(cur)out.push(cur);return out;}).slice(0,4);
     const h=lines.length*18+28; ctx.save();ctx.fillStyle='rgba(10,12,8,.78)';ctx.fillRect(12,H-h-12,Math.min(W-24,W*.72),h);
-    ctx.fillStyle='#d3934f';ctx.font="600 12px 'JetBrains Mono',monospace";ctx.fillText('NOTES',24,H-h+8);
+    ctx.fillStyle='#d3934f';ctx.font="600 12px 'Inter Variable','Noto Sans Khmer',sans-serif";ctx.fillText('NOTES',24,H-h+8);
     ctx.fillStyle='#eef0e4';ctx.font="11px 'Inter',sans-serif";lines.forEach((line,i)=>ctx.fillText(line,24,H-h+26+i*18));ctx.restore();
   }
 
@@ -1735,7 +1737,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
         ctx.fillStyle = '#1a1e15';
         ctx.fillRect(0, H-capH, W, capH);
         ctx.fillStyle = '#98a186';
-        ctx.font = "500 16px 'JetBrains Mono',monospace";
+        ctx.font = "500 16px 'Inter Variable','Noto Sans Khmer',sans-serif";
         ctx.textBaseline='middle';
         ctx.fillText(caption, 14, H-capH/2);
       }
@@ -1755,7 +1757,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       else renderSliderFrame(ctx, W, H, L, R, sliderState.clip, scaleFactor);
       if(caption){
         ctx.fillStyle = '#1a1e15'; ctx.fillRect(0,H,W,capH);
-        ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'JetBrains Mono',monospace";
+        ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'Inter Variable','Noto Sans Khmer',sans-serif";
         ctx.textBaseline='middle';
         ctx.fillText(caption, 14, H+capH/2);
       }
@@ -1774,7 +1776,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       renderOverlayFrame(ctx, W, H, B, T, overlayState.density, scaleFactor, O3 && O3.id!==B.id && O3.id!==T.id ? O3 : null, overlayState.thirdDensity);
       if(caption){
         ctx.fillStyle = '#1a1e15'; ctx.fillRect(0,H,W,capH);
-        ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'JetBrains Mono',monospace";
+        ctx.fillStyle = '#98a186'; ctx.font = "500 16px 'Inter Variable','Noto Sans Khmer',sans-serif";
         ctx.textBaseline='middle';
         ctx.fillText(caption, 14, H+capH/2);
       }
@@ -1787,7 +1789,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const W=changeCanvas.width, H=changeCanvas.height, capH=caption?46:0;
       exportCanvas.width=W; exportCanvas.height=H+capH;
       const ctx=exportCanvas.getContext('2d'); ctx.drawImage(changeCanvas,0,0); renderChangeMap();
-      if(caption){ ctx.fillStyle='#1a1e15'; ctx.fillRect(0,H,W,capH); ctx.fillStyle='#98a186'; ctx.font="500 16px 'JetBrains Mono',monospace"; ctx.textBaseline='middle'; ctx.fillText(caption,14,H+capH/2); }
+      if(caption){ ctx.fillStyle='#1a1e15'; ctx.fillRect(0,H,W,capH); ctx.fillStyle='#98a186'; ctx.font="500 16px 'Inter Variable','Noto Sans Khmer',sans-serif"; ctx.textBaseline='middle'; ctx.fillText(caption,14,H+capH/2); }
        drawExportNotes(ctx,W,H); drawExportCoords(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-change-map.png');
     }
   }

@@ -84,6 +84,8 @@
     <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V4a1 1 0 011-1h4a1 1 0 011 1v1M9 11h6M9 15h4"/></symbol>
     <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19zM14 7l3 3"/></symbol>
     <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 16l9-9 6 6-6 6H8zM9 20h11"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-collapse" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></symbol>
     <symbol id="i-ios-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 00-1 1v8a1 1 0 001 1h14a1 1 0 001-1v-8a1 1 0 00-1-1h-1"/></symbol>
   </defs>
 </svg>
@@ -116,6 +118,7 @@
       <button type="button" class="btn" id="loadProjectBtn" role="menuitem"><svg class="ico"><use href="#i-folder"/></svg><span data-i18n="actions.loadProject">Open project</span></button>
       <button type="button" class="btn" id="locationsBtn" role="menuitem"><svg class="ico"><use href="#i-pin"/></svg><span data-i18n="actions.sites">Field sites</span></button>
       <button type="button" class="btn" id="exportReportBtn" role="menuitem"><svg class="ico"><use href="#i-report"/></svg><span data-i18n="actions.report">Report</span></button>
+      <button type="button" class="btn" id="immersiveBtn" role="menuitem"><svg class="ico"><use href="#i-expand"/></svg><span data-i18n="actions.fullscreen">Full screen</span></button>
       <button type="button" class="btn" id="openUpscaleBtn" role="menuitem"><svg class="ico"><use href="#i-sparkle"/></svg><span data-i18n="actions.enhance">Enhance</span></button>
     </div>
     <input type="file" id="projectInput" accept="application/json,.json" hidden>
@@ -504,6 +507,8 @@
     <button type="button" class="btn primary" id="installNative" data-i18n="install.button" hidden>Install</button>
   </div>
 </aside>
+
+<button type="button" class="immersive-exit" id="immersiveExit" data-i18n-label="actions.exitFullscreen" data-i18n-title="actions.exitFullscreen" hidden><svg class="ico"><use href="#i-collapse"/></svg></button>
 
 <script type="module" src="/src/main.js"></script>
 </body>

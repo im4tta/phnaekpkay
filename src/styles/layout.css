@@ -132,3 +132,13 @@ body.sheet-open { overflow: hidden; }
   .topbar { gap: 6px; padding-left: 8px; padding-right: 8px; }
   .top-tools { gap: 6px; }
 }
+
+/* ---- Full screen: only the photos (and a way back) ---- */
+.immersive-exit { position: fixed; top: calc(var(--safe-top) + 12px); right: 12px; z-index: 40; width: var(--tap); height: var(--tap); display: grid; place-items: center; padding: 0; border: 1px solid var(--stage-glass-border); border-radius: var(--r-sm); background: var(--stage-glass); color: #f4f2e8; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+body.immersive .topbar, body.immersive .mode-toggle, body.immersive .dock, body.immersive .sidebar, body.immersive .sidebar-backdrop { display: none; }
+body.immersive .app { padding-bottom: 0; }
+body.immersive .corner-label { top: calc(var(--safe-top) + 12px); }
+body.immersive .corner-label { max-width: calc(50% - 50px); }
+body.immersive .corner-label.right, body.immersive .corner-label.third-tag { right: 68px; }
+body.immersive .slider-map-overlay, body.immersive .slider-map-toggle { top: calc(var(--safe-top) + 64px); }
+body.immersive .change-stats { top: calc(var(--safe-top) + 64px); }

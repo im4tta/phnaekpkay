@@ -157,3 +157,32 @@ test.describe('theme', () => {
     }
   });
 });
+
+test.describe('full screen', () => {
+  test('hides the app chrome so the photos fill the screen, and comes back', async ({ page }) => {
+    await openAnSes(page);
+    const stage = page.locator('#sliderStage');
+    const before = await stage.boundingBox();
+    await page.click('#moreBtn');
+    await page.click('#immersiveBtn');
+    await expect(page.locator('.topbar')).toBeHidden();
+    await expect(page.locator('#dock')).toBeHidden();
+    await expect(page.locator('#immersiveExit')).toBeVisible();
+    await expect.poll(async () => (await stage.boundingBox()).height).toBeGreaterThan(before.height + 40);
+    const left = await page.locator('#leftLabelTag').boundingBox();
+    const right = await page.locator('#rightLabelTag').boundingBox();
+    const exit = await page.locator('#immersiveExit').boundingBox();
+    expect(left.x + left.width).toBeLessThanOrEqual(right.x); // labels do not overlap each other
+    expect(right.x + right.width).toBeLessThanOrEqual(exit.x); // nor the exit button
+    const box = exit;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    await page.click('#immersiveExit');
+    await expect(page.locator('.topbar')).toBeVisible();
+    await expect(page.locator('#immersiveExit')).toBeHidden();
+    await page.click('#moreBtn');
+    await page.click('#immersiveBtn');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.topbar')).toBeVisible();
+  });
+});

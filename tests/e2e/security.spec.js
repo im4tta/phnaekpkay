@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { watchPage, makePng, loadProject, expectNoProblems } from './helpers.js';
+import { watchPage, makePng, loadProject, expectNoProblems, openDrawer } from './helpers.js';
 
 test('app boots with the enforced CSP and no errors', async ({ page }) => {
   const watcher = await watchPage(page);
@@ -44,6 +44,8 @@ test('API keys stay in sessionStorage and never reach localStorage, IndexedDB or
   await page.goto('/');
   await page.evaluate(() => { localStorage.setItem('phnaek-pkay-preferences', JSON.stringify({ map: { mapboxToken: 'LEAK1', sentinelId: 'LEAK2', placesApiKey: 'LEAK3' } })); });
   await page.reload();
+  await openDrawer(page);
+  await page.click('#addTabSatellite');
   await page.selectOption('#providerSelect', 'mapbox');
   await page.fill('#mapboxToken', 'pk.SECRET_TOKEN_123');
   await page.selectOption('#providerSelect', 'google');

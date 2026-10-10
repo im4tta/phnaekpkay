@@ -7,6 +7,11 @@ import { LIMITS, cleanText, isSafeImageSrc, sanitizeProject, defaultSliderState,
 import { saveSecrets, loadSecrets, scrubLegacySecrets } from './lib/secrets.js';
 import { putRecord, getRecord } from './lib/store.js';
 import { toast } from './lib/toast.js';
+import { t, setLang, getLang, detectLang } from './lib/i18n.js';
+import { shareOrDownload, downloadBlob } from './lib/share.js';
+import { initInstallHelp } from './lib/install-help.js';
+import { renderPicker, nextPair } from './components/picker.js';
+import { renderSiteRail } from './components/start.js';
 import { detectChanges, reliabilityOf } from './lib/change-detect.js';
 
   
@@ -29,6 +34,13 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   const gridStage = document.getElementById('gridStage');
   const sliderStage = document.getElementById('sliderStage');
   const placeholder = document.getElementById('placeholder');
+  const placeholderText = document.getElementById('placeholderText');
+  const mainEl = document.getElementById('main');
+  const dock = document.getElementById('dock');
+  const datePicker = document.getElementById('datePicker');
+  const pickerRow = document.getElementById('pickerRow');
+  const pickerTitle = document.getElementById('pickerTitle');
+  const swapBtn = document.getElementById('swapBtn');
   const modeGridBtn = document.getElementById('modeGridBtn');
   const modeSliderBtn = document.getElementById('modeSliderBtn');
   const modeOverlayBtn = document.getElementById('modeOverlayBtn');
@@ -39,7 +51,6 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   const overlaySwapBtn = document.getElementById('overlaySwapBtn');
   const overlayBaseImg = document.getElementById('overlayBaseImg');
   const overlayTopImg = document.getElementById('overlayTopImg');
-  const overlayTopWrap = document.getElementById('overlayTopWrap');
   const overlayDragSurface = document.getElementById('overlayDragSurface');
   const overlayBaseLabelTag = document.getElementById('overlayBaseLabelTag');
   const overlayTopLabelTag = document.getElementById('overlayTopLabelTag');
@@ -88,8 +99,8 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   const changeControls = document.getElementById('changeControls');
   const changeBeforeSelect = document.getElementById('changeBeforeSelect');
   const changeAfterSelect = document.getElementById('changeAfterSelect');
-  const changeMethodSelect = document.getElementById('changeMethodSelect');
-  const changeThreshold = document.getElementById('changeThreshold');
+  const changeMethodChips = document.getElementById('changeMethodChips');
+  const changeSensitivity = document.getElementById('changeSensitivity');
   const changeMinSize = document.getElementById('changeMinSize');
   const changeThresholdReadout = document.getElementById('changeThresholdReadout');
   const changeMinSizeReadout = document.getElementById('changeMinSizeReadout');
@@ -158,7 +169,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   const secPerFrame = document.getElementById('secPerFrame');
   const crossfadeChk = document.getElementById('crossfadeChk');
   const playSeqBtn = document.getElementById('playSeqBtn');
-  const seqPlayToggle = document.getElementById('seqPlayToggle');
+  const playSeqLabel = document.getElementById('playSeqLabel');
   const seqProgressFill = document.getElementById('seqProgressFill');
   const seqTimeline = document.getElementById('seqTimeline');
   const sweepDuration = document.getElementById('sweepDuration');
@@ -209,7 +220,6 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   const captureStatus = document.getElementById('captureStatus');
   const showMapLabelsChk = document.getElementById('showMapLabelsChk');
   const enhanceImageryChk = document.getElementById('enhanceImageryChk');
-  const techBackground = document.getElementById('techBackground');
 
   // ---------- Frames (Blob-backed) ----------
   // A frame's pixels live in a Blob exposed through an object URL: no base64 inflation and no
@@ -238,7 +248,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     catch(err){ URL.revokeObjectURL(src); throw err; }
   }
   function releaseFrame(im){ if(im && im.blob && im.src.startsWith('blob:')) URL.revokeObjectURL(im.src); }
-  function framesChanged(preserve){ renderImageList(); updateSliderSelects(preserve); renderStage(); queueProjectSave(); }
+  function framesChanged(preserve){ renderImageList(); updateSliderSelects(preserve); renderStage(); queueProjectSave(); if(images.length) maybeShowInstall(); }
   async function loadFiles(fileList){
     let rejected = 0;
     for(const file of Array.from(fileList)){
@@ -267,9 +277,11 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   });
   loadHostedModelBtn.addEventListener('click',async()=>{
     const url=upscaleModelUrl.value.trim(); if(!url) return;
+    let target; try{ target=new URL(url, location.origin); }catch(err){ target=null; }
+    if(!target || target.origin!==location.origin){ upscaleStatus.classList.add('err'); upscaleStatus.textContent='Only models hosted on this site can be loaded here. Use the file picker for other models.'; return; }
     loadHostedModelBtn.disabled=true; upscaleBtn.disabled=true; upscaleStatus.classList.remove('err'); upscaleStatus.textContent='Downloading hosted model...';
     try{
-      const res=await fetch(url); if(!res.ok) throw Error(`HTTP ${res.status}`);
+      const res=await fetch(target.href); if(!res.ok) throw Error(`HTTP ${res.status}`);
       await loadUpscaleBuffer(await res.arrayBuffer());
       upscaleStatus.textContent='Hosted model ready in background worker'; updateUpscaleSelect(); upscaleBtn.disabled=false;
     }catch(err){ upscaleSession=null; upscaleStatus.textContent=`Hosted model failed: ${err.message}`; upscaleStatus.classList.add('err'); }
@@ -362,7 +374,6 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   let liveMap = { provider:'google', lat:11.5625, lng:104.9160, zoom:14, dragging:false, lastX:0, lastY:0, cacheBust:0 };
   const tileCache = new Map();
   const labelTileCache = new Map();
-  const thumbCache = new Map();
   let sentinelPendingTiles=0;
 
 
@@ -708,9 +719,6 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   }, {passive:false});
   // Sync slider map whenever the main map updates (handled inside drawLiveMap itself).
   // These listeners ensure the slider map also refreshes for sidebar control changes.
-  function drawSliderMapIfVisible(){
-    if(mode==='slider' && sliderMapVisible) drawSliderMap();
-  }
   window.addEventListener('resize', ()=>{ if(mode==='slider' && sliderMapVisible) sizeSliderMapCanvas(); });
 
   placeSearch.addEventListener('keydown', async e=>{
@@ -956,8 +964,10 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     overlayControls.hidden = (m!=='overlay');
     sequenceControls.hidden = (m!=='sequence');
     changeControls.hidden = (m!=='change');
-    exportVideoBtn.style.display = (m==='slider' || m==='sequence' || m==='overlay') ? 'flex' : 'none';
-    exportBtn.style.display = (m==='grid' || m==='slider' || m==='overlay' || m==='change') ? 'flex' : 'none';
+    // On phones the picker starts collapsed in Blend / Changes so the controls leave room for the photos.
+    if(window.innerWidth<=820){ datePicker.classList.toggle('collapsed', m!=='slider'); syncPickerToggle(); }
+    exportVideoBtn.hidden = !(m==='slider' || m==='sequence' || m==='overlay');
+    exportBtn.hidden = (m==='sequence');
     renderStage();
   }
 
@@ -1002,27 +1012,55 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     updateOverlaySelects(preserve);
     updateChangeSelects(preserve);
     renderStage();
-    updateSliderSummary();
   }
-  function updateSliderSummary(){
-    const el=document.getElementById('sliderPairSummary'); if(!el) return;
-    const L=images.find(i=>i.id===sliderState.leftId), R=images.find(i=>i.id===sliderState.rightId);
-    el.textContent = (L&&R) ? `${L.label||('#'+L.id)} \u21C4 ${R.label||('#'+R.id)}` : '';
-  }
-  leftSelect.addEventListener('change', ()=>{ sliderState.leftId = parseInt(leftSelect.value,10); renderStage(); updateSliderSummary(); });
-  rightSelect.addEventListener('change', ()=>{ sliderState.rightId = parseInt(rightSelect.value,10); renderStage(); updateSliderSummary(); });
+  leftSelect.addEventListener('change', ()=>{ sliderState.leftId = parseInt(leftSelect.value,10); renderStage(); queueProjectSave(); });
+  rightSelect.addEventListener('change', ()=>{ sliderState.rightId = parseInt(rightSelect.value,10); renderStage(); queueProjectSave(); });
   sliderMiddleSelect.addEventListener('change', ()=>{ sliderState.middleId=parseInt(sliderMiddleSelect.value,10); renderStage(); });
   sliderThreeChk.addEventListener('change',()=>{ sliderState.three=sliderThreeChk.checked; sliderMiddleField.hidden=!sliderState.three; renderStage(); });
-  document.getElementById('sliderControlsToggle').addEventListener('click', ()=>{
-    sliderControls.classList.toggle('collapsed');
-    document.getElementById('sliderControlsToggle').setAttribute('aria-expanded', !sliderControls.classList.contains('collapsed'));
+
+  // ---------- Photo picker (Compare / Blend / Changes) ----------
+  // One component picks the two photos for whichever view is active; the <select>s in
+  // "More options" stay in sync for keyboard and screen-reader users.
+  const PAIRS = {
+    slider:  { state:()=>sliderState,  a:'leftId', b:'rightId', selA:leftSelect, selB:rightSelect },
+    overlay: { state:()=>overlayState, a:'baseId', b:'topId',   selA:overlayBaseSelect, selB:overlayTopSelect },
+    change:  { state:()=>changeState,  a:'beforeId', b:'afterId', selA:changeBeforeSelect, selB:changeAfterSelect },
+  };
+  let pickerNext = 'b';
+  function setPair(pair, aId, bId){
+    const st = pair.state();
+    st[pair.a] = aId; st[pair.b] = bId;
+    pair.selA.value = aId; pair.selB.value = bId;
+    renderStage(); queueProjectSave();
+  }
+  function renderPicker_(){
+    const pair = PAIRS[mode];
+    const show = !!pair && images.length>0;
+    datePicker.hidden = !show;
+    if(!show) return;
+    const st = pair.state();
+    pickerTitle.textContent = t('picker.title');
+    renderPicker(pickerRow,{
+      frames:images, aId:st[pair.a], bId:st[pair.b],
+      aLabel:t('picker.a.'+mode), bLabel:t('picker.b.'+mode), addLabel:t('picker.add'),
+      onPick:id=>{ const next=nextPair({aId:st[pair.a],bId:st[pair.b]},id,pickerNext==='a'?'a':'b'); pickerNext = pickerNext==='b'?'a':'b'; setPair(pair,next.aId,next.bId); },
+      onAdd:()=>{ setAddTab('photos'); setSidebarOpen(true); fileInput.click(); }
+    });
+  }
+  swapBtn.addEventListener('click', ()=>{
+    const pair = PAIRS[mode]; if(!pair) return;
+    const st = pair.state();
+    setPair(pair, st[pair.b], st[pair.a]);
   });
-  if(MOBILE_MQ.matches){ sliderControls.classList.add('collapsed'); document.getElementById('sliderControlsToggle').setAttribute('aria-expanded','false'); }
-  document.getElementById('swapBtn').addEventListener('click', ()=>{
-    [sliderState.leftId, sliderState.rightId] = [sliderState.rightId, sliderState.leftId];
-    leftSelect.value = sliderState.leftId; rightSelect.value = sliderState.rightId;
-    renderStage(); updateSliderSummary();
-  });
+  const pickerToggle = document.getElementById('pickerToggle');
+  function syncPickerToggle(){
+    const collapsed = datePicker.classList.contains('collapsed');
+    const label = t(collapsed ? 'picker.show' : 'picker.hide');
+    pickerToggle.setAttribute('aria-expanded', String(!collapsed));
+    pickerToggle.setAttribute('aria-label', label); pickerToggle.title = label;
+  }
+  pickerToggle.addEventListener('click', ()=>{ datePicker.classList.toggle('collapsed'); syncPickerToggle(); });
+  overlaySwapBtn.addEventListener('click', ()=> swapBtn.click());
 
   // ---------- Overlay select dropdowns + density ----------
   function updateOverlaySelects(preserve){
@@ -1038,15 +1076,10 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       overlayThirdSelect.value = overlayState.thirdId;
     }
   }
-  overlayBaseSelect.addEventListener('change', ()=>{ overlayState.baseId = parseInt(overlayBaseSelect.value,10); renderStage(); });
-  overlayTopSelect.addEventListener('change', ()=>{ overlayState.topId = parseInt(overlayTopSelect.value,10); renderStage(); });
+  overlayBaseSelect.addEventListener('change', ()=>{ overlayState.baseId = parseInt(overlayBaseSelect.value,10); renderStage(); queueProjectSave(); });
+  overlayTopSelect.addEventListener('change', ()=>{ overlayState.topId = parseInt(overlayTopSelect.value,10); renderStage(); queueProjectSave(); });
   overlayThirdSelect.addEventListener('change', ()=>{ overlayState.thirdId=parseInt(overlayThirdSelect.value,10); renderStage(); });
   overlayThirdDensity.addEventListener('input',()=>{ overlayState.thirdDensity=parseInt(overlayThirdDensity.value,10); overlayThirdReadout.textContent=overlayState.thirdDensity+'%'; overlayStage.style.setProperty('--third-density',overlayState.thirdDensity/100); });
-  overlaySwapBtn.addEventListener('click', ()=>{
-    [overlayState.baseId, overlayState.topId] = [overlayState.topId, overlayState.baseId];
-    overlayBaseSelect.value = overlayState.baseId; overlayTopSelect.value = overlayState.topId;
-    renderStage();
-  });
   densityRange.addEventListener('input', ()=>{
     overlayState.density = parseInt(densityRange.value,10);
     densityReadout.textContent = overlayState.density+'%';
@@ -1089,11 +1122,30 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     }
   }
   [changeBeforeSelect, changeAfterSelect].forEach((el, idx)=>el.addEventListener('change', ()=>{
-    changeState[idx ? 'afterId' : 'beforeId'] = parseInt(el.value,10); renderStage();
+    changeState[idx ? 'afterId' : 'beforeId'] = parseInt(el.value,10); renderStage(); queueProjectSave();
   }));
-  changeMethodSelect.addEventListener('change', ()=>{ changeState.method=changeMethodSelect.value; renderChangeMap(); });
-  changeThreshold.addEventListener('input', ()=>{ changeState.threshold=parseInt(changeThreshold.value,10); changeThresholdReadout.textContent=changeState.threshold+'%'; renderChangeMap(); });
-  changeMinSize.addEventListener('input', ()=>{ changeState.minSize=parseInt(changeMinSize.value,10); changeMinSizeReadout.textContent=changeState.minSize+' px'; renderChangeMap(); });
+  // Sensitivity is shown the way people think about it (higher = notices more) while the stored
+  // value stays a difference threshold (lower = notices more): threshold = 95 - sensitivity.
+  const sensitivityFromThreshold = th => 95 - th;
+  function sensitivityWord(th){ return t(th>=55 ? 'change.low.word' : th>=25 ? 'change.mid.word' : 'change.high.word'); }
+  function syncChangeControls(){
+    changeSensitivity.value = sensitivityFromThreshold(changeState.threshold);
+    changeThresholdReadout.textContent = sensitivityWord(changeState.threshold);
+    changeMinSize.value = changeState.minSize; changeMinSizeReadout.textContent = changeState.minSize+' px';
+    [...changeMethodChips.children].forEach(b=>{ const on=b.dataset.method===changeState.method; b.classList.toggle('active',on); b.setAttribute('aria-pressed',String(on)); });
+  }
+  let changeRenderRAF=null;
+  function scheduleChangeRender(){ if(changeRenderRAF) return; changeRenderRAF=requestAnimationFrame(()=>{ changeRenderRAF=null; renderChangeMap(); }); }
+  changeMethodChips.addEventListener('click', e=>{
+    const btn=e.target.closest('button[data-method]'); if(!btn) return;
+    changeState.method=btn.dataset.method; syncChangeControls(); scheduleChangeRender(); queueProjectSave();
+  });
+  changeSensitivity.addEventListener('input', ()=>{
+    changeState.threshold = 95 - parseInt(changeSensitivity.value,10);
+    changeThresholdReadout.textContent = sensitivityWord(changeState.threshold);
+    scheduleChangeRender(); queueProjectSave();
+  });
+  changeMinSize.addEventListener('input', ()=>{ changeState.minSize=parseInt(changeMinSize.value,10); changeMinSizeReadout.textContent=changeState.minSize+' px'; scheduleChangeRender(); queueProjectSave(); });
 
   // ---------- View (zoom/pan) ----------
   function activeStageEl(){
@@ -1201,6 +1253,10 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     }, {passive:false});
   }
 
+  // Pan/zoom handlers are attached once (they used to be re-attached on every render).
+  attachPanHandlers(overlayDragSurface);
+  attachPanHandlers(sequenceStage);
+
   // ---------- Divider drag (slider mode) ----------
   (function(){
     let dragging=null;
@@ -1212,6 +1268,17 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       else { pct=sliderState.three ? Math.min(sliderState.clip2-.5, pct) : pct; sliderState.clip=pct; sliderStage.style.setProperty('--clip', pct+'%'); }
     }
     divider.addEventListener('pointerdown', e=>{ dragging=1; divider.setPointerCapture(e.pointerId); });
+    divider.addEventListener('keydown', e=>{
+      const step = e.shiftKey ? 10 : 2;
+      if(e.key==='ArrowLeft' || e.key==='ArrowRight'){
+        e.preventDefault();
+        const pct = Math.min(99.5, Math.max(.5, sliderState.clip + (e.key==='ArrowLeft' ? -step : step)));
+        sliderState.clip = sliderState.three ? Math.min(sliderState.clip2-.5, pct) : pct;
+        sliderStage.style.setProperty('--clip', sliderState.clip+'%');
+        divider.setAttribute('aria-valuenow', String(Math.round(sliderState.clip)));
+        queueProjectSave();
+      }
+    });
     divider2.addEventListener('pointerdown', e=>{ dragging=2; divider2.setPointerCapture(e.pointerId); });
     window.addEventListener('pointermove', e=>{ if(dragging) setClip(e.clientX,dragging); });
     window.addEventListener('pointerup', ()=>{ dragging=null; });
@@ -1273,11 +1340,11 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   attachSliderPanelDrag(sliderThirdWrap, ()=>sliderState.thirdView);
 
   // ---------- Render stage ----------
-  function renderChangeMap(){
+  function renderChangeMap(withLabels){
     const before = images.find(i=>i.id===changeState.beforeId);
     const after = images.find(i=>i.id===changeState.afterId);
     if(!before || !after || before.id===after.id){
-      changeStats.style.display='none';
+      changeStats.hidden=true;
       return;
     }
     const W=800, H=500;
@@ -1303,12 +1370,11 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       } else { const i=p*4; const gray=px[i]*.55+px[i+1]*.35+px[i+2]*.1; px[i]=px[i+1]=px[i+2]=gray; }
     }
     ctx.putImageData(out,0,0);
-    drawCornerLabel(ctx,before.label,14,14,'left','#8ea15c');
-    drawCornerLabel(ctx,after.label,W-14,14,'right','#4f7d78');
+    if(withLabels){ drawCornerLabel(ctx,friendlyLabel(before.label,40),14,14,'left','#8ea15c'); drawCornerLabel(ctx,friendlyLabel(after.label,40),W-14,14,'right','#4f7d78'); }
     changedAreaStat.textContent=area.toFixed(1)+'%';
     regionCountStat.textContent=sizes.length;
-    reliabilityStat.textContent=reliabilityOf(area).toUpperCase();
-    changeStats.style.display='grid';
+    reliabilityStat.textContent=t('change.'+reliabilityOf(area)+'.label');
+    changeStats.hidden=false;
   }
 
   let _renderRAF=null;
@@ -1316,28 +1382,37 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     if(_renderRAF) return;
     _renderRAF=requestAnimationFrame(()=>{ _renderRAF=null; _renderStage(); });
   }
+  function showMessage(text){
+    placeholderText.textContent = text || '';
+    placeholder.classList.toggle('show', !!text);
+  }
+  function setSrc(img, src){ if(img.getAttribute('src')!==src) img.src = src; }
+  const tagText = (el, im)=>{ el.textContent = friendlyLabel(im.label); el.title = im.label; };
   function _renderStage(){
     const selected = images.filter(i=>i.selected);
-    placeholder.style.display = images.length < 1 ? 'flex' : 'none';
+    const empty = images.length < 1;
+    mainEl.classList.toggle('is-empty', empty);
+    dock.hidden = empty;
+    showMessage('');
+    if(empty) showStartScreen();
 
     gridStage.style.display = 'none';
     sliderStage.style.display = 'none';
     overlayStage.style.display = 'none';
     sequenceStage.style.display = 'none';
     changeStage.style.display = 'none';
-    changeStats.style.display = 'none';
-    seqTimeline.style.display = 'none';
+    changeStats.hidden = true;
+    renderPicker_();
+    if(empty) return;
 
     if(mode==='grid'){
-      if(images.length < 1) return;
       gridStage.style.display = 'grid';
       gridStage.replaceChildren();
       const list = selected.length ? selected : images.slice(0,6);
-      if(list.length===0){ placeholder.style.display='flex'; placeholder.textContent='Check at least one frame in the sidebar to show it in the grid.'; gridStage.style.display='none'; return; }
       gridStage.style.gridTemplateColumns = `repeat(${effectiveGridCols(list.length)}, 1fr)`;
       list.forEach(im=>{
         const viewport = h('div',{class:'panel-viewport'}, h('img',{class:'panel-img',src:im.src,alt:'',draggable:'false',decoding:'async'}));
-        const panel = h('div',{class:'panel'}, viewport, h('div',{class:'panel-label'},im.label), h('div',{class:'panel-tag'},'PHNAEK\u00B7PKAY'));
+        const panel = h('div',{class:'panel'}, viewport, h('div',{class:'panel-label',title:im.label},friendlyLabel(im.label)), h('div',{class:'panel-tag'},'PHNAEK\u00B7PKAY'));
         attachPanHandlers(viewport);
         gridStage.appendChild(panel);
       });
@@ -1347,24 +1422,24 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const R = images.find(i=>i.id===sliderState.rightId);
       if(!L || !R) return;
       sliderStage.style.display='block';
-      sliderLeftImg.src = L.src;
-      sliderRightImg.src = R.src;
-      leftLabelTag.textContent = L.label;
-      rightLabelTag.textContent = R.label;
+      setSrc(sliderLeftImg, L.src);
+      setSrc(sliderRightImg, R.src);
+      tagText(leftLabelTag, L); tagText(rightLabelTag, R);
       const M=images.find(i=>i.id===sliderState.middleId);
-      const useThree=sliderState.three && M && M.id!==L.id && M.id!==R.id;
-      sliderThirdWrap.hidden=!useThree; divider2.hidden=!useThree; middleLabelTag.hidden=!useThree; thirdLabelTag.hidden=!useThree;
+      const useThree=!!(sliderState.three && M && M.id!==L.id && M.id!==R.id);
+      sliderStage.classList.toggle('three', useThree);
+      sliderThirdWrap.hidden=!useThree; divider2.hidden=!useThree; middleLabelTag.hidden=!useThree; thirdLabelTag.hidden=!useThree; rightLabelTag.hidden=useThree;
       if(useThree){
-        sliderThirdImg.src=R.src; sliderRightImg.src=M.src;
-        middleLabelTag.textContent=M.label; thirdLabelTag.textContent=R.label;
+        setSrc(sliderThirdImg, R.src); setSrc(sliderRightImg, M.src);
+        tagText(middleLabelTag, M); tagText(thirdLabelTag, R);
         sliderRightWrap.style.clipPath=`inset(0 ${100-sliderState.clip2}% 0 ${sliderState.clip}%)`;
         sliderThirdWrap.style.setProperty('--clip2',sliderState.clip2+'%');
       } else { sliderRightWrap.style.clipPath=''; sliderThirdWrap.style.clipPath=''; }
       sliderStage.style.setProperty('--clip', sliderState.clip+'%');
       sliderStage.style.setProperty('--clip2', sliderState.clip2+'%');
+      divider.setAttribute('aria-valuenow', String(Math.round(sliderState.clip)));
       applySliderPanelVars();
       applyViewVars();
-      // Show inline map overlay
       setSliderMapVisible(sliderMapVisible);
       requestAnimationFrame(sizeSliderMapCanvas);
     } else if(mode==='overlay'){
@@ -1372,29 +1447,26 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const T = images.find(i=>i.id===overlayState.topId);
       if(!B || !T) return;
       overlayStage.style.display='block';
-      overlayBaseImg.src = B.src;
-      overlayTopImg.src = T.src;
+      setSrc(overlayBaseImg, B.src);
+      setSrc(overlayTopImg, T.src);
       const O3=images.find(i=>i.id===overlayState.thirdId);
       const useThirdOverlay=!!O3 && O3.id!==B.id && O3.id!==T.id;
       overlayThirdWrap.hidden=!useThirdOverlay; overlayThirdLabelTag.hidden=!useThirdOverlay;
-      overlayThirdImg.src=O3 ? O3.src : '';
-      overlayBaseLabelTag.textContent = B.label;
-      overlayTopLabelTag.textContent = T.label;
-      overlayThirdLabelTag.textContent = O3 ? O3.label : '';
+      if(O3) setSrc(overlayThirdImg, O3.src);
+      tagText(overlayBaseLabelTag, B); tagText(overlayTopLabelTag, T);
+      if(O3) tagText(overlayThirdLabelTag, O3);
       overlayStage.style.setProperty('--density', overlayState.density/100);
       overlayStage.style.setProperty('--third-density', overlayState.thirdDensity/100);
-      attachPanHandlers(overlayDragSurface);
       applyViewVars();
     } else if(mode==='sequence'){
-      if(images.length < 1) return;
       sequenceStage.style.display='block';
-      seqTimeline.style.display='flex';
       renderSeqTimeline();
       sizeSeqCanvas();
-      attachPanHandlers(sequenceStage);
       drawSeqStatic();
     } else if(mode==='change'){
-      if(images.length<2){ placeholder.style.display='flex'; placeholder.textContent='Upload at least two aligned frames to generate a change map.'; return; }
+      if(images.length<2){ showMessage(t('change.needTwo')); return; }
+      const before = images.find(i=>i.id===changeState.beforeId), after = images.find(i=>i.id===changeState.afterId);
+      if(before && after && before.id===after.id){ showMessage(t('change.pickDifferent')); return; }
       changeStage.style.display='block';
       renderChangeMap();
     }
@@ -1415,7 +1487,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     seqTimeline.replaceChildren();
     images.forEach((im, idx)=>{
       const tick = h('button',{type:'button',class:'seq-tick',title:'Jump to this date'},
-        h('span',{class:'idx'},String(idx+1).padStart(2,'0')), h('span',{class:'lbl'},im.label || ('Frame '+(idx+1))));
+        h('span',{class:'idx'},String(idx+1).padStart(2,'0')), h('span',{class:'lbl'},friendlyLabel(im.label) || ('Frame '+(idx+1))));
       tick.addEventListener('click', ()=>{
         stopSequencePreview();
         const holdMs = parseFloat(secPerFrame.value)*1000;
@@ -1460,7 +1532,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       drawFrameToCtx(ctx, next, Cw, Ch, a, scaleFactor);
       if(a>0.5) activeLabel = next.label;
     }
-    drawLabel(ctx, activeLabel, 0, 0, 'left');
+    drawLabel(ctx, friendlyLabel(activeLabel, 40), 0, 0, 'left');
     return {idx, cycleLen, t};
   }
 
@@ -1478,22 +1550,24 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     seqPausedElapsed = elapsed;
     if(seqPlaying) seqRAF = requestAnimationFrame(seqLoop);
   }
+  function setPlayButton(playing){
+    playSeqLabel.textContent = t(playing ? 'seq.pause' : 'seq.play');
+    playSeqLabel.dataset.i18n = playing ? 'seq.pause' : 'seq.play';
+    playSeqBtn.querySelector('use').setAttribute('href', playing ? '#i-pause' : '#i-play');
+  }
   function playSequencePreview(){
     if(images.length===0) return;
     seqPlaying = true;
     seqStartTs = null;
-    seqPlayToggle.textContent = '\u275A\u275A';
-    playSeqBtn.textContent = '\u275A\u275A Pause preview';
+    setPlayButton(true);
     seqRAF = requestAnimationFrame(seqLoop);
   }
   function stopSequencePreview(){
     seqPlaying = false;
     if(seqRAF) cancelAnimationFrame(seqRAF);
     seqRAF = null; seqStartTs = null;
-    seqPlayToggle.textContent = '\u25B6';
-    playSeqBtn.textContent = '\u25B6 Play preview';
+    setPlayButton(false);
   }
-  seqPlayToggle.addEventListener('click', ()=> seqPlaying ? stopSequencePreview() : playSequencePreview());
   playSeqBtn.addEventListener('click', ()=> seqPlaying ? stopSequencePreview() : playSequencePreview());
   secPerFrame.addEventListener('input', ()=>{ if(!seqPlaying) drawSeqStatic(); });
   crossfadeChk.addEventListener('change', ()=>{ if(!seqPlaying) drawSeqStatic(); });
@@ -1537,7 +1611,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
 
   function drawCornerLabel(ctx, text, x, y, align, accent){
     ctx.font = "500 20px 'Noto Sans Khmer','JetBrains Mono',monospace";
-    const padX=12, padY=8;
+    const padX=12;
     const w = ctx.measureText(text).width + padX*2;
     const h = 34;
     let bx = align==='right' ? x - w : x;
@@ -1571,8 +1645,8 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     ctx.restore();
     ctx.fillStyle = '#d3934f';
     ctx.fillRect(clipX-1.5, 0, 3, H);
-    drawCornerLabel(ctx, L.label, 14, 14, 'left', '#8ea15c');
-    drawCornerLabel(ctx, R.label, W-14, 14, 'right', '#4f7d78');
+    drawCornerLabel(ctx, friendlyLabel(L.label,40), 14, 14, 'left', '#8ea15c');
+    drawCornerLabel(ctx, friendlyLabel(R.label,40), W-14, 14, 'right', '#4f7d78');
   }
   function renderThreeSliderFrame(ctx,W,H,L,M,R,clip1,clip2,scaleFactor){
     ctx.fillStyle='#12140f'; ctx.fillRect(0,0,W,H);
@@ -1582,7 +1656,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     ctx.save();ctx.beginPath();ctx.rect(x1,0,x2-x1,H);ctx.clip();draw(M,mv);ctx.restore();
     ctx.save();ctx.beginPath();ctx.rect(x2,0,W-x2,H);ctx.clip();draw(R,rv);ctx.restore();
     ctx.fillStyle='#d3934f';ctx.fillRect(x1-1.5,0,3,H);ctx.fillStyle='#4f7d78';ctx.fillRect(x2-1.5,0,3,H);
-    drawCornerLabel(ctx,L.label,14,14,'left','#8ea15c'); drawCornerLabel(ctx,M.label,W/2,14,'left','#d3934f'); drawCornerLabel(ctx,R.label,W-14,14,'right','#4f7d78');
+    drawCornerLabel(ctx,friendlyLabel(L.label,30),14,14,'left','#8ea15c'); drawCornerLabel(ctx,friendlyLabel(M.label,30),W/2,14,'left','#d3934f'); drawCornerLabel(ctx,friendlyLabel(R.label,30),W-14,14,'right','#4f7d78');
   }
 
   function renderOverlayFrame(ctx, W, H, B, T, densityPct, scaleFactor, O3, thirdDensity){
@@ -1596,9 +1670,9 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     ctx.drawImage(T.imgEl, rT.sx, rT.sy, rT.sw, rT.sh, 0, 0, W, H);
     if(O3){ const r3=computeSourceRect(O3.natW,O3.natH,W,H,view.zoom,tx,ty); ctx.globalAlpha=Math.max(0,Math.min(1,(thirdDensity==null?55:thirdDensity)/100)); ctx.drawImage(O3.imgEl,r3.sx,r3.sy,r3.sw,r3.sh,0,0,W,H); }
     ctx.globalAlpha = 1;
-    drawCornerLabel(ctx, B.label, 14, 14, 'left', '#8ea15c');
-    drawCornerLabel(ctx, T.label, W-14, 14, 'right', '#4f7d78');
-    if(O3) drawCornerLabel(ctx,O3.label,W-14,54,'right','#4f7d78');
+    drawCornerLabel(ctx, friendlyLabel(B.label,40), 14, 14, 'left', '#8ea15c');
+    drawCornerLabel(ctx, friendlyLabel(T.label,40), W-14, 14, 'right', '#4f7d78');
+    if(O3) drawCornerLabel(ctx,friendlyLabel(O3.label,40),W-14,54,'right','#4f7d78');
   }
 
   function drawExportBrand(ctx,W,H){
@@ -1621,7 +1695,15 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     ctx.fillStyle='#eef0e4';ctx.font="11px 'Inter',sans-serif";lines.forEach((line,i)=>ctx.fillText(line,24,H-h+26+i*18));ctx.restore();
   }
 
-  exportBtn.addEventListener('click', async ()=>{
+  let exportIntent = 'download';
+  // Export at the on-screen aspect ratio so the saved image frames the photos like the screen does.
+  function exportSize(el, W){
+    const r = el.getBoundingClientRect();
+    const ratio = r.width>0 && r.height>0 ? r.height/r.width : 0.64;
+    return { W, H: Math.max(500, Math.min(2200, Math.round(W*ratio))) };
+  }
+  async function exportImage(intent){
+    exportIntent = intent;
     await ensureFontsReady();
     const caption = captionInput.value.trim();
     if(mode==='grid'){
@@ -1647,7 +1729,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
         const tx = view.panx*scaleFactor, ty = view.pany*scaleFactor;
         const {sx,sy,sw,sh} = computeSourceRect(im.natW, im.natH, panelW, panelH, view.zoom, tx, ty);
         ctx.drawImage(im.imgEl, sx, sy, sw, sh, x, y, panelW, panelH);
-        drawLabel(ctx, im.label, x, y, 'left');
+        drawLabel(ctx, friendlyLabel(im.label, 40), x, y, 'left');
       });
       if(caption){
         ctx.fillStyle = '#1a1e15';
@@ -1662,7 +1744,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const L = images.find(i=>i.id===sliderState.leftId);
       const R = images.find(i=>i.id===sliderState.rightId);
       if(!L || !R){ toast('Choose two frames for the slider.',{kind:'error'}); return; }
-      const W = 1400, H = 900;
+      const {W, H} = exportSize(sliderStage, 1400);
       const capH = caption ? 46 : 0;
       exportCanvas.width = W; exportCanvas.height = H+capH;
       const ctx = exportCanvas.getContext('2d');
@@ -1682,7 +1764,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const B = images.find(i=>i.id===overlayState.baseId);
       const T = images.find(i=>i.id===overlayState.topId);
       if(!B || !T){ toast('Choose two frames for the overlay.',{kind:'error'}); return; }
-      const W = 1400, H = 900;
+      const {W, H} = exportSize(overlayStage, 1400);
       const capH = caption ? 46 : 0;
       exportCanvas.width = W; exportCanvas.height = H+capH;
       const ctx = exportCanvas.getContext('2d');
@@ -1701,14 +1783,16 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const before = images.find(i=>i.id===changeState.beforeId);
       const after = images.find(i=>i.id===changeState.afterId);
       if(!before || !after || before.id===after.id){ toast('Choose two different frames for the change map.',{kind:'error'}); return; }
-      renderChangeMap();
+      renderChangeMap(true);
       const W=changeCanvas.width, H=changeCanvas.height, capH=caption?46:0;
       exportCanvas.width=W; exportCanvas.height=H+capH;
-      const ctx=exportCanvas.getContext('2d'); ctx.drawImage(changeCanvas,0,0);
+      const ctx=exportCanvas.getContext('2d'); ctx.drawImage(changeCanvas,0,0); renderChangeMap();
       if(caption){ ctx.fillStyle='#1a1e15'; ctx.fillRect(0,H,W,capH); ctx.fillStyle='#98a186'; ctx.font="500 16px 'JetBrains Mono',monospace"; ctx.textBaseline='middle'; ctx.fillText(caption,14,H+capH/2); }
        drawExportNotes(ctx,W,H); drawExportCoords(ctx,W,H); drawExportBrand(ctx,W,H); triggerDownload('phnaek-pkay-change-map.png');
     }
-  });
+  }
+  exportBtn.addEventListener('click', ()=>exportImage('download'));
+  document.getElementById('shareBtn').addEventListener('click', ()=>{ if(mode==='sequence') return; exportImage('share'); });
 
   // ---------- Video export (webm, native MediaRecorder — no external libraries) ----------
   function pickMimeType(){
@@ -1726,10 +1810,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     recorder.ondataavailable = e=>{ if(e.data.size) chunks.push(e.data); };
     recorder.onstop = ()=>{
       const blob = new Blob(chunks, {type: mimeType || 'video/webm'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
+      downloadBlob(blob, filename);
       onDone && onDone();
     };
     recorder.start();
@@ -1756,7 +1837,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const L = images.find(i=>i.id===sliderState.leftId);
       const R = images.find(i=>i.id===sliderState.rightId);
       if(!L || !R){ toast('Choose two frames for the slider.',{kind:'error'}); exportVideoBtn.disabled=false; exportVideoBtn.textContent=originalLabel; return; }
-      const W = 1280, H = 800;
+      const {W, H} = exportSize(sliderStage, 1280);
       exportCanvas.width = W; exportCanvas.height = H;
       const ctx = exportCanvas.getContext('2d');
       const liveRect = sliderStage.getBoundingClientRect();
@@ -1776,7 +1857,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       const B = images.find(i=>i.id===overlayState.baseId);
       const T = images.find(i=>i.id===overlayState.topId);
       if(!B || !T){ toast('Choose two frames for the overlay.',{kind:'error'}); exportVideoBtn.disabled=false; exportVideoBtn.textContent=originalLabel; return; }
-      const W = 1280, H = 800;
+      const {W, H} = exportSize(overlayStage, 1280);
       exportCanvas.width = W; exportCanvas.height = H;
       const ctx = exportCanvas.getContext('2d');
       const liveRect = overlayStage.getBoundingClientRect();
@@ -1796,7 +1877,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       });
     } else if(mode==='sequence'){
       if(images.length < 1){ toast('Add at least one frame first.',{kind:'error'}); exportVideoBtn.disabled=false; exportVideoBtn.textContent=originalLabel; return; }
-      const W = 1280, H = 800;
+      const {W, H} = exportSize(sequenceStage, 1280);
       exportCanvas.width = W; exportCanvas.height = H;
       const ctx = exportCanvas.getContext('2d');
       const liveRect = sequenceStage.getBoundingClientRect();
@@ -1815,20 +1896,18 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     }
   });
 
-  function triggerDownload(filename){
-    exportCanvas.toBlob(blob=>{
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-    }, 'image/png');
+  async function triggerDownload(filename){
+    try{
+      const blob = await canvasToBlob(exportCanvas,'image/png');
+      if(exportIntent==='share'){
+        const result = await shareOrDownload(blob, filename, document.title);
+        if(result==='shared') toast(t('toast.shared'));
+        else if(result==='downloaded') toast(t('toast.shareFail'));
+      } else downloadBlob(blob, filename);
+    }catch(err){ toast(t('toast.saveFail'),{kind:'error'}); }
   }
 
-  function downloadText(filename, text, type){
-    const blob=new Blob([text],{type:type||'text/plain'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),500);
-  }
+  function downloadText(filename, text, type){ downloadBlob(new Blob([text],{type:type||'text/plain'}), filename); }
 
   function setSidebarOpen(open){
     sidebar.classList.toggle('is-collapsed',!open);
@@ -1846,20 +1925,20 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   sidebarBackdrop.addEventListener('click',()=>setSidebarOpen(false));
   document.getElementById('sidebarCloseBtn').addEventListener('click',()=>setSidebarOpen(false));
 
-  // ---------- Mobile actions sheet ----------
+  // ---------- Menu (bottom sheet on phones, popover on desktop) ----------
   const moreBtn=document.getElementById('moreBtn'), topActions=document.getElementById('topActions'), sheetBackdrop=document.getElementById('sheetBackdrop');
   function setActionsOpen(open){
     topActions.classList.toggle('is-open',open);
-    document.body.classList.toggle('sheet-open',open);
+    document.body.classList.toggle('sheet-open',open && window.innerWidth<=820);
     sheetBackdrop.hidden=!open;
     moreBtn.setAttribute('aria-expanded',String(open));
-    if(open){ const first=topActions.querySelector('button:not([style*="display: none"]):not([style*="display:none"])'); if(first) first.focus(); }
+    if(open){ const first=topActions.querySelector('button:not([hidden])'); if(first) first.focus(); }
   }
   moreBtn.addEventListener('click',()=>setActionsOpen(!topActions.classList.contains('is-open')));
   sheetBackdrop.addEventListener('click',()=>setActionsOpen(false));
   topActions.addEventListener('click',e=>{ if(e.target.closest('button')) setActionsOpen(false); });
+  document.addEventListener('click',e=>{ if(topActions.classList.contains('is-open') && !topActions.contains(e.target) && !moreBtn.contains(e.target)) setActionsOpen(false); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && topActions.classList.contains('is-open')){ setActionsOpen(false); moreBtn.focus(); } });
-  window.addEventListener('resize',()=>{ if(window.innerWidth>820 && topActions.classList.contains('is-open')) setActionsOpen(false); });
   let wasDesktopWidth = window.innerWidth>820;
   window.addEventListener('resize',()=>{
     const isDesktopWidth = window.innerWidth>820;
@@ -1897,6 +1976,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   function queueProjectSave(){ clearTimeout(projectSaveTimer); projectSaveTimer=setTimeout(persistProject,1200); }
   async function persistProject(){
     clearTimeout(projectSaveTimer);
+    if(!images.length) return; // keep the last real project for the Continue card
     try{
       const frames=images.map(im=>({id:im.id,label:im.label,imageryDate:im.imageryDate||'',capturedAt:im.capturedAt||null,generated:!!im.generated,selected:!!im.selected,url:im.blob?null:im.src}));
       const signature=images.map(im=>im.id+(im.blob?':b':':u')).join(',');
@@ -1932,6 +2012,17 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     if(saved.src && saved.src.startsWith('data:')) return frameFromBlob(dataUrlToBlob(saved.src),meta);
     return frameFromSource(saved.src||saved.url,null,meta); // trusted bundled field-site frame
   }
+  function applyMap(m){
+    if(!m) return;
+      if(m.provider) liveMap.provider=m.provider;
+      if(m.lat!==null) liveMap.lat=m.lat;
+      if(m.lng!==null) liveMap.lng=m.lng;
+      if(m.zoom!==null) liveMap.zoom=m.zoom;
+      sentinelLayer.value=m.sentinelLayer; sentinelDate.value=m.sentinelDate; sentinelCloud.value=m.sentinelCloud; sentinelSharpness.value=m.sentinelSharpness; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%';
+      if(m.nasaLayer) nasaLayer.value=m.nasaLayer;
+      if(m.nasaDate) nasaDate.value=m.nasaDate;
+      providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change'));
+  }
   // Replace the project with validated state `p` and already-decoded frames (null keeps current frames).
   function commitProject(p, loaded){
     if(loaded){ const old=images; images=loaded; old.forEach(releaseFrame); }
@@ -1939,18 +2030,9 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     sliderState=p.sliderState; overlayState=p.overlayState; changeState=p.changeState;
     sliderThreeChk.checked=!!sliderState.three; sliderMiddleField.hidden=!sliderState.three;
     overlayThirdDensity.value=overlayState.thirdDensity; overlayThirdReadout.textContent=overlayState.thirdDensity+'%';
-    changeThreshold.value=changeState.threshold; changeMinSize.value=changeState.minSize; changeMethodSelect.value=changeState.method; changeThresholdReadout.textContent=changeState.threshold+'%'; changeMinSizeReadout.textContent=changeState.minSize+' px';
+    syncChangeControls();
     applyViewVars(); applySliderPanelVars();
-    if(p.map){
-      if(p.map.provider) liveMap.provider=p.map.provider;
-      if(p.map.lat!==null) liveMap.lat=p.map.lat;
-      if(p.map.lng!==null) liveMap.lng=p.map.lng;
-      if(p.map.zoom!==null) liveMap.zoom=p.map.zoom;
-      sentinelLayer.value=p.map.sentinelLayer; sentinelDate.value=p.map.sentinelDate; sentinelCloud.value=p.map.sentinelCloud; sentinelSharpness.value=p.map.sentinelSharpness; sentinelSharpnessReadout.textContent=sentinelSharpness.value+'%';
-      if(p.map.nasaLayer) nasaLayer.value=p.map.nasaLayer;
-      if(p.map.nasaDate) nasaDate.value=p.map.nasaDate;
-      providerSelect.value=liveMap.provider; providerSelect.dispatchEvent(new Event('change'));
-    }
+    applyMap(p.map);
     if(loaded) framesChanged(true);
     else renderStage();
   }
@@ -2104,34 +2186,15 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   providerSelect.addEventListener('change',queueProjectSave);
   includeNotesExport.addEventListener('change',queueProjectSave);
 
-  function startTechBackground(){
-    const ctx=techBackground.getContext('2d'), nodes=[]; let width=0,height=0,dpr=1,bgPaused=false;
-    function resize(){ dpr=Math.min(2,window.devicePixelRatio||1); width=window.innerWidth; height=window.innerHeight; techBackground.width=width*dpr; techBackground.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
-    function seed(){ nodes.length=0; const count=Math.min(56,Math.max(22,Math.round(width*height/30000))); for(let i=0;i<count;i++) nodes.push({x:Math.random()*width,y:Math.random()*height,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12,p:Math.random()*Math.PI*2}); }
-    function draw(ts){
-      if(bgPaused) return;
-      ctx.clearRect(0,0,width,height); const dark=document.documentElement.getAttribute('data-theme')!=='light';
-      ctx.fillStyle=dark?'rgba(13,16,12,.18)':'rgba(243,242,232,.18)';ctx.fillRect(0,0,width,height);
-      nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;n.p+=.012;if(n.x<-20)n.x=width+20;if(n.x>width+20)n.x=-20;if(n.y<-20)n.y=height+20;if(n.y>height+20)n.y=-20;});
-      ctx.lineWidth=.7;
-      for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy;if(d2<14400){const d=Math.sqrt(d2);const alpha=(1-d/120)*.16;ctx.strokeStyle=dark?`rgba(142,161,92,${alpha})`:`rgba(72,96,42,${alpha})`;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
-      nodes.forEach(n=>{const pulse=(Math.sin(n.p+ts*.0007)+1)/2;ctx.fillStyle=dark?`rgba(211,147,79,${.22+pulse*.2})`:`rgba(95,122,58,${.2+pulse*.2})`;ctx.beginPath();ctx.arc(n.x,n.y,1+pulse*1.2,0,Math.PI*2);ctx.fill();});
-      requestAnimationFrame(draw);
-    }
-    resize();seed();window.addEventListener('resize',()=>{resize();seed();});requestAnimationFrame(draw);
-    document.addEventListener('visibilitychange',()=>{ if(document.hidden) { bgPaused=true; } else { bgPaused=false; requestAnimationFrame(draw); } });
-  }
-
   // ---------- Theme (light / dark) ----------
+  function applyThemeLabel(){ themeToggleBtn.title = t('actions.theme'); }
   function applyTheme(theme){
     if(theme === 'light'){
       document.documentElement.setAttribute('data-theme','light');
-      themeToggleBtn.textContent = '\u263D'; // moon = click to go dark
-      themeToggleBtn.title = 'Switch to dark theme';
+      themeToggleBtn.querySelector('use').setAttribute('href','#i-sun'); // light now: show sun
     } else {
       document.documentElement.removeAttribute('data-theme');
-      themeToggleBtn.textContent = '\u263C'; // sun = click to go light
-      themeToggleBtn.title = 'Switch to light theme';
+      themeToggleBtn.querySelector('use').setAttribute('href','#i-moon'); // dark now: show moon
     }
     const themeMeta=document.querySelector('meta[name="theme-color"]'); if(themeMeta) themeMeta.setAttribute('content', theme==='light'?'#f3f2e8':'#12140f');
     try{ localStorage.setItem('phnaek-pkay-theme', theme); }catch(e){}
@@ -2148,6 +2211,71 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     }
     applyTheme(saved === 'light' ? 'light' : 'dark');
   })();
+
+  // ---------- Add photos: tabs, paste, start screen ----------
+  const addTabs = { photos:[document.getElementById('addTabPhotos'),document.getElementById('addPanePhotos')], satellite:[document.getElementById('addTabSatellite'),document.getElementById('addPaneSatellite')], paste:[document.getElementById('addTabPaste'),document.getElementById('addPanePaste')] };
+  function setAddTab(name){
+    for(const [key,[tab,pane]] of Object.entries(addTabs)){ tab.setAttribute('aria-selected',String(key===name)); pane.hidden = key!==name; }
+    if(name==='satellite') requestAnimationFrame(sizeLiveMapCanvas);
+  }
+  for(const [key,[tab]] of Object.entries(addTabs)) tab.addEventListener('click',()=>setAddTab(key));
+  document.getElementById('pasteBtn').addEventListener('click', async ()=>{
+    try{
+      const items = await navigator.clipboard.read();
+      const files = [];
+      for(const item of items){ const type=item.types.find(x=>x.startsWith('image/')); if(type) files.push(new File([await item.getType(type)],'pasted-'+Date.now()+'.png',{type})); }
+      if(files.length) loadFiles(files); else toast(t('add.pasteEmpty'),{kind:'error'});
+    }catch(err){ toast(t('add.pasteEmpty'),{kind:'error'}); }
+  });
+
+  const siteRail = document.getElementById('siteRail');
+  const continueSection = document.getElementById('continueSection');
+  let railDirty = true, savedProject = null;
+  document.addEventListener('sites-loaded',()=>{ railDirty = true; renderStage(); });
+  async function refreshContinue(){
+    savedProject = await readSavedProject();
+    const frames = savedProject ? savedProject.stateRec.frames : [];
+    continueSection.hidden = !frames.length;
+    if(!frames.length) return;
+    const first = frames[0], blob = savedProject.byId[first.id];
+    const thumb = document.getElementById('continueThumb');
+    if(thumb.dataset.blobUrl) URL.revokeObjectURL(thumb.dataset.blobUrl);
+    delete thumb.dataset.blobUrl;
+    if(blob instanceof Blob){ const url=URL.createObjectURL(blob); thumb.dataset.blobUrl=url; thumb.src=url; }
+    else if(typeof first.url==='string' && isSafeImageSrc(first.url,{allowSiteUrls:true}) && !first.url.startsWith('data:')) thumb.src=first.url;
+    document.getElementById('continueTitle').textContent = savedProject.stateRec.state.caption || friendlyLabel(first.label);
+    document.getElementById('continueMeta').textContent = t('start.continueMeta',{n:frames.length});
+  }
+  function showStartScreen(){
+    if(railDirty){
+      railDirty = false;
+      document.getElementById('startSitesSection').hidden = !SITES.length;
+      renderSiteRail(siteRail, SITES, {photosLabel:n=>t('site.photos',{n}), onOpen:site=>openLocation(site)});
+    }
+    refreshContinue();
+  }
+  document.getElementById('continueCard').addEventListener('click', async ()=>{
+    if(!savedProject) return;
+    const saved = savedProject; savedProject = null;
+    try{ await restoreSavedProject(saved); setMode(saved.stateRec.state.mode || 'slider'); }
+    catch(err){ toast(t('toast.loadFail'),{kind:'error'}); }
+  });
+  document.getElementById('startAddBtn').addEventListener('click',()=>{ setAddTab('photos'); fileInput.click(); });
+  document.getElementById('startMapBtn').addEventListener('click',()=>{ setAddTab('satellite'); setSidebarOpen(true); });
+  document.getElementById('startSeeAllBtn').addEventListener('click',openLocations);
+  document.getElementById('imageList').addEventListener('click',()=>{});
+
+  // ---------- Language ----------
+  const langBtn = document.getElementById('langBtn');
+  langBtn.addEventListener('click',()=>setLang(getLang()==='en'?'km':'en'));
+  document.addEventListener('langchange',()=>{
+    railDirty = true; setPlayButton(seqPlaying); syncChangeControls();
+    syncPickerToggle();
+    renderImageList(); renderStage(); applyThemeLabel();
+  });
+
+  // ---------- Install help ----------
+  const maybeShowInstall = initInstallHelp({ sheet:document.getElementById('installSheet'), steps:document.getElementById('installSteps'), notNow:document.getElementById('installNotNow'), gotIt:document.getElementById('installGotIt'), nativeBtn:document.getElementById('installNative') });
 
   // ---------- Homepage (brand click) ----------
   const brandHome = document.getElementById('brandHome');
@@ -2166,7 +2294,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   brandHome.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); goHome(); } });
 
   // ---------- init ----------
-  if(!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) startTechBackground();
+  setLang(detectLang(),{persist:false});
   setMode('slider');
   applyViewVars();
   renderStage();
@@ -2175,7 +2303,10 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   (async function boot(){
     await loadSites();
     const site = siteBySlug();
-    if(site) openLocation(site, false);
+    if(site){ openLocation(site, false); return; }
+    // Fresh visit: reopen the map where the user left it (photos are offered under "Continue").
+    const saved = await readSavedProject();
+    if(saved){ try{ const p=sanitizeProject(Object.assign({},saved.stateRec.state,{preferenceOnly:true})); applyMap(p.map); }catch(err){ /* ignore corrupt state */ } }
   })();
 
   // ---------- PWA: service worker registration (production builds only) ----------

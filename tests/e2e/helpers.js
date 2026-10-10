@@ -41,3 +41,18 @@ export async function expectNoProblems(page, watcher) {
   expect(await watcher.cspViolations()).toEqual([]);
   expect(watcher.problems).toEqual([]);
 }
+
+export const AN_SES = '/p/14.388783,104.965518';
+
+/** Open the An Ses field site and wait until both photos are in the project. */
+export async function openAnSes(page) {
+  await page.goto(AN_SES);
+  await expect(page.locator('#imageList .img-row')).toHaveCount(2);
+  await expect(page.locator('#sliderStage')).toBeVisible();
+}
+
+/** Phones keep the controls in a drawer; open it when it is closed. */
+export async function openDrawer(page) {
+  if (await page.locator('#sidebar').evaluate((el) => el.classList.contains('is-collapsed'))) await page.click('#sidebarToggleBtn');
+  await expect(page.locator('#sidebar')).toBeVisible();
+}

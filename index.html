@@ -48,371 +48,421 @@
 <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/assets/splash/splash-750x1334.png">
 <link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/assets/splash/splash-640x1136.png">
 <link rel="stylesheet" href="/src/styles/fonts.css">
-<link rel="stylesheet" href="/src/styles/app.css">
-<link rel="stylesheet" href="/src/styles/mobile.css">
-<link rel="stylesheet" href="/src/styles/mobile-ux.css">
+<link rel="stylesheet" href="/src/styles/tokens.css">
+<link rel="stylesheet" href="/src/styles/layout.css">
+<link rel="stylesheet" href="/src/styles/components.css">
+<link rel="stylesheet" href="/src/styles/stage.css">
 </head>
 <body>
-<canvas id="techBackground" aria-hidden="true"></canvas>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M12 4v16"/><path d="M9 10l-2 2 2 2M15 10l2 2-2 2"/></symbol>
+    <symbol id="i-blend" viewBox="0 0 24 24"><rect x="3" y="3" width="13" height="13" rx="2.5"/><rect x="8" y="8" width="13" height="13" rx="2.5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></symbol>
+    <symbol id="i-change" viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 4-7 5 9"/><path d="M3 21h18"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 118 0v3"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10l5-3v10l-5-3z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V4a1 1 0 011-1h4a1 1 0 011 1v1M9 11h6M9 15h4"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19zM14 7l3 3"/></symbol>
+    <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 16l9-9 6 6-6 6H8zM9 20h11"/></symbol>
+    <symbol id="i-ios-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 00-1 1v8a1 1 0 001 1h14a1 1 0 001-1v-8a1 1 0 00-1-1h-1"/></symbol>
+  </defs>
+</svg>
+
 <div class="app">
 
-  <div class="topbar">
-    <div class="brand" id="brandHome" role="button" tabindex="0" title="Return to homepage">
-      <div class="brand-title">
-        <span class="mark">PHNAEK&middot;PKAY</span>
-        <small>Satellite Eye &middot; imagery history</small>
-      </div>
+  <header class="topbar">
+    <button type="button" class="icon-btn sidebar-toggle" id="sidebarToggleBtn" data-i18n-label="actions.controls" data-i18n-title="actions.controls" aria-controls="sidebar" aria-expanded="false"><svg class="ico"><use href="#i-menu"/></svg></button>
+    <div class="brand" id="brandHome" role="button" tabindex="0" title="Phnaek Pkay">
+      <img class="brand-mark" src="/assets/phnaek-pkay.svg" alt="" width="30" height="30">
+      <span class="brand-name">Phnaek Pkay</span>
     </div>
-    <div class="mode-toggle">
-      <button id="modeGridBtn" class="active"><svg class="mode-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="mode-lbl">Grid</span></button>
-      <button id="modeSliderBtn"><svg class="mode-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/><path d="M9 10l-2 2 2 2M15 10l2 2-2 2"/></svg><span class="mode-lbl">Slider</span></button>
-      <button id="modeOverlayBtn"><svg class="mode-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><rect x="8" y="8" width="13" height="13" rx="2"/></svg><span class="mode-lbl">Overlay</span></button>
-      <button id="modeSequenceBtn"><svg class="mode-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="5" height="12" rx="1"/><rect x="9.5" y="6" width="5" height="12" rx="1"/><rect x="16" y="6" width="5" height="12" rx="1"/></svg><span class="mode-lbl">Sequence</span></button>
-      <button id="modeChangeBtn"><svg class="mode-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 4 4-7 5 9"/><path d="M3 21h18"/></svg><span class="mode-lbl">Change map</span></button>
+    <nav class="mode-toggle" aria-label="Views" data-i18n-label="tab.nav">
+      <button type="button" id="modeGridBtn"><svg class="ico mode-ico"><use href="#i-grid"/></svg><span class="mode-lbl" data-i18n="tab.all">All</span></button>
+      <button type="button" id="modeSliderBtn" class="active"><svg class="ico mode-ico"><use href="#i-compare"/></svg><span class="mode-lbl" data-i18n="tab.compare">Compare</span></button>
+      <button type="button" id="modeOverlayBtn"><svg class="ico mode-ico"><use href="#i-blend"/></svg><span class="mode-lbl" data-i18n="tab.blend">Blend</span></button>
+      <button type="button" id="modeSequenceBtn"><svg class="ico mode-ico"><use href="#i-play"/></svg><span class="mode-lbl" data-i18n="tab.play">Play</span></button>
+      <button type="button" id="modeChangeBtn"><svg class="ico mode-ico"><use href="#i-change"/></svg><span class="mode-lbl" data-i18n="tab.changes">Changes</span></button>
+    </nav>
+    <div class="top-tools">
+      <button type="button" class="icon-btn" id="langBtn" data-i18n-label="lang.switch" data-i18n-title="lang.switch"><span class="lang-label" data-i18n="lang.name">EN</span></button>
+      <button type="button" class="icon-btn" id="themeToggleBtn" data-i18n-label="actions.theme" data-i18n-title="actions.theme"><svg class="ico"><use href="#i-moon"/></svg></button>
+      <button type="button" class="icon-btn" id="shareBtn" data-i18n-label="actions.share" data-i18n-title="actions.share"><svg class="ico"><use href="#i-share"/></svg></button>
+      <button type="button" class="icon-btn more-btn" id="moreBtn" data-i18n-label="actions.more" data-i18n-title="actions.more" aria-haspopup="true" aria-expanded="false" aria-controls="topActions"><svg class="ico"><use href="#i-more"/></svg></button>
     </div>
-    <button class="btn ghost sidebar-toggle" id="sidebarToggleBtn" title="Toggle controls" aria-label="Show controls" aria-controls="sidebar" aria-expanded="false">&#9776;</button>
-    <button class="btn ghost" id="themeToggleBtn" title="Toggle light / dark theme" aria-label="Toggle light or dark theme">&#9788;</button>
-    <button class="btn ghost more-btn" id="moreBtn" aria-label="More actions" aria-haspopup="true" aria-expanded="false" aria-controls="topActions">&#8943;</button>
-    <div class="top-actions" id="topActions" role="group" aria-label="Project actions">
-      <button class="btn ghost" id="saveProjectBtn">Save</button>
-      <button class="btn ghost" id="loadProjectBtn">Load</button>
-      <button class="btn ghost" id="locationsBtn">Locations<span class="loc-pulse" id="locPulse" title="New field sites to explore"></span></button>
-      <button class="btn ghost" id="exportReportBtn">Report</button>
-      <button class="btn ghost" id="openUpscaleBtn">Enhance</button>
-      <button class="btn ghost" id="exportVideoBtn" style="display:none;">&#9679; Export video</button>
-      <button class="btn" id="exportBtn">&#8681; Export PNG</button>
+    <div class="top-actions" id="topActions" role="menu" aria-label="Project actions">
+      <button type="button" class="btn primary" id="exportBtn" role="menuitem"><svg class="ico"><use href="#i-download"/></svg><span data-i18n="actions.exportPng">Save image</span></button>
+      <button type="button" class="btn" id="exportVideoBtn" role="menuitem" hidden><svg class="ico"><use href="#i-video"/></svg><span data-i18n="actions.video">Record video</span></button>
+      <button type="button" class="btn" id="saveProjectBtn" role="menuitem"><svg class="ico"><use href="#i-save"/></svg><span data-i18n="actions.saveProject">Save project</span></button>
+      <button type="button" class="btn" id="loadProjectBtn" role="menuitem"><svg class="ico"><use href="#i-folder"/></svg><span data-i18n="actions.loadProject">Open project</span></button>
+      <button type="button" class="btn" id="locationsBtn" role="menuitem"><svg class="ico"><use href="#i-pin"/></svg><span data-i18n="actions.sites">Field sites</span></button>
+      <button type="button" class="btn" id="exportReportBtn" role="menuitem"><svg class="ico"><use href="#i-report"/></svg><span data-i18n="actions.report">Report</span></button>
+      <button type="button" class="btn" id="openUpscaleBtn" role="menuitem"><svg class="ico"><use href="#i-sparkle"/></svg><span data-i18n="actions.enhance">Enhance</span></button>
     </div>
     <input type="file" id="projectInput" accept="application/json,.json" hidden>
-  </div>
+  </header>
   <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
 
   <div class="layout">
-    <aside class="sidebar" id="sidebar">
-      <div class="drawer-head"><strong>Controls</strong><button type="button" class="sidebar-close" id="sidebarCloseBtn" title="Close controls" aria-label="Close controls">&times;</button></div>
+    <aside class="sidebar" id="sidebar" aria-label="Photos and settings">
+      <div class="drawer-head"><strong data-i18n="actions.controls">Photos and settings</strong><button type="button" class="icon-btn sidebar-close" id="sidebarCloseBtn" data-i18n-label="close" data-i18n-title="close"><svg class="ico"><use href="#i-close"/></svg></button></div>
 
-      <div>
-        <h2>Add imagery</h2>
-        <div class="dropzone" id="dropzone">
-          <span class="dz-desktop">Drop satellite frames here, or click to browse</span><span class="dz-mobile">Tap to add satellite frames</span>
-          <span class="hint">PNG / JPG &middot; or press Ctrl/Cmd+V to paste</span>
-          <input type="file" id="fileInput" multiple accept="image/*">
+      <section class="side-section" aria-labelledby="addTitle">
+        <h2 id="addTitle" data-i18n="add.title">Add photos</h2>
+        <div class="segmented" id="addTabs" role="tablist">
+          <button type="button" role="tab" id="addTabPhotos" aria-selected="true" aria-controls="addPanePhotos" data-i18n="add.photos">Photos</button>
+          <button type="button" role="tab" id="addTabSatellite" aria-selected="false" aria-controls="addPaneSatellite" data-i18n="add.satellite">Satellite</button>
+          <button type="button" role="tab" id="addTabPaste" aria-selected="false" aria-controls="addPanePaste" data-i18n="add.paste">Paste</button>
         </div>
-      </div>
 
-      <details class="collapse" open>
-        <summary>Live satellite capture</summary>
-        <div class="collapse-body">
+        <div class="tab-pane" id="addPanePhotos" role="tabpanel" aria-labelledby="addTabPhotos">
+          <div class="dropzone" id="dropzone">
+            <svg class="ico dz-ico"><use href="#i-photo"/></svg>
+            <span class="dz-desktop" data-i18n="add.drop.desktop">Drop photos here, or click to choose</span><span class="dz-mobile" data-i18n="add.drop.mobile">Tap to choose photos</span>
+            <span class="hint" data-i18n="add.drop.hint">PNG, JPG or WebP</span>
+            <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp" aria-label="Choose photos">
+          </div>
+        </div>
+
+        <div class="tab-pane" id="addPanePaste" role="tabpanel" aria-labelledby="addTabPaste" hidden>
+          <p class="note" data-i18n="add.pasteHint">Copy an image anywhere, then paste it here.</p>
+          <button type="button" class="btn wide" id="pasteBtn"><svg class="ico"><use href="#i-clipboard"/></svg><span data-i18n="add.pasteBtn">Paste image</span></button>
+          <p class="note small">Ctrl/Cmd + V</p>
+        </div>
+
+        <div class="tab-pane" id="addPaneSatellite" role="tabpanel" aria-labelledby="addTabSatellite" hidden>
           <div class="field">
-          <label>Provider</label>
-          <select id="providerSelect">
-            <option value="esri">Esri World Imagery &middot; no key</option>
-            <option value="carto">CARTO Voyager map &middot; no key</option>
-            <option value="nasa">NASA GIBS near-real-time &middot; no key</option>
-            <option value="google">Google Satellite tiles &middot; no key, unofficial</option>
-            <option value="mapbox">Mapbox Satellite &middot; needs token</option>
-            <option value="sentinel">Copernicus Sentinel-2 &middot; configuration ID</option>
-          </select>
-        </div>
-        <div class="field" id="mapboxTokenField" hidden style="margin-top:8px;">
-          <label>Mapbox access token</label>
-          <input type="password" id="mapboxToken" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="pk.eyJ1Ijoi&hellip;">
-        </div>
-        <div class="field" id="sentinelIdField" hidden style="margin-top:8px;">
-          <label>Sentinel Hub instance ID</label>
-          <input type="password" id="sentinelId" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Instance ID">
-        </div>
-        <div class="field" id="sentinelLayerField" hidden style="margin-top:8px;">
-          <label>Layer name</label>
-          <input type="text" id="sentinelLayer" value="TRUE_COLOR" placeholder="exact configured layer name">
-        </div>
-        <div class="field" id="sentinelDateField" hidden style="margin-top:8px;">
-          <label>Date (YYYY-MM-DD)</label>
-          <input type="date" id="sentinelDate">
-          <div class="date-actions">
-            <button type="button" class="btn ghost" id="sentinelPrevDay">&larr; day</button>
-            <button type="button" class="btn ghost" id="sentinelLatest">Latest clear</button>
-            <button type="button" class="btn ghost" id="sentinelNextDay">day &rarr;</button>
+            <label for="providerSelect">Provider</label>
+            <select id="providerSelect">
+              <option value="esri">Esri World Imagery &middot; no key</option>
+              <option value="carto">CARTO Voyager map &middot; no key</option>
+              <option value="nasa">NASA GIBS near-real-time &middot; no key</option>
+              <option value="google">Google Satellite tiles &middot; no key, unofficial</option>
+              <option value="mapbox">Mapbox Satellite &middot; needs token</option>
+              <option value="sentinel">Copernicus Sentinel-2 &middot; configuration ID</option>
+            </select>
           </div>
-        </div>
-        <div class="field" id="sentinelWindowField" hidden style="margin-top:8px;">
-          <label>Search window</label>
-          <select id="sentinelWindow">
-            <option value="1" selected>Exact date</option>
-            <option value="7">Best scene within 7 days</option>
-            <option value="30">Best scene within 30 days</option>
-          </select>
-          <button type="button" class="btn ghost" id="findSentinelDatesBtn" style="width:100%;margin-top:7px;">Find available dates</button>
-          <div class="capture-status" id="sentinelDatesStatus"></div>
-          <div class="date-results" id="sentinelDatesResults"></div>
-        </div>
-        <div class="field" id="sentinelCloudField" hidden style="margin-top:8px;">
-          <label>MAX CLOUD COVER <span id="sentinelCloudReadout">20%</span></label>
-          <input type="range" id="sentinelCloud" min="0" max="100" step="1" value="20">
-        </div>
-        <div class="field" id="sentinelSharpnessField" hidden style="margin-top:8px;">
-          <label>DETAIL BOOST <span id="sentinelSharpnessReadout">35%</span></label>
-          <input type="range" id="sentinelSharpness" min="0" max="80" step="1" value="35">
-          <p class="provider-note">Visual sharpening only. It improves edges but cannot create missing 10 m detail.</p>
-        </div>
-        <button class="btn ghost" id="sentinelTestBtn" hidden style="width:100%;margin-top:8px;">Test Sentinel configuration</button>
-        <div class="capture-status" id="sentinelTestStatus"></div>
-        <div class="field" id="nasaLayerField" hidden style="margin-top:8px;">
-          <label>NASA GIBS layer</label>
-          <select id="nasaLayer">
-            <option value="VIIRS_SNPP_CorrectedReflectance_TrueColor">VIIRS true color (375m)</option>
-            <option value="MODIS_Terra_CorrectedReflectance_TrueColor">MODIS Terra true color (250m)</option>
-            <option value="MODIS_Aqua_CorrectedReflectance_TrueColor">MODIS Aqua true color (250m)</option>
-          </select>
-        </div>
-        <div class="field" id="nasaDateField" hidden style="margin-top:8px;">
-          <label>NASA date (YYYY-MM-DD)</label>
-          <input type="date" id="nasaDate">
-        </div>
-        <p class="provider-note" id="providerNote">Free, no signup. Current-day mosaic (not date-specific).</p>
-        <div class="provider-capability"><span id="providerResolution">resolution varies</span><span id="providerZoomLimit">zoom z--</span></div>
-        <p class="zoom-advice" id="zoomAdvice" hidden>Sentinel-2 native detail is best around z14. Higher zoom enlarges the same pixels; it does not add detail.</p>
-
-        <div class="field" id="placesApiKeyField" style="margin-top:10px;">
-          <label>Google Places API key (this tab only)</label>
-          <input type="password" id="placesApiKey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="optional">
-        </div>
-        <p class="provider-note" id="placesApiNote">Optional geocoding key only. Leave blank to use free OpenStreetMap search.</p>
-        <div class="field" style="margin-top:8px;">
-          <label>Go to place</label>
-          <input type="text" id="placeSearch" placeholder="e.g. O Smach, Cambodia &middot; Enter">
-        </div>
-
-        <div class="map-live" id="liveMapWrap" style="margin-top:8px;">
-          <canvas id="liveMapCanvas"></canvas>
-          <button type="button" class="map-expand-btn" id="mapExpandBtn" title="Expand map" aria-label="Expand map">&#9974;</button>
-          <button type="button" class="map-refresh-btn" id="mapRefreshBtn" title="Force refresh tiles (bypass cache)" aria-label="Refresh map tiles">&#8635;</button>
-          <div class="map-zoom-controls">
-            <button type="button" id="mapZoomIn" aria-label="Zoom in">+</button>
-            <button type="button" id="mapZoomOut" aria-label="Zoom out">&minus;</button>
+          <div class="field" id="mapboxTokenField" hidden>
+            <label for="mapboxToken">Mapbox access token</label>
+            <input type="password" id="mapboxToken" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="pk.eyJ1Ijoi&hellip;">
           </div>
-          <div class="map-readout" id="mapReadout">z&mdash;</div>
-        </div>
-        <div class="checklist" style="margin-top:7px;">
-          <label><input type="checkbox" id="showMapLabelsChk"> Show place and boundary labels</label>
-          <label><input type="checkbox" id="enhanceImageryChk" checked> Enhance contrast and color</label>
-        </div>
+          <div class="field" id="sentinelIdField" hidden>
+            <label for="sentinelId">Sentinel Hub instance ID</label>
+            <input type="password" id="sentinelId" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Instance ID">
+          </div>
+          <div class="field" id="sentinelLayerField" hidden>
+            <label for="sentinelLayer">Layer name</label>
+            <input type="text" id="sentinelLayer" value="TRUE_COLOR" placeholder="exact configured layer name">
+          </div>
+          <div class="field" id="sentinelDateField" hidden>
+            <label for="sentinelDate">Date</label>
+            <input type="date" id="sentinelDate">
+            <div class="date-actions">
+              <button type="button" class="btn small" id="sentinelPrevDay">&larr; day</button>
+              <button type="button" class="btn small" id="sentinelLatest">Latest clear</button>
+              <button type="button" class="btn small" id="sentinelNextDay">day &rarr;</button>
+            </div>
+          </div>
+          <div class="field" id="sentinelWindowField" hidden>
+            <label for="sentinelWindow">Search window</label>
+            <select id="sentinelWindow">
+              <option value="1" selected>Exact date</option>
+              <option value="7">Best scene within 7 days</option>
+              <option value="30">Best scene within 30 days</option>
+            </select>
+            <button type="button" class="btn small wide" id="findSentinelDatesBtn">Find available dates</button>
+            <div class="capture-status" id="sentinelDatesStatus"></div>
+            <div class="date-results" id="sentinelDatesResults"></div>
+          </div>
+          <div class="field" id="sentinelCloudField" hidden>
+            <label for="sentinelCloud">Max cloud cover <span id="sentinelCloudReadout">20%</span></label>
+            <input type="range" id="sentinelCloud" min="0" max="100" step="1" value="20">
+          </div>
+          <div class="field" id="sentinelSharpnessField" hidden>
+            <label for="sentinelSharpness">Detail boost <span id="sentinelSharpnessReadout">35%</span></label>
+            <input type="range" id="sentinelSharpness" min="0" max="80" step="1" value="35">
+            <p class="note small">Visual sharpening only. It improves edges but cannot create missing 10 m detail.</p>
+          </div>
+          <button type="button" class="btn small wide" id="sentinelTestBtn" hidden>Test Sentinel configuration</button>
+          <div class="capture-status" id="sentinelTestStatus"></div>
+          <div class="field" id="nasaLayerField" hidden>
+            <label for="nasaLayer">NASA GIBS layer</label>
+            <select id="nasaLayer">
+              <option value="VIIRS_SNPP_CorrectedReflectance_TrueColor">VIIRS true color (375m)</option>
+              <option value="MODIS_Terra_CorrectedReflectance_TrueColor">MODIS Terra true color (250m)</option>
+              <option value="MODIS_Aqua_CorrectedReflectance_TrueColor">MODIS Aqua true color (250m)</option>
+            </select>
+          </div>
+          <div class="field" id="nasaDateField" hidden>
+            <label for="nasaDate">NASA date</label>
+            <input type="date" id="nasaDate">
+          </div>
+          <p class="note" id="providerNote">Free, no signup. Current-day mosaic (not date-specific).</p>
+          <div class="provider-capability"><span id="providerResolution">resolution varies</span><span id="providerZoomLimit">zoom z--</span></div>
+          <p class="note small" id="zoomAdvice" hidden>Sentinel-2 native detail is best around z14. Higher zoom enlarges the same pixels; it does not add detail.</p>
 
-        <div class="field" style="margin-top:8px;">
-          <label>Capture label</label>
-          <input type="text" id="captureLabel" placeholder="date / label for this frame">
-        </div>
-        <button class="btn ghost" id="captureMapBtn" style="width:100%; margin-top:6px;">&#9678; Capture view as frame</button>
-        <div class="capture-status" id="captureStatus"></div>
-      </div>
-      </details>
+          <div class="field" id="placesApiKeyField">
+            <label for="placesApiKey">Google Places API key (this tab only)</label>
+            <input type="password" id="placesApiKey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="optional">
+          </div>
+          <p class="note small" id="placesApiNote">Optional geocoding key only. Leave blank to use free OpenStreetMap search. Keys are never saved or exported.</p>
+          <div class="field">
+            <label for="placeSearch">Go to a place</label>
+            <input type="text" id="placeSearch" placeholder="e.g. O Smach, Cambodia" enterkeyhint="search">
+          </div>
 
-      <div>
-        <h2>Frames</h2>
-        <div class="image-list" id="imageList">
-          <div class="empty-note">No imagery loaded yet.</div>
+          <div class="map-live" id="liveMapWrap">
+            <canvas id="liveMapCanvas"></canvas>
+            <button type="button" class="map-btn map-expand-btn" id="mapExpandBtn" title="Expand map" aria-label="Expand map">&#9974;</button>
+            <button type="button" class="map-btn map-refresh-btn" id="mapRefreshBtn" title="Reload tiles" aria-label="Reload map tiles">&#8635;</button>
+            <div class="map-zoom-controls">
+              <button type="button" class="map-btn" id="mapZoomIn" aria-label="Zoom in">+</button>
+              <button type="button" class="map-btn" id="mapZoomOut" aria-label="Zoom out">&minus;</button>
+            </div>
+            <div class="map-readout" id="mapReadout">z&mdash;</div>
+          </div>
+          <div class="checklist">
+            <label><input type="checkbox" id="showMapLabelsChk"> Show place and boundary labels</label>
+            <label><input type="checkbox" id="enhanceImageryChk" checked> Enhance contrast and color</label>
+          </div>
+          <div class="field">
+            <label for="captureLabel">Label for this photo</label>
+            <input type="text" id="captureLabel" placeholder="date or name">
+          </div>
+          <button type="button" class="btn primary wide" id="captureMapBtn"><svg class="ico"><use href="#i-pin"/></svg>Capture this view</button>
+          <div class="capture-status" id="captureStatus" role="status"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="field">
-        <label>Caption / attribution</label>
-        <input type="text" id="captionInput" placeholder="e.g. O Smach area &middot; Imagery: Planet Labs">
-      </div>
-      <div class="field">
-        <label>Documentation notes</label>
-        <textarea id="notesInput" rows="4" placeholder="Location, source, observed changes…"></textarea>
-      </div>
-      <div class="checklist"><label><input type="checkbox" id="includeNotesExport"> Include notes in PNG export</label></div>
-      <div class="annotation-tools">
-        <button class="btn ghost" id="drawToggleBtn">Draw on view</button>
-        <button class="btn ghost" id="clearDrawingBtn">Clear drawing</button>
-      </div>
-      <details class="collapse upscale-collapse" open>
+      <section class="side-section" aria-labelledby="framesTitle">
+        <h2 id="framesTitle" data-i18n="frames.title">Photos in this project</h2>
+        <div class="image-list" id="imageList"><div class="empty-note" data-i18n="frames.empty">No photos yet.</div></div>
+      </section>
+
+      <section class="side-section" aria-labelledby="notesTitle">
+        <h2 id="notesTitle" data-i18n="notes.title">Notes</h2>
+        <div class="field">
+          <label for="captionInput" data-i18n="notes.caption">Caption</label>
+          <input type="text" id="captionInput" placeholder="e.g. O Smach area &middot; Imagery: Planet Labs">
+        </div>
+        <div class="field">
+          <label for="notesInput" data-i18n="notes.notes">Notes</label>
+          <textarea id="notesInput" rows="4" placeholder="Location, source, observed changes…"></textarea>
+        </div>
+        <div class="checklist"><label><input type="checkbox" id="includeNotesExport"> Include notes in saved images</label></div>
+        <div class="annotation-tools">
+          <button type="button" class="btn" id="drawToggleBtn"><svg class="ico"><use href="#i-pen"/></svg>Draw on view</button>
+          <button type="button" class="btn" id="clearDrawingBtn"><svg class="ico"><use href="#i-eraser"/></svg>Clear drawing</button>
+        </div>
+      </section>
+
+      <details class="collapse upscale-collapse">
         <summary>AI visual enhancement</summary>
         <div class="upscale-tools collapse-body" id="upscaleTools">
-        <p class="provider-note">Optional local ONNX super-resolution. Download an ONNX Real-ESRGAN or SwinIR model, choose it below, then enhance a frame. Generated detail is for visual review only.</p>
-        <input type="file" id="upscaleModelInput" accept=".onnx,application/octet-stream">
-        <input type="text" id="upscaleModelUrl" value="/models/RealESRGAN_x4plus.onnx" aria-label="Hosted ONNX model URL">
-        <button class="btn ghost" id="loadHostedModelBtn">Load hosted model</button>
-        <a class="model-link" href="https://github.com/xinntao/Real-ESRGAN" target="_blank" rel="noopener">Open Real-ESRGAN model source</a>
-        <select id="upscaleFrameSelect"></select>
-        <button class="btn ghost" id="upscaleBtn" disabled>Load a model first</button>
-        <progress id="upscaleProgress" max="100" value="0"></progress>
-        <div class="upscale-progress-label" id="upscaleProgressLabel">Idle</div>
-        <div class="capture-status" id="upscaleStatus"></div>
+          <p class="note small">Optional, runs on this device. Choose an ONNX super-resolution model, then enhance a photo. Generated detail is for visual review only.</p>
+          <input type="file" id="upscaleModelInput" accept=".onnx,application/octet-stream" aria-label="Choose an ONNX model file">
+          <input type="text" id="upscaleModelUrl" value="/models/RealESRGAN_x4plus.onnx" aria-label="Model URL on this site">
+          <button type="button" class="btn small wide" id="loadHostedModelBtn">Load hosted model</button>
+          <a class="model-link" href="https://github.com/xinntao/Real-ESRGAN" target="_blank" rel="noopener noreferrer">Real-ESRGAN model source</a>
+          <select id="upscaleFrameSelect" aria-label="Photo to enhance"></select>
+          <button type="button" class="btn small wide" id="upscaleBtn" disabled>Load a model first</button>
+          <progress id="upscaleProgress" max="100" value="0"></progress>
+          <div class="upscale-progress-label" id="upscaleProgressLabel">Idle</div>
+          <div class="capture-status" id="upscaleStatus"></div>
         </div>
       </details>
 
-      <div id="gridControls">
-        <h2>Grid layout</h2>
-        <div class="cols-select" id="colsSelect">
-          <button data-cols="2" class="active">2 COL</button>
-          <button data-cols="3">3 COL</button>
-          <button data-cols="4">4 COL</button>
-        </div>
-      </div>
-
-      <div id="overlayControls" hidden>
-        <h2>Overlay panels</h2>
-        <div class="field">
-          <label>Base (bottom)</label>
-          <select id="overlayBaseSelect"></select>
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>Overlay (top)</label>
-          <select id="overlayTopSelect"></select>
-        </div>
-        <div class="field" style="margin-top:10px;"><label>Third (top)</label><select id="overlayThirdSelect"></select></div>
-        <div class="field" style="margin-top:10px;"><label>Third opacity</label><div class="density-row"><input type="range" id="overlayThirdDensity" min="0" max="100" value="55"><span class="density-readout" id="overlayThirdReadout">55%</span></div></div>
-        <button class="btn ghost" id="overlaySwapBtn" style="width:100%; margin-top:10px;">&#8646; Swap base / overlay</button>
-        <div class="field" style="margin-top:14px;">
-          <label>Overlay density</label>
-          <div class="density-row">
-            <input type="range" id="densityRange" min="0" max="100" step="1" value="50">
-            <span class="density-readout" id="densityReadout">50%</span>
-          </div>
-        </div>
-        <div class="checklist" style="margin-top:6px;">
-          <label><input type="checkbox" id="densityPulseChk"> Auto-pulse density (blink comparator)</label>
-        </div>
-        <div class="field" style="margin-top:10px;" id="pulseSpeedField" hidden>
-          <label>Pulse speed (sec/cycle)</label>
-          <input type="text" inputmode="numeric" id="pulseSpeed" value="1.6">
-        </div>
-      </div>
-
-      <div id="sequenceControls" hidden>
-        <h2>Sequence (auto)</h2>
-        <div class="stage-hint" style="margin-bottom:2px;">Plays every uploaded frame in list order &mdash; reorder them in the Frames panel above.</div>
-        <div class="field">
-          <label>Seconds per frame</label>
-          <input type="range" id="secPerFrame" min="0.5" max="5" step="0.1" value="1.5">
-        </div>
-        <div class="checklist" style="margin-top:2px;">
-          <label><input type="checkbox" id="crossfadeChk" checked> Crossfade between frames</label>
-        </div>
-        <button class="btn ghost" id="playSeqBtn" style="width:100%; margin-top:10px;">&#9654; Play preview</button>
-      </div>
-
-      <div id="changeControls" hidden>
-        <h2>Change detection</h2>
-        <div class="field">
-          <label>Before</label>
-          <select id="changeBeforeSelect"></select>
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>After</label>
-          <select id="changeAfterSelect"></select>
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>Method</label>
-          <select id="changeMethodSelect">
-            <option value="rgb">RGB difference</option>
-            <option value="luma">Brightness difference</option>
-            <option value="ndvi">Vegetation proxy (green/red)</option>
-          </select>
-        </div>
-        <div class="field" style="margin-top:12px;">
-          <label>SENSITIVITY <span id="changeThresholdReadout">30%</span></label>
-          <input type="range" id="changeThreshold" min="5" max="90" step="1" value="30">
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>MIN REGION SIZE <span id="changeMinSizeReadout">12 px</span></label>
-          <input type="range" id="changeMinSize" min="1" max="80" step="1" value="12">
-        </div>
-        <p class="change-note">Fast, explainable pixel comparison. Brightness and seasonal effects can look like change, so use the mask as a review guide rather than ground truth.</p>
-      </div>
-
-      <div class="view-controls">
-        <h2>Sync view</h2>
+      <section class="side-section view-controls">
+        <h2>Zoom</h2>
         <div class="zoom-row">
-          <input type="range" id="zoomRange" min="1" max="4" step="0.01" value="1">
+          <input type="range" id="zoomRange" min="1" max="4" step="0.01" value="1" aria-label="Zoom">
           <span class="zoom-readout" id="zoomReadout">1.00x</span>
         </div>
-        <button class="btn ghost" id="resetViewBtn" style="width:100%;">Reset pan / zoom</button>
-        <div class="coord-readout">
-          <span>ZOOM <span id="zoomTxt">1.00</span></span>
-          <span>PAN <span id="panTxt">0,0</span></span>
-        </div>
-      </div>
-
+        <button type="button" class="btn small wide" id="resetViewBtn">Reset pan and zoom</button>
+        <div class="coord-readout"><span>ZOOM <span id="zoomTxt">1.00</span></span><span>PAN <span id="panTxt">0,0</span></span></div>
+      </section>
     </aside>
     <div class="sidebar-backdrop is-hidden" id="sidebarBackdrop"></div>
 
-    <main class="stage-wrap">
+    <main class="stage-wrap" id="main">
       <canvas id="annotationCanvas" aria-label="Freehand map annotations"></canvas>
-      <div class="grid-stage" id="gridStage" style="display:none;"></div>
-      <div id="sliderControls" hidden>
-        <button type="button" class="slider-controls-toggle" id="sliderControlsToggle" aria-expanded="true" aria-controls="sliderControlsBody"><span class="chev" id="sliderControlsChev">&#9660;</span> <span class="toggle-label">Slider panels</span><span class="pair" id="sliderPairSummary"></span><span class="edit">Edit</span></button>
-        <div class="slider-controls-body" id="sliderControlsBody">
-          <div class="field">
-            <label>Left (before)</label>
-            <select id="leftSelect"></select>
+
+      <!-- Start screen: shown while the project has no photos -->
+      <section class="start" id="startScreen" aria-labelledby="startTitle">
+        <div class="start-inner">
+          <p class="eyebrow">Phnaek Pkay &middot; Satellite Eye</p>
+          <h1 id="startTitle" data-i18n="start.title">See what changed on the ground.</h1>
+          <p class="start-sub" data-i18n="start.sub">Compare satellite photos from different dates. No account needed.</p>
+          <div class="start-actions">
+            <button type="button" class="btn primary big" id="startAddBtn"><svg class="ico"><use href="#i-photo"/></svg><span data-i18n="start.add">Add photos</span></button>
+            <button type="button" class="btn big" id="startMapBtn"><svg class="ico"><use href="#i-pin"/></svg><span data-i18n="start.map">From map</span></button>
           </div>
-          <div class="field">
-            <label>Right (after)</label>
-            <select id="rightSelect"></select>
+          <div class="start-section" id="startSitesSection">
+            <div class="start-head"><h2 data-i18n="start.sites">Field sites</h2><button type="button" class="link-btn" id="startSeeAllBtn" data-i18n="start.seeAll">See all</button></div>
+            <div class="site-rail" id="siteRail"></div>
           </div>
-          <button class="btn ghost" id="swapBtn">&#8646; Swap left / right</button>
-          <div class="checklist"><label><input type="checkbox" id="sliderThreeChk"> Show third frame</label></div>
-          <div class="field" id="sliderMiddleField" hidden><label>Middle</label><select id="sliderMiddleSelect"></select></div>
-          <div class="field" id="sliderSweepField">
-            <label>Sweep duration (sec)</label>
-            <input type="text" inputmode="numeric" id="sweepDuration" value="4">
+          <div class="start-section" id="continueSection" hidden>
+            <div class="start-head"><h2 data-i18n="start.continue">Continue</h2></div>
+            <button type="button" class="continue-card" id="continueCard">
+              <img class="continue-thumb" id="continueThumb" alt="" width="64" height="64">
+              <span class="continue-text"><strong id="continueTitle"></strong><span id="continueMeta"></span></span>
+              <svg class="ico"><use href="#i-chev-right"/></svg>
+            </button>
           </div>
-          <p class="provider-note" style="flex-basis:100%;">Drag directly on each frame to reposition it &middot; scroll or pinch on a frame to zoom it independently &middot; Reset pan / zoom (sidebar) clears all frames.</p>
+          <p class="privacy-note"><svg class="ico"><use href="#i-lock"/></svg><span data-i18n="start.privacy">Your photos and keys stay on this device.</span></p>
         </div>
-      </div>
+      </section>
+
+      <div class="grid-stage" id="gridStage" style="display:none;"></div>
+
       <div class="slider-stage" id="sliderStage" style="display:none;">
-         <div class="slider-panel base" id="sliderLeftWrap"><img id="sliderLeftImg" draggable="false"></div>
-         <div class="slider-panel overlay" id="sliderRightWrap"><img id="sliderRightImg" draggable="false"></div>
-         <div class="slider-panel third" id="sliderThirdWrap" hidden><img id="sliderThirdImg" draggable="false"></div>
-         <div class="divider" id="divider"><div class="handle">&#8596;</div></div>
-         <div class="divider second" id="divider2" hidden><div class="handle">&#8596;</div></div>
-         <div class="corner-label left" id="leftLabelTag"></div>
-         <div class="corner-label right" id="rightLabelTag"></div>
-         <div class="corner-label middle" id="middleLabelTag" hidden></div>
-         <div class="corner-label third-tag" id="thirdLabelTag" hidden></div>
-         <div class="slider-map-overlay" id="sliderMapOverlay">
-           <div class="slider-map-header">
-             <span class="slider-map-title">&#9974; Live Map</span>
-             <button type="button" class="slider-map-close" id="sliderMapCloseBtn" title="Hide map" aria-label="Hide map">&times;</button>
-           </div>
-           <canvas id="sliderMapCanvas"></canvas>
-           <div class="slider-map-zoom">
-             <button type="button" id="sliderMapZoomIn" aria-label="Zoom in">+</button>
-             <button type="button" id="sliderMapZoomOut" aria-label="Zoom out">&minus;</button>
-           </div>
-           <div class="slider-map-readout" id="sliderMapReadout">z&mdash;</div>
-         </div>
-         <button type="button" class="slider-map-toggle is-hidden" id="sliderMapToggleBtn" title="Show map">&#9974; Map</button>
+        <div class="slider-panel base" id="sliderLeftWrap"><img id="sliderLeftImg" draggable="false" alt=""></div>
+        <div class="slider-panel overlay" id="sliderRightWrap"><img id="sliderRightImg" draggable="false" alt=""></div>
+        <div class="slider-panel third" id="sliderThirdWrap" hidden><img id="sliderThirdImg" draggable="false" alt=""></div>
+        <div class="divider" id="divider" role="slider" tabindex="0" aria-label="Compare position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><div class="handle"><svg class="ico"><use href="#i-compare"/></svg></div></div>
+        <div class="divider second" id="divider2" hidden><div class="handle"><svg class="ico"><use href="#i-compare"/></svg></div></div>
+        <div class="corner-label left" id="leftLabelTag"></div>
+        <div class="corner-label right" id="rightLabelTag"></div>
+        <div class="corner-label middle" id="middleLabelTag" hidden></div>
+        <div class="corner-label third-tag" id="thirdLabelTag" hidden></div>
+        <div class="slider-map-overlay" id="sliderMapOverlay">
+          <div class="slider-map-header">
+            <span class="slider-map-title">Live map</span>
+            <button type="button" class="slider-map-close" id="sliderMapCloseBtn" title="Hide map" aria-label="Hide map">&times;</button>
+          </div>
+          <canvas id="sliderMapCanvas"></canvas>
+          <div class="slider-map-zoom">
+            <button type="button" id="sliderMapZoomIn" aria-label="Zoom in">+</button>
+            <button type="button" id="sliderMapZoomOut" aria-label="Zoom out">&minus;</button>
+          </div>
+          <div class="slider-map-readout" id="sliderMapReadout">z&mdash;</div>
+        </div>
+        <button type="button" class="slider-map-toggle is-hidden" id="sliderMapToggleBtn" title="Show map"><svg class="ico"><use href="#i-pin"/></svg>Map</button>
       </div>
       <div class="overlay-stage" id="overlayStage" style="display:none;">
-         <div class="overlay-panel base"><img id="overlayBaseImg" draggable="false"></div>
-         <div class="overlay-panel top" id="overlayTopWrap"><img id="overlayTopImg" draggable="false"></div>
-         <div class="overlay-panel third" id="overlayThirdWrap"><img id="overlayThirdImg" draggable="false"></div>
+        <div class="overlay-panel base"><img id="overlayBaseImg" draggable="false" alt=""></div>
+        <div class="overlay-panel top" id="overlayTopWrap"><img id="overlayTopImg" draggable="false" alt=""></div>
+        <div class="overlay-panel third" id="overlayThirdWrap"><img id="overlayThirdImg" draggable="false" alt=""></div>
         <div class="drag-surface" id="overlayDragSurface"></div>
-         <div class="corner-label left" id="overlayBaseLabelTag"></div>
-         <div class="corner-label right" id="overlayTopLabelTag"></div>
-         <div class="corner-label third-tag" id="overlayThirdLabelTag"></div>
+        <div class="corner-label left" id="overlayBaseLabelTag"></div>
+        <div class="corner-label right" id="overlayTopLabelTag"></div>
+        <div class="corner-label third-tag" id="overlayThirdLabelTag"></div>
       </div>
       <div class="sequence-stage" id="sequenceStage" style="display:none;">
         <canvas id="seqCanvas"></canvas>
-        <button class="seq-play" id="seqPlayToggle">&#9654;</button>
         <div class="seq-progress"><div class="seq-progress-fill" id="seqProgressFill"></div></div>
       </div>
       <div class="change-stage" id="changeStage" style="display:none;">
         <canvas id="changeCanvas"></canvas>
-        <div class="change-legend"><i></i> likely change</div>
+        <div class="change-legend"><i></i> <span data-i18n="tab.changes">Changes</span></div>
       </div>
-      <div class="change-stats" id="changeStats" style="display:none;">
-        <div class="change-stat"><strong id="changedAreaStat">--</strong><span>changed area</span></div>
-        <div class="change-stat"><strong id="regionCountStat">--</strong><span>regions</span></div>
-        <div class="change-stat"><strong id="reliabilityStat">--</strong><span>reliability</span></div>
+      <div class="change-stats glass" id="changeStats" hidden>
+        <div class="change-stat big"><strong id="changedAreaStat">--</strong><span data-i18n="change.area">of the area changed</span></div>
+        <div class="change-stat"><strong id="regionCountStat">--</strong><span data-i18n="change.spots">spots</span></div>
+        <div class="change-stat"><strong id="reliabilityStat">--</strong><span data-i18n="change.confidence">confidence</span></div>
       </div>
-      <div class="seq-timeline" id="seqTimeline" style="display:none;"></div>
-      <div class="placeholder" id="placeholder">
-        <span>Upload two or more satellite frames of the same location to begin building a before/after comparison for documentation.</span>
-        <small>You can also drop frames here, paste from clipboard, or capture a live satellite view from the sidebar.</small>
+      <div class="placeholder" id="placeholder" role="status"><span id="placeholderText"></span></div>
+
+      <!-- Dock: photo picker plus the controls for the current view -->
+      <div class="dock glass" id="dock">
+        <div class="picker" id="datePicker" hidden>
+          <div class="picker-head">
+            <strong class="picker-title" id="pickerTitle" data-i18n="picker.title">Pick two photos</strong>
+            <button type="button" class="link-btn" id="swapBtn"><svg class="ico"><use href="#i-swap"/></svg><span data-i18n="picker.swap">Swap</span></button>
+            <button type="button" class="icon-btn small" id="pickerToggle" aria-expanded="true" aria-controls="pickerRow" data-i18n-label="picker.hide" data-i18n-title="picker.hide"><svg class="ico"><use href="#i-down"/></svg></button>
+          </div>
+          <div class="picker-row" id="pickerRow" role="group" aria-labelledby="pickerTitle"></div>
+        </div>
+
+        <div class="dock-body" id="gridControls">
+          <span class="dock-label" data-i18n="grid.columns">Columns</span>
+          <div class="chips" id="colsSelect" role="group" aria-label="Columns">
+            <button type="button" class="chip active" data-cols="2">2</button>
+            <button type="button" class="chip" data-cols="3">3</button>
+            <button type="button" class="chip" data-cols="4">4</button>
+          </div>
+        </div>
+
+        <div class="dock-body" id="sliderControls" hidden>
+          <details class="more">
+            <summary data-i18n="more.options">More options</summary>
+            <div class="more-body" id="sliderControlsBody">
+              <div class="field"><label for="leftSelect">Left (before)</label><select id="leftSelect"></select></div>
+              <div class="field"><label for="rightSelect">Right (after)</label><select id="rightSelect"></select></div>
+              <div class="checklist"><label><input type="checkbox" id="sliderThreeChk"> Show a third photo</label></div>
+              <div class="field" id="sliderMiddleField" hidden><label for="sliderMiddleSelect">Middle</label><select id="sliderMiddleSelect"></select></div>
+              <div class="field" id="sliderSweepField"><label for="sweepDuration">Video sweep (seconds)</label><input type="text" inputmode="numeric" id="sweepDuration" value="4"></div>
+              <p class="note small">Drag a photo to move it, scroll or pinch to zoom it on its own.</p>
+            </div>
+          </details>
+        </div>
+
+        <div class="dock-body" id="overlayControls" hidden>
+          <label class="dock-label" for="densityRange" data-i18n="overlay.amount">Show more of the top photo</label>
+          <div class="density-row"><input type="range" id="densityRange" min="0" max="100" step="1" value="50"><span class="density-readout" id="densityReadout">50%</span></div>
+          <div class="chips"><label class="chip toggle"><input type="checkbox" id="densityPulseChk"><span data-i18n="overlay.blink">Blink to spot changes</span></label></div>
+          <details class="more">
+            <summary data-i18n="more.options">More options</summary>
+            <div class="more-body">
+              <div class="field"><label for="overlayBaseSelect">Base (bottom)</label><select id="overlayBaseSelect"></select></div>
+              <div class="field"><label for="overlayTopSelect">On top</label><select id="overlayTopSelect"></select></div>
+              <button type="button" class="btn small" id="overlaySwapBtn"><svg class="ico"><use href="#i-swap"/></svg>Swap base and top</button>
+              <div class="field"><label for="overlayThirdSelect">Third photo</label><select id="overlayThirdSelect"></select></div>
+              <div class="field"><label for="overlayThirdDensity">Third photo opacity</label><div class="density-row"><input type="range" id="overlayThirdDensity" min="0" max="100" value="55"><span class="density-readout" id="overlayThirdReadout">55%</span></div></div>
+              <div class="field" id="pulseSpeedField" hidden><label for="pulseSpeed">Blink speed (seconds per cycle)</label><input type="text" inputmode="decimal" id="pulseSpeed" value="1.6"></div>
+            </div>
+          </details>
+        </div>
+
+        <div class="dock-body" id="sequenceControls" hidden>
+          <div class="seq-row">
+            <button type="button" class="btn primary" id="playSeqBtn"><svg class="ico"><use href="#i-play"/></svg><span id="playSeqLabel" data-i18n="seq.play">Play</span></button>
+            <label class="chip toggle"><input type="checkbox" id="crossfadeChk" checked><span data-i18n="seq.fade">Smooth fade</span></label>
+          </div>
+          <label class="dock-label" for="secPerFrame" data-i18n="seq.speed">Seconds per photo</label>
+          <input type="range" id="secPerFrame" min="0.5" max="5" step="0.1" value="1.5">
+          <div class="seq-timeline" id="seqTimeline"></div>
+        </div>
+
+        <div class="dock-body" id="changeControls" hidden>
+          <div class="sens-head"><label class="dock-label" for="changeSensitivity" data-i18n="change.sensitivity">Sensitivity</label><span class="sens-value" id="changeThresholdReadout">Medium</span></div>
+          <input type="range" id="changeSensitivity" min="5" max="90" step="1" value="65" aria-describedby="sensHint">
+          <div class="sens-hint" id="sensHint"><span data-i18n="change.low">Only big changes</span><span data-i18n="change.high">Every small change</span></div>
+          <span class="dock-label" data-i18n="change.method">Compare by</span>
+          <div class="chips" id="changeMethodChips" role="group" aria-label="Compare by">
+            <button type="button" class="chip active" data-method="rgb" data-i18n="change.rgb">Colour</button>
+            <button type="button" class="chip" data-method="luma" data-i18n="change.luma">Brightness</button>
+            <button type="button" class="chip" data-method="ndvi" data-i18n="change.ndvi">Vegetation</button>
+          </div>
+          <details class="more">
+            <summary data-i18n="more.options">More options</summary>
+            <div class="more-body">
+              <div class="field"><label for="changeBeforeSelect">Before</label><select id="changeBeforeSelect"></select></div>
+              <div class="field"><label for="changeAfterSelect">After</label><select id="changeAfterSelect"></select></div>
+              <div class="field"><label for="changeMinSize"><span data-i18n="change.minSize">Ignore spots smaller than</span> <span id="changeMinSizeReadout">12 px</span></label><input type="range" id="changeMinSize" min="1" max="80" step="1" value="12"></div>
+              <p class="note small">Fast pixel comparison. Brightness and seasonal effects can look like change, so use the result as a guide, not as proof.</p>
+            </div>
+          </details>
+        </div>
       </div>
     </main>
   </div>
@@ -423,12 +473,29 @@
 <div class="locations-modal-backdrop is-hidden" id="locationsBackdrop"></div>
 <div class="locations-modal is-hidden" id="locationsModal" role="dialog" aria-modal="true" aria-labelledby="locationsTitle" inert>
   <div class="locations-modal-head">
-    <h2 id="locationsTitle">Field sites</h2>
-    <button type="button" class="locations-close" id="locationsCloseBtn" aria-label="Close locations">&times;</button>
+    <h2 id="locationsTitle" data-i18n="start.sites">Field sites</h2>
+    <button type="button" class="icon-btn" id="locationsCloseBtn" data-i18n-label="close" data-i18n-title="close"><svg class="ico"><use href="#i-close"/></svg></button>
   </div>
-  <p class="locations-note">Satellite locations documenting affected villages along the Cambodia&ndash;Thailand border. Click a site to open its imagery.</p>
+  <p class="locations-note">Satellite locations documenting affected villages along the Cambodia&ndash;Thailand border. Choose a site to open its imagery.</p>
   <div class="locations-grid" id="locationsGrid"></div>
 </div>
+
+<!-- Install help (iOS Safari: manual steps; Chrome/Android: native prompt) -->
+<aside class="install-sheet glass" id="installSheet" role="dialog" aria-labelledby="installTitle" hidden>
+  <div class="install-head">
+    <img src="/assets/icons/apple-touch-icon-120.png" alt="" width="56" height="56">
+    <div><strong id="installTitle" data-i18n="install.title">Install Phnaek Pkay</strong><span data-i18n="install.sub">Opens full-screen and works offline.</span></div>
+  </div>
+  <ol class="install-steps" id="installSteps">
+    <li><span class="step-n">1</span><span><span data-i18n="install.step1">Tap Share in Safari</span> <svg class="ico inline"><use href="#i-ios-share"/></svg></span></li>
+    <li><span class="step-n">2</span><span data-i18n="install.step2">Choose Add to Home Screen</span></li>
+  </ol>
+  <div class="install-actions">
+    <button type="button" class="btn" id="installNotNow" data-i18n="install.notNow">Not now</button>
+    <button type="button" class="btn primary" id="installGotIt" data-i18n="install.gotIt">Got it</button>
+    <button type="button" class="btn primary" id="installNative" data-i18n="install.button" hidden>Install</button>
+  </div>
+</aside>
 
 <script type="module" src="/src/main.js"></script>
 </body>

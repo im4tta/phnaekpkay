@@ -1,0 +1,7 @@
+/* Self-hosted fonts (bundled by Vite, served from this origin; no third-party font host).
+   Inter is a variable font, so one file per script subset covers every weight.
+   Noto Sans Khmer is only downloaded when Khmer text is on screen (unicode-range). */
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-sans-khmer/khmer-400.css';
+@import '@fontsource/noto-sans-khmer/khmer-500.css';
+@import '@fontsource/noto-sans-khmer/khmer-600.css';

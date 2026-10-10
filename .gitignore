@@ -7,3 +7,5 @@ node_modules/
 *.swp
 dist/
 models/*.pth
+test-results/
+playwright-report/

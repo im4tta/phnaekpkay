@@ -1,57 +1,22 @@
 {
+  "id": "/",
   "name": "Phnaek Pkay | Satellite Eye",
   "short_name": "Phnaek Pkay",
-  "description": "Upload, capture, compare, and analyze satellite imagery over time — with slider, overlay, sequence, change detection, annotations, and offline-ready PWA support.",
-  "id": "./",
-  "start_url": "./index.html",
-  "scope": "./",
+  "description": "Compare satellite photos from different dates: slider, blend, play, and change detection. Works offline.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
+  "lang": "en",
+  "dir": "ltr",
   "background_color": "#12140f",
   "theme_color": "#12140f",
   "categories": ["utilities", "photo"],
   "icons": [
-    {
-      "src": "/assets/phnaek-pkay.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/favicon-16.png",
-      "sizes": "16x16",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/assets/icons/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/phnaek-pkay.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

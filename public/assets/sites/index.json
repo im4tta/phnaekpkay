@@ -1,0 +1,49 @@
+{
+ "sites": [
+  {
+   "slug": "boeng-trakoun",
+   "name": "Boeng Trakoun",
+   "desc": "Village site along the Cambodia\u2013Thailand border",
+   "lat": 13.98965635876216,
+   "lng": 102.85603437036133,
+   "thumb": "/assets/sites/boeng-trakoun/thumb.webp",
+   "frames": 2
+  },
+  {
+   "slug": "prey-chan",
+   "name": "Prey Chan",
+   "desc": "Village site along the Cambodia\u2013Thailand border",
+   "lat": 13.815808689147602,
+   "lng": 102.74036805725552,
+   "thumb": "/assets/sites/prey-chan/thumb.webp",
+   "frames": 2
+  },
+  {
+   "slug": "chhork-chey",
+   "name": "Chhork Chey",
+   "desc": "Village site along the Cambodia\u2013Thailand border",
+   "lat": 13.7604993,
+   "lng": 102.7014209,
+   "thumb": "/assets/sites/chhork-chey/thumb.webp",
+   "frames": 2
+  },
+  {
+   "slug": "thma-da",
+   "name": "Thma Da",
+   "desc": "Village site along the Cambodia\u2013Thailand border",
+   "lat": 12.132719934667024,
+   "lng": 102.73395977196657,
+   "thumb": "/assets/sites/thma-da/thumb.webp",
+   "frames": 2
+  },
+  {
+   "slug": "an-ses",
+   "name": "An Ses",
+   "desc": "Village site along the Cambodia\u2013Thailand border",
+   "lat": 14.388782740915987,
+   "lng": 104.96551843862306,
+   "thumb": "/assets/sites/an-ses/thumb.webp",
+   "frames": 2
+  }
+ ]
+}

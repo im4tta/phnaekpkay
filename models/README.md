@@ -14,7 +14,7 @@ here using the same pattern:
 models/RealESRGAN_x4plus.onnx
 ```
 
-Then run the Vite server and click **Load hosted model**. The default URL is
+Then run the Vite server and click **Load hosted model** (the URL must be on the same origin; the CSP blocks other hosts). The default URL is
 `/models/RealESRGAN_x4plus.onnx`.
 
 The `.pth` files shipped by the Python Real-ESRGAN project are not browser
@@ -22,3 +22,5 @@ models. They must be exported to ONNX first, and the exported model must accept
 `[1, 3, height, width]` float RGB input normalized to `0..1` and return an
 `[1, 3, height, width]`-style output. Keep model files out of git if they are
 large; static hosting and browser memory limits still apply.
+
+On Vercel the model is only served as a real file when *Git LFS* is enabled for the project; otherwise the file is a 133-byte pointer.

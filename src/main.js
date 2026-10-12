@@ -1,3 +1,4 @@
+import './lib/trusted-types.js';
 import { h, setChildren, setOptions, escapeHtml } from './lib/dom.js';
 import { TILE, lon2tileX, lat2tileY, tileX2lon, tileY2lat } from './lib/geo.js';
 import { extractDateLabel, formatTimestamp, friendlyLabel } from './lib/format.js';
@@ -7,6 +8,8 @@ import { LIMITS, cleanText, isSafeImageSrc, sanitizeProject, defaultSliderState,
 import { saveSecrets, loadSecrets, scrubLegacySecrets } from './lib/secrets.js';
 import { putRecord, getRecord } from './lib/store.js';
 import { toast } from './lib/toast.js';
+import { siteSlug, findSiteBySlug } from './lib/slug.js';
+import { registerServiceWorker } from './lib/pwa.js';
 import { t, setLang, getLang, detectLang } from './lib/i18n.js';
 import { shareOrDownload, downloadBlob } from './lib/share.js';
 import { initInstallHelp } from './lib/install-help.js';
@@ -157,6 +160,14 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
       if(message.type==='ready'){ upscaleSession={inputNames:[message.inputName],outputNames:[message.outputName]}; upscaleStatus.textContent='Model ready in background worker'; updateUpscaleSelect(); upscaleBtn.disabled=false; if(upscaleLoadResolve){const resolve=upscaleLoadResolve;upscaleLoadResolve=null;resolve();} }
       if(message.type==='result' && upscaleRunResolve){ const resolve=upscaleRunResolve; upscaleRunResolve=null; resolve({data:new Float32Array(message.data),dims:message.dims}); }
       if(message.type==='error'){ if(upscaleRunReject){const reject=upscaleRunReject;upscaleRunReject=null;reject(Error(message.message));} else if(upscaleLoadReject){const reject=upscaleLoadReject;upscaleLoadReject=null;reject(Error(message.message));} else {upscaleStatus.textContent=`Model error: ${message.message}`;upscaleStatus.classList.add('err');} }
+    };
+    // A worker that cannot start (blocked script, network) must not leave the UI waiting forever.
+    upscaleWorker.onerror=event=>{
+      event.preventDefault();
+      const failure=Error('Background model worker could not start.');
+      const reject=upscaleLoadReject||upscaleRunReject;
+      upscaleLoadReject=upscaleRunReject=null; upscaleWorker=null;
+      if(reject) reject(failure); else { upscaleStatus.textContent=failure.message; upscaleStatus.classList.add('err'); }
     };
     return upscaleWorker;
   }
@@ -2116,16 +2127,7 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
     document.dispatchEvent(new CustomEvent('sites-loaded'));
     return SITES;
   }
-  function fmtCoord(v){ return Number(Number(v).toFixed(6)).toString(); }
-  function siteSlug(site){ return '/p/'+fmtCoord(site.lat)+','+fmtCoord(site.lng); }
-  function siteBySlug(){
-    const m = window.location.pathname.match(/^\/p\/([^/]+)$/);
-    if(!m) return null;
-    const parts = m[1].split(',');
-    const lat = Number(parts[0]), lng = Number(parts[1]);
-    if(!isFinite(lat) || !isFinite(lng)) return null;
-    return SITES.find(s=>Math.abs(s.lat-lat)<1e-6 && Math.abs(s.lng-lng)<1e-6);
-  }
+  function siteBySlug(){ return findSiteBySlug(SITES, window.location.pathname) || undefined; }
   function openLocations(){
     locationsBackdrop.classList.remove('is-hidden');
     locationsModal.classList.remove('is-hidden');
@@ -2338,8 +2340,6 @@ import { detectChanges, reliabilityOf } from './lib/change-detect.js';
   })();
 
   // ---------- PWA: service worker registration (production builds only) ----------
-  if('serviceWorker' in navigator && import.meta.env.PROD){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('/sw.js', {updateViaCache:'none'}).catch(()=>{ /* offline support just won't be available */ });
-    });
+  if(import.meta.env.PROD){
+    registerServiceWorker({ onUpdate: ()=> toast(t('update.ready'), { timeout:20000, action:{ label:t('update.reload'), onClick:()=>window.location.reload() } }) });
   }

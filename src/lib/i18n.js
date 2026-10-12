@@ -125,7 +125,7 @@ export function t(key, vars) {
 
 /** Apply translations to every marked element under `root`. */
 export function applyI18n(root = document) {
-  for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  for (const el of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll('[data-i18n]'))) el.textContent = t(el.dataset.i18n);
   // data-i18n-placeholder / data-i18n-label (sets aria-label) / data-i18n-title
   for (const [data, attr] of [['placeholder', 'placeholder'], ['label', 'aria-label'], ['title', 'title']]) {
     for (const el of root.querySelectorAll(`[data-i18n-${data}]`)) el.setAttribute(attr, t(el.getAttribute(`data-i18n-${data}`)));

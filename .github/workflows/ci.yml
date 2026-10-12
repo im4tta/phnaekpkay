@@ -25,6 +25,7 @@ jobs:
       # No install scripts from dependencies run in CI (supply-chain hygiene); nothing here needs them.
       - run: npm ci --ignore-scripts
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
       - run: npm run build
 

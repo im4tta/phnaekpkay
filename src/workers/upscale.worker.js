@@ -1,5 +1,20 @@
 /* Real-ESRGAN inference in a background worker. onnxruntime-web is self-hosted
    (copied to /vendor/ort/ by the build) so no third-party script is executed. */
+
+/* Trusted Types (the CSP applies to this worker too): only same-origin script URLs are
+   allowed. Same policy as src/lib/trusted-types.js; a classic worker cannot import it. */
+if (self.trustedTypes && self.trustedTypes.createPolicy) {
+  try {
+    self.trustedTypes.createPolicy('default', {
+      createScriptURL: (input) => {
+        const url = new URL(String(input), self.location.href);
+        if (url.origin !== self.location.origin) throw new TypeError('Blocked script URL: not same-origin');
+        return url.href;
+      },
+    });
+  } catch (error) { /* policy already exists */ }
+}
+
 importScripts('/vendor/ort/ort.wasm.min.js');
 
 ort.env.wasm.wasmPaths = '/vendor/ort/';

@@ -80,3 +80,59 @@ test('API keys stay in sessionStorage and never reach localStorage, IndexedDB or
   expect(text).not.toMatch(/SECRET_|LEAK\d/);
   expect(text).not.toMatch(/mapboxToken|sentinelId|placesApiKey/);
 });
+
+test('Trusted Types are enforced: no string becomes script except same-origin worker URLs', async ({ page }) => {
+  const watcher = await watchPage(page);
+  const response = await page.goto('/');
+  const csp = response.headers()['content-security-policy'];
+  expect(csp).toContain("require-trusted-types-for 'script'");
+  expect(csp).toContain('trusted-types default');
+  expect(csp).not.toMatch(/'unsafe-eval'/);
+  const result = await page.evaluate(() => {
+    const attempt = (fn) => { try { fn(); return 'allowed'; } catch (e) { return e.name; } };
+    return {
+      hasDefaultPolicy: Boolean(window.trustedTypes && window.trustedTypes.defaultPolicy),
+      innerHTML: attempt(() => { document.createElement('div').innerHTML = '<img src=x onerror=alert(1)>'; }),
+      scriptSrc: attempt(() => { document.createElement('script').src = 'https://evil.example/x.js'; }),
+      scriptText: attempt(() => { document.createElement('script').text = 'window.__pwned = 1'; }),
+      evilWorker: attempt(() => { new Worker('https://evil.example/x.js'); }),
+      dataWorker: attempt(() => { new Worker('data:text/javascript,postMessage(1)'); }),
+    };
+  });
+  expect(result.hasDefaultPolicy).toBe(true);
+  expect(result.innerHTML).toBe('TypeError');
+  expect(result.scriptSrc).toBe('TypeError');
+  expect(result.scriptText).toBe('TypeError');
+  expect(result.evilWorker).toBe('TypeError');
+  expect(result.dataWorker).toBe('TypeError');
+  expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
+  // the app itself never trips the policy while it runs (forget the violations caused on purpose above)
+  await page.evaluate(() => { window.__csp = []; });
+  await page.locator('.site-card').first().click();
+  await expect(page.locator('#sliderStage')).toBeVisible();
+  await page.waitForTimeout(400);
+  expect((await watcher.cspViolations()).filter((v) => !/^img-src|^connect-src/.test(v))).toEqual([]);
+});
+
+test('the AI-enhance worker still starts under the CSP and Trusted Types', async ({ page }) => {
+  const watcher = await watchPage(page);
+  await page.goto('/');
+  // A bogus model: the worker must start, load onnxruntime, and fail on the model, not on the policy.
+  await page.setInputFiles('#upscaleModelInput', { name: 'bogus.onnx', mimeType: 'application/octet-stream', buffer: Buffer.alloc(64, 7) });
+  const status = page.locator('#upscaleStatus');
+  await expect(status).toContainText('Model could not load:', { timeout: 20_000 });
+  await expect(status).not.toContainText('could not start');
+  expect((await watcher.cspViolations()).filter((v) => !/^img-src|^connect-src/.test(v))).toEqual([]);
+});
+
+test('scripts, WASM and data files are same-origin only (Cross-Origin-Resource-Policy)', async ({ request }) => {
+  const html = await (await request.get('/')).text();
+  const script = html.match(/\/static\/index-[\w-]+\.js/)[0];
+  for (const path of [script, '/vendor/ort/ort.wasm.min.js', '/assets/sites/index.json']) {
+    const res = await request.get(path);
+    expect(res.status(), path).toBe(200);
+    expect(res.headers()['cross-origin-resource-policy'], path).toBe('same-origin');
+  }
+  const doc = await request.get('/');
+  expect(doc.headers()['cross-origin-opener-policy']).toBe('same-origin');
+});

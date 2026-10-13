@@ -22,7 +22,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # No install scripts from dependencies run in CI (supply-chain hygiene); nothing here needs them.
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -36,7 +37,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # No install scripts from dependencies run in CI (supply-chain hygiene); nothing here needs them.
+      - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npx playwright test

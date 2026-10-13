@@ -20,7 +20,8 @@ if (args.includes('--build') && !args.includes('--port')) {
 if (args.includes('--build')) execFileSync('npx', ['vite', 'build'], { cwd: root, stdio: 'inherit' });
 
 const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
-const toRegExp = (source) => new RegExp('^' + source.replace(/[.+?^${}|[\]\\]/g, '\\$&').replace(/\(\.\*\)/g, '.*').replace(/:[a-z]+/g, '[^/]+') + '$');
+// The subset of Vercel's path syntax that vercel.json uses: "(.*)" matches anything, ":name" one segment.
+const toRegExp = (source) => new RegExp('^' + source.split('(.*)').map((part) => part.replace(/[.+?^${}|[\]\\()*]/g, '\\$&').replace(/:[a-zA-Z]+/g, '[^/]+')).join('.*') + '$');
 const headerRules = (config.headers || []).map((r) => ({ re: toRegExp(r.source), headers: r.headers }));
 const rewrites = (config.rewrites || []).map((r) => ({ re: toRegExp(r.source), destination: r.destination }));
 

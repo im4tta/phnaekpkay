@@ -12,7 +12,7 @@ export function isIos(nav = globalThis.navigator) {
 }
 
 export function isStandalone(win = globalThis) {
-  return win.navigator.standalone === true || (win.matchMedia && win.matchMedia('(display-mode: standalone)').matches);
+  return /** @type {any} */ (win.navigator).standalone === true || (win.matchMedia && win.matchMedia('(display-mode: standalone)').matches);
 }
 
 export function isSnoozed(storage = globalThis.localStorage, now = Date.now()) {

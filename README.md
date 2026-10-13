@@ -67,6 +67,7 @@ The **Field sites** carousel (and menu entry) opens documented villages along th
 npm install
 npm run dev          # Vite dev server
 npm run lint         # ESLint (also forbids innerHTML)
+npm run typecheck    # tsc over src/ (JSDoc types, lenient)
 npm test             # unit tests (Vitest)
 npm run build        # production build to dist/
 npm run test:e2e     # build, then Playwright on phone + desktop profiles
@@ -79,9 +80,12 @@ End-to-end tests run against `tools/serve-dist.mjs`, which applies the same head
 
 ```
 index.html            markup only (no inline script)
-src/main.js           app controller (being split into modules)
-src/lib/              tested, DOM-light modules: dom, geo, format, project (validation),
-                      change-detect, blob, secrets, store (IndexedDB), i18n, toast, share, install-help
+src/main.js           entry point (imports the feature modules, then starts the app)
+src/app/              els.js (typed DOM lookups), state.js (shared state)
+src/features/         one file per piece of behaviour: frames, views, map, export, project, ...
+src/lib/              tested, DOM-light modules: dom, geo, format, project (validation), slug,
+                      change-detect, blob, secrets, store (IndexedDB), i18n, toast, share,
+                      install-help, pwa, trusted-types
 src/components/       picker, start screen pieces
 src/styles/           tokens → layout → components → stage
 src/workers/          AI upscale worker (onnxruntime-web, self-hosted)
